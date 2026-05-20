@@ -1,0 +1,6 @@
+{
+  "name": "AI Candidate Sourcing & Outreach Agent",
+  "description": "An automated candidate sourcing, data enrichment, and multichannel outreach platform for recruiters.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
