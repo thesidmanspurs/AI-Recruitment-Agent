@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { apolloSourcingService } from '../services/apollo/apolloSourcingService.js';
 import { apolloService, ApolloError } from '../services/apollo/apolloService.js';
+import { redditService } from '../services/reddit/redditService.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
 import { screenProfiles } from '../services/screening/screeningService.js';
@@ -23,14 +24,13 @@ export const candidateController = {
       await usageService.assertWithinLimit(userId);
 
       // STRICT POLICY: real people only.
-      // Sourcing uses Apollo People Search exclusively. No AI-invented
-      // candidates, no fixture rows — if Apollo can't deliver, the call
-      // fails loudly with a 503 and zero rows persisted.
-      if (!apolloSourcingService.isAvailable()) {
+      // Sourcing combines Apollo (LinkedIn) + Reddit (hiring subreddits).
+      // At least one source must be configured; we never invent candidates.
+      if (!apolloSourcingService.isAvailable() && !redditService.isAvailable()) {
         return next(
           createError(
-            'Sourcing is unavailable: APOLLO_PEOPLE_SEARCH_KEY is not configured on the server. ' +
-              'Sourcing requires a real candidate source — synthetic profiles are not allowed.',
+            'Sourcing is unavailable: neither Apollo nor Reddit is configured on the server. ' +
+              'At least one real source is required.',
             503
           )
         );
@@ -49,8 +49,11 @@ export const candidateController = {
         page = Math.floor(existingCount / pageSize) + 1;
       }
 
-      // Step 1: Apollo Search — get IDs + first_name + obfuscated last_name
-      let searchResult;
+      // Step 1: Apollo Search — get IDs + first_name + obfuscated last_name.
+      // We treat Apollo failures as soft: if it errors or returns nothing,
+      // we still try Reddit. Only if BOTH come up empty do we report 404/502.
+      let searchResult: Awaited<ReturnType<typeof apolloSourcingService.searchRaw>> | null = null;
+      let apolloErrorMsg: string | null = null;
       try {
         searchResult = await apolloSourcingService.searchRaw({
           title: campaign.jobTitle,
@@ -61,24 +64,20 @@ export const candidateController = {
           page,
         });
       } catch (err) {
-        const reason =
+        apolloErrorMsg =
           err instanceof ApolloError
             ? `Apollo Search ${err.status}: ${err.message}`
             : err instanceof Error
               ? err.message
               : 'Apollo Search call failed.';
-        return next(createError(`Sourcing failed: ${reason}`, 502));
+        console.warn('[Apollo] sourcing failed:', apolloErrorMsg);
+        await campaignRepository.addLog(campaignId, {
+          message: `Apollo sourcing skipped: ${apolloErrorMsg}`,
+          type: 'WARNING',
+        });
       }
 
-      const searchHits = searchResult.hits;
-      if (searchHits.length === 0) {
-        return next(
-          createError(
-            'Apollo Search returned no matches for this job spec. Try broader keywords or a less specific title.',
-            404
-          )
-        );
-      }
+      const searchHits = searchResult?.hits ?? [];
 
       // Step 2: chain Match-by-id for each hit — the unlock on Basic.
       // Search alone gives us first_name + obfuscated last_name + id; Match
@@ -135,18 +134,45 @@ export const candidateController = {
         })
         .filter((p): p is NonNullable<typeof p> => p !== null);
 
-      if (rawProfiles.length === 0) {
+      // Reddit sourcing — runs in parallel intent (we already have the Apollo
+      // result by this point, so this is sequential but cheap). We never let
+      // a Reddit failure block the Apollo pipeline: any error here is logged
+      // and swallowed so the user still sees their LinkedIn candidates.
+      let redditProfiles: typeof rawProfiles = [];
+      if (redditService.isAvailable()) {
+        try {
+          redditProfiles = await redditService.sourceCandidates({
+            jobTitle: campaign.jobTitle,
+            extractedKeywords: campaign.extractedKeywords,
+            limit: Math.max(5, Math.floor(pageSize / 2)),
+          });
+          await campaignRepository.addLog(campaignId, {
+            message: `Reddit sourcing: ${redditProfiles.length} candidate(s) discovered in hiring subreddits.`,
+            type: 'INFO',
+          });
+        } catch (err) {
+          console.warn('[Reddit] sourcing failed:', err instanceof Error ? err.message : err);
+          await campaignRepository.addLog(campaignId, {
+            message: `Reddit sourcing skipped: ${err instanceof Error ? err.message : 'unknown error'}`,
+            type: 'WARNING',
+          });
+        }
+      }
+
+      const combinedProfiles = [...rawProfiles, ...redditProfiles];
+
+      if (combinedProfiles.length === 0) {
         return next(
           createError(
-            'Apollo Search returned candidates but Match could not resolve any of them. ' +
-              'Often a transient Apollo issue — try again in a moment.',
+            'No candidates resolved from either Apollo or Reddit. ' +
+              'Often a transient upstream issue — try again in a moment.',
             502
           )
         );
       }
 
       // Phase 3 — algorithmic screening (dedupe, validate, threshold split)
-      const screening = screenProfiles(rawProfiles);
+      const screening = screenProfiles(combinedProfiles);
 
       // Cross-batch dedupe: drop anyone whose name already exists in this
       // campaign. Without this, re-sourcing on the fallback path (or even
@@ -210,9 +236,13 @@ export const candidateController = {
         screening: { ...screening.summary, skippedExisting },
         isSimulated: false,
         simulationReason: undefined,
-        source: 'apollo',
+        source: searchHits.length > 0 ? 'apollo+reddit' : 'reddit',
+        sources: {
+          apollo: { count: enrichmentByName.size, error: apolloErrorMsg },
+          reddit: { count: redditProfiles.length },
+        },
         usage,
-        pagination: {
+        pagination: searchResult ? {
           page: searchResult.page,
           pageSize: searchResult.perPage,
           totalEntries: searchResult.totalEntries,
@@ -225,7 +255,7 @@ export const candidateController = {
                 searchResult.totalEntries - searchResult.page * searchResult.perPage
               )
             : 0,
-        },
+        } : null,
       });
     } catch (err) {
       next(err);

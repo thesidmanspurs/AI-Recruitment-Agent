@@ -50,6 +50,13 @@ export const env = {
   APP_BASE_URL: process.env.APP_BASE_URL || '',
   APOLLO_WEBHOOK_SECRET: process.env.APOLLO_WEBHOOK_SECRET || '',
 
+  // Reddit OAuth2 (client-credentials flow). Register at
+  // https://www.reddit.com/prefs/apps → create "script" app. Used to source
+  // candidates from public posts in hiring-relevant subreddits.
+  REDDIT_CLIENT_ID: process.env.REDDIT_CLIENT_ID || '',
+  REDDIT_CLIENT_SECRET: process.env.REDDIT_CLIENT_SECRET || '',
+  REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT || 'aries-sourcing/0.1',
+
   // Email Outreach
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
