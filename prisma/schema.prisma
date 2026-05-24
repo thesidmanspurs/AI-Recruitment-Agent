@@ -122,6 +122,9 @@ model Candidate {
   linkedinUrl   String?
   emailEnriched Boolean @default(false)
   phoneEnriched Boolean @default(false)
+  // Apollo internal person id — needed to correlate async phone webhooks back
+  // to this row when Apollo POSTs the revealed phone minutes/hours later.
+  apolloId      String? @unique
 
   // Outreach (Phase 5)
   outreachStatus    OutreachStatus   @default(SOURCED)

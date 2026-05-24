@@ -19,6 +19,7 @@ import type { EnrichmentRequest, ApolloEnrichmentResult } from '../../types/outr
 
 interface ApolloPersonResponse {
   person?: {
+    id?: string | null;
     email?: string | null;
     phone_numbers?: Array<{ sanitized_number?: string; raw_number?: string }>;
     city?: string | null;
@@ -28,6 +29,24 @@ interface ApolloPersonResponse {
     organization?: { name?: string | null; primary_domain?: string | null } | null;
     title?: string | null;
   } | null;
+}
+
+// Builds the absolute callback URL Apollo will POST the revealed phone to.
+// We pass the webhook secret as a query-string token because Apollo Basic
+// doesn't sign webhook payloads — the secret on the URL is the only guard.
+function phoneWebhookUrl(): string | undefined {
+  if (!env.APP_BASE_URL || !env.APOLLO_WEBHOOK_SECRET) return undefined;
+  return `${env.APP_BASE_URL.replace(/\/$/, '')}/api/webhooks/apollo?secret=${encodeURIComponent(env.APOLLO_WEBHOOK_SECRET)}`;
+}
+
+// Common reveal-phone payload fragment. When a webhook URL is configured we
+// ask Apollo to reveal the phone — synchronously if their plan allows, else
+// asynchronously by POSTing to webhook_url. The flag is harmless if reveal
+// isn't supported on the active plan: the field just stays empty.
+function phoneRevealArgs(): Record<string, unknown> {
+  const url = phoneWebhookUrl();
+  if (!url) return { reveal_phone_number: false };
+  return { reveal_phone_number: true, webhook_url: url };
 }
 
 export class ApolloError extends Error {
@@ -62,6 +81,7 @@ export const apolloService = {
    */
   async enrichByLinkedInUrl(linkedinUrl: string): Promise<{
     found: boolean;
+    apolloId?: string;
     name?: string;
     firstName?: string;
     lastName?: string;
@@ -77,7 +97,7 @@ export const apolloService = {
     if (!env.APOLLO_API_KEY) {
       throw new ApolloError(401, 'APOLLO_API_KEY is not configured on the server.');
     }
-    const body = { linkedin_url: linkedinUrl, reveal_phone_number: false };
+    const body = { linkedin_url: linkedinUrl, ...phoneRevealArgs() };
     const res = await fetch(`${APOLLO_BASE_URL}/people/match`, {
       method: 'POST',
       headers: {
@@ -115,6 +135,7 @@ export const apolloService = {
     const location = [p.city, p.state, p.country].filter(Boolean).join(', ') || undefined;
     return {
       found: true,
+      apolloId: p.id ?? undefined,
       name: fullName || undefined,
       firstName: first,
       lastName: last,
@@ -137,6 +158,7 @@ export const apolloService = {
    */
   async enrichById(id: string): Promise<{
     found: boolean;
+    apolloId?: string;
     name?: string;
     firstName?: string;
     lastName?: string;
@@ -152,7 +174,7 @@ export const apolloService = {
     if (!env.APOLLO_API_KEY) {
       throw new ApolloError(401, 'APOLLO_API_KEY is not configured.');
     }
-    const body = { id, reveal_phone_number: false };
+    const body = { id, ...phoneRevealArgs() };
     const res = await fetch(`${APOLLO_BASE_URL}/people/match`, {
       method: 'POST',
       headers: {
@@ -186,6 +208,7 @@ export const apolloService = {
     const location = [p.city, p.state, p.country].filter(Boolean).join(', ') || undefined;
     return {
       found: true,
+      apolloId: p.id ?? undefined,
       name: fullName || undefined,
       firstName: first,
       lastName: last,
@@ -216,9 +239,9 @@ export const apolloService = {
       last_name: last,
       organization_name: request.company || undefined,
       linkedin_url: request.linkedinUrl || undefined,
-      // Phone reveal is a paid feature on Apollo; this hint costs nothing if
-      // unsupported and unlocks the phone field when it is.
-      reveal_phone_number: false,
+      // Phone reveal: ask Apollo to deliver phone synchronously when their
+      // plan allows it, or asynchronously to our webhook URL otherwise.
+      ...phoneRevealArgs(),
     };
 
     let res: Response;

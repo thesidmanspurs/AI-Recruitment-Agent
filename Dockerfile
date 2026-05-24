@@ -14,7 +14,6 @@ RUN npm ci --no-audit --no-fund
 COPY prisma ./prisma
 COPY backend ./backend
 COPY frontend ./frontend
-COPY tsconfig*.json ./
 
 # Build: prisma client + frontend SPA + bundled backend
 RUN npm run build

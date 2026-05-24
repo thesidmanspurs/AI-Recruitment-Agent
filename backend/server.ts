@@ -11,6 +11,7 @@ import authRoutes from './routes/authRoutes.js';
 import campaignRoutes from './routes/campaignRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import usageRoutes from './routes/usageRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
 import { trackingService } from './services/tracking/trackingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +32,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 app.use('/api/auth', authRoutes);
+
+// Webhooks are public (no JWT). Each route validates its own shared-secret
+// token. Must be mounted BEFORE the authenticate middleware.
+app.use('/api/webhooks', webhookRoutes);
 
 // ── Protected routes (JWT required) ──────────────────────────────────────────
 app.use('/api/campaigns', authenticate, campaignRoutes);

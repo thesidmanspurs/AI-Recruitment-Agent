@@ -53,7 +53,7 @@ function EnrichmentIcons({ contact }: { contact: Candidate['contact'] }) {
         title={
           contact.phoneEnriched
             ? contact.phone ?? 'Phone enriched'
-            : 'Phone not fetched — requires webhook server (Apollo delivers phones asynchronously)'
+            : 'Phone pending — Apollo delivers it asynchronously via webhook; refresh in a few minutes'
         }
         className={`w-7 h-7 rounded-full flex items-center justify-center border ${
           contact.phoneEnriched
@@ -559,7 +559,7 @@ function renderExpandableRow(
                     label="Phone"
                     value={candidate.contact.phone}
                     href={candidate.contact.phone ? `tel:${candidate.contact.phone}` : undefined}
-                    fallback="Not fetched — Apollo delivers phones asynchronously via webhook (not yet wired)"
+                    fallback="Pending — Apollo delivers phones asynchronously via webhook; refresh in a few minutes"
                   />
                   <ContactRow
                     icon={<MapPin className="w-3.5 h-3.5 text-gray-500" />}

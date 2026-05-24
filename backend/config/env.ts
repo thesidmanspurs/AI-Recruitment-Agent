@@ -44,6 +44,12 @@ export const env = {
   APOLLO_ORG_ENRICH_KEY:
     process.env.APOLLO_ORG_ENRICH_KEY || process.env.APOLLO_API_KEY || '',
 
+  // Apollo async phone-reveal webhook. APP_BASE_URL is the public origin
+  // (e.g. the Cloud Run URL); APOLLO_WEBHOOK_SECRET guards the endpoint via
+  // a query-string token since Apollo Basic doesn't sign webhook payloads.
+  APP_BASE_URL: process.env.APP_BASE_URL || '',
+  APOLLO_WEBHOOK_SECRET: process.env.APOLLO_WEBHOOK_SECRET || '',
+
   // Email Outreach
   SMTP_HOST: process.env.SMTP_HOST || '',
   SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),

@@ -22,6 +22,7 @@ export type UpdateCandidateInput = {
   phone?: string;
   location?: string;
   linkedinUrl?: string;
+  apolloId?: string | null;
   emailEnriched?: boolean;
   phoneEnriched?: boolean;
   outreachStatus?: OutreachStatus;
@@ -108,6 +109,14 @@ export const candidateRepository = {
 
   update(id: string, data: UpdateCandidateInput) {
     return prisma.candidate.update({ where: { id }, data });
+  },
+
+  findByApolloId(apolloId: string) {
+    return prisma.candidate.findUnique({ where: { apolloId } });
+  },
+
+  updateByApolloId(apolloId: string, data: UpdateCandidateInput) {
+    return prisma.candidate.update({ where: { apolloId }, data });
   },
 
   delete(id: string) {
