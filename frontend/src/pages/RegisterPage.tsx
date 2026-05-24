@@ -53,7 +53,7 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
           <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
             <span className="text-base font-extrabold text-white">A</span>
           </div>
-          <span className="text-gray-900 font-bold text-lg">AI Recruitment Agent</span>
+          <span className="text-gray-900 font-bold text-lg">ARIES</span>
         </div>
 
         <h2 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h2>

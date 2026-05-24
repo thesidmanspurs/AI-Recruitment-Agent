@@ -190,10 +190,10 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
             </div>
             <div className="min-w-0">
               <h1 className="text-base font-bold text-gray-900 leading-none truncate">
-                AI Recruitment Agent
+                ARIES
               </h1>
               <p className="text-[11px] text-gray-500 mt-0.5 truncate">
-                Autonomous sourcing pipeline
+                AI Recruitment &amp; Intelligent Engagement Service
               </p>
             </div>
           </div>

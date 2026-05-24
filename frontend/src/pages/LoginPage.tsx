@@ -122,7 +122,7 @@ export function AuthShell({ heading, tagline, children }: AuthShellProps) {
             <span className="text-base font-extrabold text-white">A</span>
           </div>
           <span className="text-gray-900 font-bold text-lg tracking-tight">
-            AI Recruitment Agent
+            ARIES
           </span>
         </div>
 
@@ -161,7 +161,7 @@ export function AuthShell({ heading, tagline, children }: AuthShellProps) {
           </div>
         </div>
 
-        <p className="relative text-xs text-gray-400">© 2026 AI Recruitment Agent</p>
+        <p className="relative text-xs text-gray-400">© 2026 ARIES</p>
       </div>
 
       {/* Right form panel */}
@@ -176,7 +176,7 @@ function BrandMobile() {
       <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
         <span className="text-base font-extrabold text-white">A</span>
       </div>
-      <span className="text-gray-900 font-bold text-lg">AI Recruitment Agent</span>
+      <span className="text-gray-900 font-bold text-lg">ARIES</span>
     </div>
   );
 }
