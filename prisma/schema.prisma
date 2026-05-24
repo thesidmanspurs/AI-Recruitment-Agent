@@ -1,0 +1,188 @@
+// Prisma schema — PostgreSQL
+// Local dev:  postgresql://postgres:password@localhost:5432/recruitment_agent
+// GCP Cloud SQL (Unix socket): postgresql://user:password@/dbname?host=/cloudsql/PROJECT:REGION:INSTANCE
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String       @id @default(uuid())
+  email              String       @unique
+  name               String
+  passwordHash       String
+  role               UserRole     @default(USER)
+  isBlocked          Boolean      @default(false)
+  blockedAt          DateTime?
+  blockedReason      String?
+  dailyLimitOverride Int?         // null = inherit the global daily_free_limit setting
+  lastLoginAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  campaigns          Campaign[]
+  usage              UsageDaily[]
+
+  @@index([email])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// Singleton key/value table for global settings. Admin-editable.
+// Known keys: daily_free_limit  (integer, default 50)
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+// Tracks how many AI-paid operations a user has consumed on a given UTC date.
+// One row per (user, date). Incremented on every successful Gemini call.
+model UsageDaily {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // YYYY-MM-DD (UTC) — kept as string so unique index is trivial
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+// ─── Campaign (one per recruitment category/role) ────────────────────────────
+
+model Campaign {
+  id                 String         @id @default(uuid())
+  userId             String
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String
+  jobTitle           String
+  rawJobText         String         @db.Text
+  location           String?
+  jobType            String?
+  department         String?
+  status             CampaignStatus @default(DRAFT)
+  code               String?
+  analyzedAt         DateTime?
+  alternateTitles    String[]
+  extractedKeywords  String[]
+  requirements       String[]
+  preferredPlatforms String[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  candidates         Candidate[]
+  activityLogs       ActivityLog[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+enum CampaignStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+// ─── Candidate ───────────────────────────────────────────────────────────────
+
+model Candidate {
+  id               String          @id @default(uuid())
+  campaignId       String
+  campaign         Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name             String
+  currentTitle     String
+  company          String
+  bio              String          @db.Text
+  openToWork       Boolean         @default(false)
+  platform         Platform
+  matchScore       Float
+  matchExplanation String          @db.Text
+  skills           String[]
+  strengths        String[]
+  gaps             String[]
+
+  // Contact — populated by Apollo (Phase 4)
+  email         String?
+  phone         String?
+  location      String?
+  linkedinUrl   String?
+  emailEnriched Boolean @default(false)
+  phoneEnriched Boolean @default(false)
+
+  // Outreach (Phase 5)
+  outreachStatus    OutreachStatus   @default(SOURCED)
+  outreachMessage   String?          @db.Text
+  outreachChannel   OutreachChannel?
+  outreachSentAt    DateTime?
+  daysSinceOutreach Int              @default(0)
+  alertTriggered    Boolean          @default(false)
+  notes             String?          @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([campaignId, name])
+  @@index([campaignId])
+  @@index([campaignId, matchScore])
+  @@index([campaignId, outreachStatus])
+}
+
+enum Platform {
+  LinkedIn
+  Upwork
+  Reddit
+}
+
+enum OutreachStatus {
+  SOURCED
+  ENRICHED
+  OUTREACH_SENT
+  OPENED
+  REPLIED
+  NO_RESPONSE
+}
+
+enum OutreachChannel {
+  EMAIL
+  LINKEDIN_DM
+  PLATFORM_MESSAGE
+}
+
+// ─── Activity Log ────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id            String          @id @default(uuid())
+  campaignId    String
+  campaign      Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  candidateId   String?
+  candidateName String?
+  message       String
+  type          ActivityLogType
+  timestamp     DateTime        @default(now())
+
+  @@index([campaignId])
+  @@index([campaignId, timestamp])
+}
+
+enum ActivityLogType {
+  INFO
+  ENRICH
+  OUTREACH
+  REPLY
+  ALERT
+  SYSTEM
+}
