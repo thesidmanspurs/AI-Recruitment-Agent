@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { env } from './config/env.js';
@@ -21,6 +22,7 @@ const frontendRoot = path.resolve(__dirname, '../frontend');
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(requestLogger);
 
 // ── CORS — only on /api; the SPA itself is same-origin via Vite middleware ──

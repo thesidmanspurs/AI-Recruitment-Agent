@@ -3,7 +3,6 @@ import type { UserRole } from '../hooks/useAuth';
 
 export interface AuthResponse {
   success: boolean;
-  token: string;
   user: { id: string; email: string; name: string; role: UserRole };
 }
 

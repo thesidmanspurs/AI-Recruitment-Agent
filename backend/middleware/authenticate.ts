@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { prisma } from '../config/database.js';
 import { createError } from './errorHandler.js';
+import { AUTH_COOKIE_NAME } from '../utils/authCookie.js';
 import type { JwtPayload } from '../types/auth.types.js';
 
 /**
@@ -23,12 +24,16 @@ export async function authenticate(
   _res: Response,
   next: NextFunction
 ): Promise<void> {
+  // Prefer the HttpOnly auth cookie (XSS-resistant). Fall back to the
+  // Authorization header for non-browser clients (curl, mobile apps, tests).
+  const cookieToken = (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME];
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(createError('Missing or invalid Authorization header.', 401));
+  const headerToken =
+    authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const token = cookieToken || headerToken;
+  if (!token) {
+    return next(createError('Missing or invalid authentication credentials.', 401));
   }
-
-  const token = authHeader.slice(7);
   let payload: JwtPayload;
   try {
     payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;

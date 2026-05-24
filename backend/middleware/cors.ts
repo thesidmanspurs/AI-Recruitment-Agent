@@ -28,7 +28,7 @@ const corsOptions: CorsOptions = {
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false, // Bearer tokens travel in Authorization, not cookies
+  credentials: true, // HttpOnly auth cookie must travel cross-origin in dev
   maxAge: 600,
 };
 

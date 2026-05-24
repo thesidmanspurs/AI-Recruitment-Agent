@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth/authService.js';
 import { createError } from '../middleware/errorHandler.js';
+import { setAuthCookie, clearAuthCookie } from '../utils/authCookie.js';
 import type { RegisterRequest, LoginRequest } from '../types/auth.types.js';
 
 export const authController = {
@@ -15,7 +16,10 @@ export const authController = {
         return next(createError('Password must be at least 8 characters.', 400));
       }
       const result = await authService.register({ name, email, password });
-      res.status(201).json({ success: true, ...result });
+      setAuthCookie(res, result.token);
+      // We no longer return the JWT in the body — the HttpOnly cookie carries
+      // it. Returning the user is enough for the client to bootstrap state.
+      res.status(201).json({ success: true, user: result.user });
     } catch (err) {
       next(err);
     }
@@ -29,10 +33,21 @@ export const authController = {
         return next(createError('email and password are required.', 400));
       }
       const result = await authService.login({ email, password });
-      res.json({ success: true, ...result });
+      setAuthCookie(res, result.token);
+      res.json({ success: true, user: result.user });
     } catch (err) {
       next(err);
     }
+  },
+
+  // POST /api/auth/logout
+  // Clears the HttpOnly cookie. The JWT itself stays valid until expiry
+  // because JWTs are stateless — but with the cookie gone the browser has
+  // no way to present it. If we ever need true revocation we'll add a
+  // tokenVersion column and bump it on logout.
+  logout(_req: Request, res: Response): void {
+    clearAuthCookie(res);
+    res.json({ success: true });
   },
 
   // GET /api/auth/me
