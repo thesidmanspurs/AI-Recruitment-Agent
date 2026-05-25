@@ -30,7 +30,8 @@ let _transport: Transporter | null = null;
 
 function getTransport(): Transporter | null {
   if (_transport) return _transport;
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null;
+  const isReal = (v: string) => !!v && v !== 'PLACEHOLDER';
+  if (!isReal(env.SMTP_HOST) || !isReal(env.SMTP_USER) || !isReal(env.SMTP_PASS)) return null;
   _transport = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
@@ -42,7 +43,10 @@ function getTransport(): Transporter | null {
 
 export const emailService = {
   isAvailable(): boolean {
-    return !!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
+    // Treat the literal "PLACEHOLDER" same as empty so cloudbuild can ship
+    // before real SMTP credentials are provisioned.
+    const real = (v: string) => !!v && v !== 'PLACEHOLDER';
+    return real(env.SMTP_HOST) && real(env.SMTP_USER) && real(env.SMTP_PASS);
   },
 
   async sendEmail(params: SendEmailParams): Promise<SendResult> {
