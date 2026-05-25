@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { X, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useRef, type FormEvent, type ChangeEvent } from 'react';
+import { X, Loader2, Sparkles, AlertCircle, Upload, FileText } from 'lucide-react';
 import { ApiError } from '../../api/client';
 import type { CreateCampaignInput } from '../../api/campaignApi';
 
@@ -22,6 +22,45 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
   const [department, setDepartment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-uploading the same file
+    if (!file) return;
+
+    setError(null);
+    setUploading(true);
+    try {
+      // Backend extracts text from PDF / DOCX / TXT and returns it. We never
+      // bypass the existing Analyze step — the text just lands in the textarea
+      // so the user can review / edit before submitting.
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/upload/extract-text', {
+        method: 'POST',
+        credentials: 'include',
+        body: form,
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || `HTTP ${res.status}`);
+      }
+      setJobText(json.text as string);
+      setUploadedFileName(file.name);
+      // Auto-fill campaign name from filename if it's still empty.
+      if (!name.trim()) {
+        const base = file.name.replace(/\.(pdf|docx|txt|md)$/i, '').replace(/[_-]+/g, ' ').trim();
+        if (base) setName(base.slice(0, 80));
+      }
+    } catch (err) {
+      setError(`Couldn't read that file: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -136,9 +175,35 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
           </div>
 
           <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              Job description *
-            </label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Job description *
+              </label>
+              <div className="flex items-center gap-2">
+                {uploadedFileName && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 max-w-[180px] truncate">
+                    <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span className="truncate">{uploadedFileName}</span>
+                  </span>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || submitting}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                  {uploading ? 'Reading…' : 'Upload PDF / DOCX'}
+                </button>
+              </div>
+            </div>
             <textarea
               value={jobText}
               onChange={e => setJobText(e.target.value)}
