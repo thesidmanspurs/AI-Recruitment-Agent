@@ -16,6 +16,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { CandidateTable } from '../components/dashboard/CandidateTable';
+import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -318,6 +319,16 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
             <EmptyDashboard onNew={() => setShowCreate(true)} />
           ) : activeCampaign ? (
             <>
+              {/* Sourcing Playbook — 4-step roadmap derived from campaign state */}
+              <OnboardingPlaybook
+                campaign={activeCampaign}
+                candidates={tableCandidates}
+                onIngestSpec={() => setShowCreate(true)}
+                onScrollToCandidates={() =>
+                  document.getElementById('candidates-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+              />
+
               {/* Campaign header */}
               <SectionCard
                 noBodyPadding
@@ -512,6 +523,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
               })()}
 
               {/* Candidate table */}
+              <div id="candidates-table" />
               {candidates.length === 0 ? (
                 <EmptySourcing onSource={handleSource} sourcing={sourcing} />
               ) : (
