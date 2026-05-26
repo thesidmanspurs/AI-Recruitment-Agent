@@ -14,6 +14,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import usageRoutes from './routes/usageRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import locationRoutes from './routes/locationRoutes.js';
 import { trackingService } from './services/tracking/trackingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,6 +44,7 @@ app.use('/api/webhooks', webhookRoutes);
 // ── Protected routes (JWT required) ──────────────────────────────────────────
 app.use('/api/campaigns', authenticate, campaignRoutes);
 app.use('/api/upload', authenticate, uploadRoutes);
+app.use('/api/locations', authenticate, locationRoutes);
 app.use('/api/usage', authenticate, usageRoutes);
 app.use('/api/admin', authenticate, requireAdmin, adminRoutes);
 
