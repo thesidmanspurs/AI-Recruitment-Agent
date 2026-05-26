@@ -10,7 +10,14 @@ interface EditCampaignModalProps {
   onClose: () => void;
   onSave: (
     id: string,
-    input: { name?: string; location?: string; jobType?: string; department?: string; jobText?: string }
+    input: {
+      name?: string;
+      location?: string;
+      jobType?: string;
+      department?: string;
+      jobText?: string;
+      outreachTemplate?: string | null;
+    }
   ) => Promise<{ isSimulated: boolean; simulationReason?: string }>;
   onResetCandidates?: (id: string) => Promise<number>;
 }
@@ -35,6 +42,7 @@ export function EditCampaignModal({
   const [jobType, setJobType] = useState('Full-time');
   const [department, setDepartment] = useState('');
   const [jobText, setJobText] = useState('');
+  const [outreachTemplate, setOutreachTemplate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +54,7 @@ export function EditCampaignModal({
     setJobType(campaign.jobType ?? 'Full-time');
     setDepartment(campaign.department ?? '');
     setJobText(campaign.rawJobText);
+    setOutreachTemplate(campaign.outreachTemplate ?? '');
     setError(null);
   }, [campaign?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -66,6 +75,9 @@ export function EditCampaignModal({
         department: department.trim() || undefined,
         // Only send jobText if it actually changed — saves a Gemini call.
         jobText: jdChanged ? jobText.trim() : undefined,
+        // Empty string -> null so the backend falls back to per-candidate
+        // Gemini generation.
+        outreachTemplate: outreachTemplate.trim() === '' ? null : outreachTemplate,
       });
       onClose();
     } catch (err) {
@@ -186,6 +198,23 @@ export function EditCampaignModal({
             value={jobText}
             onChange={e => setJobText(e.target.value)}
             rows={10}
+            className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y"
+          />
+        </Field>
+
+        <Field
+          label="Outreach template (campaign-wide)"
+          hint={
+            outreachTemplate.trim()
+              ? 'This template pre-fills the Outreach editor for every candidate in this campaign. Leave empty to let Gemini generate fresh per-candidate.'
+              : 'Leave empty to let Gemini generate fresh per-candidate. Otherwise: first paragraph = subject (blank line then body). Placeholders: {{firstName}}, {{candidateTitle}}, {{candidateCompany}}, {{jobTitle}}, {{recruiterName}}, {{topStrength}}, {{topKeyword}}.'
+          }
+        >
+          <textarea
+            value={outreachTemplate}
+            onChange={e => setOutreachTemplate(e.target.value)}
+            placeholder={`{{jobTitle}} role at our client — quick chat?\n\nHi {{firstName}},\n\nI came across your work as {{candidateTitle}} @ {{candidateCompany}} — your background in {{topKeyword}} is exactly what we're looking for on a {{jobTitle}} role.\n\nOpen to a 15-minute chat next week?\n\nBest,\n{{recruiterName}}`}
+            rows={9}
             className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y"
           />
         </Field>

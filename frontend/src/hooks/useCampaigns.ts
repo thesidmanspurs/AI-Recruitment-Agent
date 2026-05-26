@@ -199,6 +199,7 @@ export function useCampaigns() {
         jobType?: string;
         department?: string;
         jobText?: string;
+        outreachTemplate?: string | null;
       }
     ): Promise<{ isSimulated: boolean; simulationReason?: string }> => {
       const res = await campaignApi.update(id, input);

@@ -121,19 +121,23 @@ export const jobSpecController = {
   // Gemini analysis so title/keywords/requirements stay in sync.
   async updateCampaign(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, location, jobType, department, status, jobText } = req.body as {
+      const { name, location, jobType, department, status, jobText, outreachTemplate } = req.body as {
         name?: string;
         location?: string;
         jobType?: string;
         department?: string;
         status?: 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
         jobText?: string;
+        outreachTemplate?: string | null;
       };
 
       const existing = await campaignRepository.findById(req.params.id, req.user!.id);
       if (!existing) return next(createError('Campaign not found.', 404));
 
       const update: Record<string, unknown> = { name, location, jobType, department, status };
+      if (outreachTemplate !== undefined) {
+        update.outreachTemplate = outreachTemplate?.trim() ? outreachTemplate.trim() : null;
+      }
       let isSimulated = false;
       let simulationReason: string | undefined;
 

@@ -27,6 +27,7 @@ export interface CampaignDto {
   extractedKeywords: string[];
   requirements: string[];
   preferredPlatforms: string[];
+  outreachTemplate?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -117,6 +118,7 @@ export const campaignApi = {
       department?: string;
       status?: CampaignStatus;
       jobText?: string;
+      outreachTemplate?: string | null;
     }
   ) {
     return apiClient.put<{

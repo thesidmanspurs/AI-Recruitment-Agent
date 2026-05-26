@@ -13,6 +13,7 @@ export type CreateCampaignInput = {
   extractedKeywords?: string[];
   requirements?: string[];
   preferredPlatforms?: string[];
+  outreachTemplate?: string | null;
   status?: CampaignStatus;
   analyzedAt?: Date;
 };

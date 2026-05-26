@@ -298,15 +298,58 @@ export const outreachController = {
 };
 
 /**
- * Generate an outreach message via Gemini, falling back to a deterministic
- * template if Gemini is unavailable (no key / 429 / 404). The fallback is
- * good enough for the demo path; recruiters will edit before sending anyway.
+ * Generate an outreach message. Precedence:
+ *   1. Campaign-level outreach template (Subject\n\nBody with placeholders)
+ *      — substituted with candidate / campaign / recruiter values.
+ *   2. Gemini per-candidate generation.
+ *   3. Deterministic local template fallback.
+ *
+ * Supported placeholders (case-insensitive):
+ *   {{firstName}} {{lastName}} {{candidateName}}
+ *   {{candidateTitle}} {{candidateCompany}}
+ *   {{jobTitle}} {{recruiterName}} {{topStrength}} {{topKeyword}}
  */
-async function draftMessage(
+function applyTemplate(
+  tpl: string,
   campaign: { jobTitle: string; extractedKeywords: string[] },
   candidate: { name: string; currentTitle: string; company: string; strengths: string[] },
   recruiterName: string
+): { subject: string; body: string } {
+  const firstName = candidate.name.split(' ')[0] ?? candidate.name;
+  const lastName = candidate.name.split(' ').slice(1).join(' ');
+  const vars: Record<string, string> = {
+    firstname: firstName,
+    lastname: lastName,
+    candidatename: candidate.name,
+    candidatetitle: candidate.currentTitle,
+    candidatecompany: candidate.company,
+    jobtitle: campaign.jobTitle,
+    recruitername: recruiterName,
+    topstrength: candidate.strengths[0] ?? 'your background',
+    topkeyword: campaign.extractedKeywords[0] ?? 'this stack',
+  };
+  const filled = tpl.replace(/\{\{\s*([a-zA-Z]+)\s*\}\}/g, (_, key) =>
+    vars[String(key).toLowerCase()] ?? ''
+  );
+  const idx = filled.indexOf('\n\n');
+  if (idx > 0) {
+    return { subject: filled.slice(0, idx).trim(), body: filled.slice(idx + 2).trim() };
+  }
+  // No blank-line separator — treat the whole thing as body, derive a subject.
+  return { subject: `${campaign.jobTitle} — quick chat?`, body: filled.trim() };
+}
+
+async function draftMessage(
+  campaign: { jobTitle: string; extractedKeywords: string[]; outreachTemplate?: string | null },
+  candidate: { name: string; currentTitle: string; company: string; strengths: string[] },
+  recruiterName: string
 ): Promise<{ subject: string; body: string; isSimulated: boolean; simulationReason?: string }> {
+  if (campaign.outreachTemplate && campaign.outreachTemplate.trim()) {
+    return {
+      ...applyTemplate(campaign.outreachTemplate, campaign, candidate, recruiterName),
+      isSimulated: false,
+    };
+  }
   if (geminiService.isAvailable()) {
     try {
       const msg = await geminiService.generateOutreachMessage({
