@@ -42,6 +42,14 @@ export const candidateController = {
       // → each "Source candidates" click moves to the next Apollo page.
       const pageParam = (req.query.page ?? req.body?.page) as string | number | undefined;
       const pageSizeParam = (req.query.pageSize ?? req.body?.pageSize) as string | number | undefined;
+      // Optional location filter — accepts a single string or array, normalised
+      // to string[]. Forwarded to Apollo's person_locations.
+      const locationsRaw = (req.body?.locations ?? req.query.locations) as unknown;
+      const locations: string[] = Array.isArray(locationsRaw)
+        ? locationsRaw.map(String).map(s => s.trim()).filter(Boolean)
+        : typeof locationsRaw === 'string' && locationsRaw.trim()
+          ? locationsRaw.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
       const pageSize = Math.min(50, Math.max(1, Number(pageSizeParam) || 25));
       let page = Number(pageParam);
       if (!Number.isFinite(page) || page < 1) {
@@ -62,6 +70,7 @@ export const candidateController = {
           preferredPlatforms: campaign.preferredPlatforms,
           limit: pageSize,
           page,
+          locations: locations.length > 0 ? locations : undefined,
         });
       } catch (err) {
         apolloErrorMsg =

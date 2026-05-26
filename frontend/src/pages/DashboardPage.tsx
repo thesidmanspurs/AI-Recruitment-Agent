@@ -19,6 +19,7 @@ import { CandidateTable } from '../components/dashboard/CandidateTable';
 import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
 import { HeaderStepper, type StepperStatus } from '../components/dashboard/HeaderStepper';
 import { WorkflowGuideModal } from '../components/dashboard/WorkflowGuideModal';
+import { LocationFilter } from '../components/dashboard/LocationFilter';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -72,6 +73,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   const [showDelete, setShowDelete] = useState(false);
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [sourceLocations, setSourceLocations] = useState<string[]>([]);
   const toast = useToast();
   const lastSimReason = useRef<string | null>(null);
   const lastError = useRef<string | null>(null);
@@ -158,7 +160,9 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   async function handleSource() {
     if (!activeId) return;
     try {
-      await sourceCandidates(activeId);
+      await sourceCandidates(activeId, {
+        locations: sourceLocations.length > 0 ? sourceLocations : undefined,
+      });
     } catch {
       // surfaced via hook state
     }
@@ -393,7 +397,16 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                       </span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <LocationFilter
+                      applied={sourceLocations}
+                      onApply={async (locs) => {
+                        setSourceLocations(locs);
+                        if (locs.length === 0) return; // reset only
+                        if (!activeId) return;
+                        try { await sourceCandidates(activeId, { locations: locs }); } catch {}
+                      }}
+                    />
                     <button
                       onClick={handleSource}
                       disabled={sourcing}

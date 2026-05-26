@@ -126,7 +126,10 @@ export function useCampaigns() {
   }, [refreshCampaigns]);
 
   const sourceCandidates = useCallback(
-    async (campaignId: string, opts: { page?: number; pageSize?: number } = {}): Promise<void> => {
+    async (
+      campaignId: string,
+      opts: { page?: number; pageSize?: number; locations?: string[] } = {}
+    ): Promise<void> => {
       setSourcing(true);
       setError(null);
       try {

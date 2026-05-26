@@ -136,7 +136,10 @@ export const campaignApi = {
   },
 
   // Phase 2 / 3
-  source(campaignId: string, opts: { page?: number; pageSize?: number } = {}) {
+  source(
+    campaignId: string,
+    opts: { page?: number; pageSize?: number; locations?: string[] } = {}
+  ) {
     const params = new URLSearchParams();
     if (opts.page != null) params.set('page', String(opts.page));
     if (opts.pageSize != null) params.set('pageSize', String(opts.pageSize));
@@ -163,7 +166,9 @@ export const campaignApi = {
         hasMore: boolean;
         nextPageCreditEstimate: number;
       };
-    }>(`/campaigns/${campaignId}/candidates/source${q}`, {});
+    }>(`/campaigns/${campaignId}/candidates/source${q}`, {
+      locations: opts.locations && opts.locations.length > 0 ? opts.locations : undefined,
+    });
   },
 
   listCandidates(campaignId: string) {

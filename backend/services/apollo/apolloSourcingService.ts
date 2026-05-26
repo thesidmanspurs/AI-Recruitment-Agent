@@ -66,6 +66,12 @@ export interface ApolloSourceParams {
   page?: number;
   /** Optional country filter (e.g. "United Kingdom"). */
   country?: string;
+  /**
+   * Optional list of locations to filter by (city, region, or country names
+   * matched by Apollo's person_locations filter). When set, takes precedence
+   * over `country` and is OR-joined inside Apollo.
+   */
+  locations?: string[];
 }
 
 export interface ApolloSearchPage {
@@ -104,7 +110,10 @@ export const apolloSourcingService = {
       per_page: perPage,
       person_titles: titles,
     };
-    if (params.country) body.person_locations = [params.country];
+    // Multi-location filter takes precedence over the single-country slot.
+    const locs = (params.locations ?? []).map(s => s.trim()).filter(Boolean);
+    if (locs.length > 0) body.person_locations = locs;
+    else if (params.country) body.person_locations = [params.country];
 
     const res = await fetch(`${APOLLO_BASE_URL}/mixed_people/api_search`, {
       method: 'POST',
@@ -185,7 +194,10 @@ export const apolloSourcingService = {
       per_page: limit,
       person_titles: titles,
     };
-    if (params.country) body.person_locations = [params.country];
+    // Multi-location filter takes precedence over the single-country slot.
+    const locs = (params.locations ?? []).map(s => s.trim()).filter(Boolean);
+    if (locs.length > 0) body.person_locations = locs;
+    else if (params.country) body.person_locations = [params.country];
 
     let res: Response;
     try {
