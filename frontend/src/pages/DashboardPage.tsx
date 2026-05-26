@@ -14,7 +14,6 @@ import {
   Send,
   Bell,
   Globe,
-  Eye,
 } from 'lucide-react';
 import { CandidateTable } from '../components/dashboard/CandidateTable';
 import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
@@ -22,7 +21,6 @@ import { HeaderStepper, type StepperStatus } from '../components/dashboard/Heade
 import { WorkflowGuideModal } from '../components/dashboard/WorkflowGuideModal';
 import { LocationFilter } from '../components/dashboard/LocationFilter';
 import { OutreachEditorModal } from '../components/dashboard/OutreachEditorModal';
-import { ClientViewModal } from '../components/dashboard/ClientViewModal';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -79,7 +77,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   const [showGuide, setShowGuide] = useState(false);
   const [sourceLocations, setSourceLocations] = useState<string[]>([]);
   const [outreachEditorId, setOutreachEditorId] = useState<string | null>(null);
-  const [showClientView, setShowClientView] = useState(false);
   const toast = useToast();
   const lastSimReason = useRef<string | null>(null);
   const lastError = useRef<string | null>(null);
@@ -242,13 +239,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
           }
           void reloadCandidates();
         }}
-      />
-      <ClientViewModal
-        open={showClientView}
-        onClose={() => setShowClientView(false)}
-        campaignTitle={activeCampaign?.jobTitle ?? ''}
-        candidates={tableCandidates}
-        threshold={screening?.threshold ?? 9.0}
       />
       <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
@@ -452,14 +442,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                           {candidates.length === 0 ? 'Auto-source' : 'Re-source'}
                         </>
                       )}
-                    </button>
-                    <button
-                      onClick={() => setShowClientView(true)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
-                      title="Open a client-friendly view of the shortlist"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Client view
                     </button>
                     <button
                       onClick={() => setShowEdit(true)}
