@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { CandidateTable } from '../components/dashboard/CandidateTable';
 import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
+import { HeaderStepper, type StepperStatus } from '../components/dashboard/HeaderStepper';
+import { WorkflowGuideModal } from '../components/dashboard/WorkflowGuideModal';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -69,6 +71,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const toast = useToast();
   const lastSimReason = useRef<string | null>(null);
   const lastError = useRef<string | null>(null);
@@ -125,6 +128,32 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   }, [candidates]);
 
   const tableCandidates = useMemo(() => candidates.map(toCandidate), [candidates]);
+
+  // ── Workflow step state — shared by header stepper, playbook panel, guide modal ──
+  const stepStatuses = useMemo<Record<string, StepperStatus>>(() => {
+    const analyzed = !!activeCampaign && (activeCampaign.extractedKeywords?.length ?? 0) > 0;
+    const count = tableCandidates.length;
+    const topMatch = tableCandidates.filter(c => c.matchScore >= 9.0).length;
+    const sent = tableCandidates.filter(c =>
+      ['Outreach Sent', 'Opened', 'Replied'].includes(c.outreachStatus)
+    ).length;
+
+    const ingest: StepperStatus = analyzed ? 'complete' : activeCampaign ? 'active' : 'pending';
+    const filter: StepperStatus = count >= 5 ? 'complete' : count > 0 ? 'active' : 'pending';
+    const review: StepperStatus = topMatch >= 1 ? 'complete' : count > 0 ? 'active' : 'pending';
+    const outreach: StepperStatus = sent >= 1 ? 'complete' : count > 0 ? 'active' : 'pending';
+    return { ingest, filter, review, outreach };
+  }, [activeCampaign, tableCandidates]);
+
+  const headerSteps = useMemo(
+    () => [
+      { key: 'ingest', label: 'Ingest', status: stepStatuses.ingest },
+      { key: 'filter', label: 'Filter', status: stepStatuses.filter },
+      { key: 'review', label: 'Review', status: stepStatuses.review },
+      { key: 'outreach', label: 'Outreach', status: stepStatuses.outreach },
+    ],
+    [stepStatuses]
+  );
 
   async function handleSource() {
     if (!activeId) return;
@@ -183,6 +212,11 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   return (
     <div className="min-h-screen bg-[#f3f4f8] text-gray-900 font-sans">
       {/* Top header — mirrors admin layout */}
+      <WorkflowGuideModal
+        open={showGuide}
+        onClose={() => setShowGuide(false)}
+        liveStatuses={stepStatuses}
+      />
       <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -252,6 +286,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
             </div>
           )}
         </div>
+
+        {/* Workflow stepper strip — visible whenever a user is signed in */}
+        {user && (
+          <div className="max-w-[1400px] mx-auto px-6 pb-3 -mt-1 flex items-center justify-center sm:justify-start overflow-x-auto">
+            <HeaderStepper steps={headerSteps} onHelp={() => setShowGuide(true)} />
+          </div>
+        )}
       </header>
 
       <div className="max-w-[1400px] mx-auto px-6 py-8 flex flex-col lg:flex-row gap-6">
