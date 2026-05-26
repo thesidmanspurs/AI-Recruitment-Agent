@@ -27,6 +27,9 @@ export const env = {
   // Auth
   JWT_SECRET: process.env.JWT_SECRET || 'change-me-in-production',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  // Comma-separated allowlist of emails that should always be ADMIN. Applied
+  // on register (new accounts) and on login (self-heal for existing rows).
+  ADMIN_EMAILS: parseList(process.env.ADMIN_EMAILS).map(e => e.toLowerCase()),
 
   // AI Brain
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',

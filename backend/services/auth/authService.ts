@@ -13,8 +13,13 @@ export const authService = {
     if (existing) throw createError('An account with this email already exists.', 409);
 
     const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+    // Bootstrap admins from the ADMIN_EMAILS env allowlist — saves an
+    // out-of-band DB UPDATE to seed the first admin. Comparison lowercased.
+    const role = env.ADMIN_EMAILS.includes(data.email.trim().toLowerCase())
+      ? 'ADMIN'
+      : 'USER';
     const user = await prisma.user.create({
-      data: { email: data.email, name: data.name, passwordHash },
+      data: { email: data.email, name: data.name, passwordHash, role },
     });
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
@@ -28,10 +33,25 @@ export const authService = {
     const valid = await bcrypt.compare(data.password, user.passwordHash);
     if (!valid) throw createError('Invalid email or password.', 401);
 
-    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    // Self-heal: if email is in the ADMIN_EMAILS allowlist but the row isn't
+    // ADMIN yet (e.g. user existed before the allowlist was set), promote on
+    // login. Idempotent — does nothing if already ADMIN.
+    const shouldBeAdmin =
+      env.ADMIN_EMAILS.includes(user.email.toLowerCase()) && user.role !== 'ADMIN';
 
-    const token = signToken({ userId: user.id, email: user.email, role: user.role });
-    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        ...(shouldBeAdmin ? { role: 'ADMIN' as const } : {}),
+      },
+    });
+
+    const token = signToken({ userId: updated.id, email: updated.email, role: updated.role });
+    return {
+      token,
+      user: { id: updated.id, email: updated.email, name: updated.name, role: updated.role },
+    };
   },
 
   async getProfile(userId: string) {
