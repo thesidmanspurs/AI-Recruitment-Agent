@@ -125,6 +125,20 @@ export function useCampaigns() {
     }
   }, [refreshCampaigns]);
 
+  const reloadCandidates = useCallback(async (): Promise<void> => {
+    if (!activeId) return;
+    try {
+      const [c, a] = await Promise.all([
+        campaignApi.listCandidates(activeId),
+        campaignApi.getAlerts(activeId),
+      ]);
+      setCandidates(c.data);
+      setAlerts(a.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh candidates.');
+    }
+  }, [activeId]);
+
   const sourceCandidates = useCallback(
     async (
       campaignId: string,
@@ -304,6 +318,7 @@ export function useCampaigns() {
     enrichCandidate,
     enrichingId,
     sendOutreach,
+    reloadCandidates,
     markReplied,
     outreachId,
     alerts,
