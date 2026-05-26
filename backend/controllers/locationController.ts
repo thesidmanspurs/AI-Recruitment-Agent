@@ -50,12 +50,18 @@ const TTL_MS = 10 * 60 * 1000;
 function shortenName(r: NominatimResult): string {
   const a = r.address ?? {};
   const city = a.city || a.town;
-  const parts = [city, a.state, a.country].filter(Boolean);
-  if (parts.length > 0) return parts.join(', ');
-  // Fallbacks: truncate display_name to first 2 commas
+  const parts = [city, a.state, a.country].filter(Boolean) as string[];
   const dn = r.display_name ?? r.name ?? '';
-  const seg = dn.split(',').slice(0, 2).map(s => s.trim()).join(', ');
-  return seg || dn;
+
+  // If the address-built form is too vague (just a country), fall back to
+  // the first 2 segments of display_name which usually carry the place + country.
+  // Otherwise prefer the cleaner structured form.
+  if (parts.length >= 2) return parts.join(', ');
+  if (dn) {
+    const seg = dn.split(',').slice(0, 2).map(s => s.trim()).join(', ');
+    if (seg) return seg;
+  }
+  return parts.join(', ') || dn;
 }
 
 export const locationController = {
