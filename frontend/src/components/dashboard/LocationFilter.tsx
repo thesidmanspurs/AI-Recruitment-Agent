@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { MapPin, ChevronDown, Check, X } from 'lucide-react';
 
 /**
@@ -48,6 +49,33 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
   const [draft, setDraft] = useState<string[]>(applied);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Panel position — computed from the button's bounding rect so the panel
+  // renders via portal at document.body level and isn't clipped by any
+  // overflow:hidden ancestor (campaign card, sticky header, etc).
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+    function reposition() {
+      const r = buttonRef.current!.getBoundingClientRect();
+      const PANEL_W = 340;
+      const margin = 8;
+      // Default to anchoring under the button, left-aligned; flip to the
+      // right edge if it would overflow the viewport.
+      const wantLeft = r.left;
+      const overflowsRight = wantLeft + PANEL_W > window.innerWidth - margin;
+      const left = overflowsRight ? Math.max(margin, r.right - PANEL_W) : wantLeft;
+      setPanelPos({ top: r.bottom + margin, left });
+    }
+    reposition();
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [open]);
 
   // Re-sync draft from applied whenever the panel opens, so closing without
   // committing doesn't leave stale state next time.
@@ -134,10 +162,11 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && (
+      {open && panelPos && createPortal(
         <div
           ref={panelRef}
-          className="absolute left-0 top-full mt-2 w-[340px] bg-white border border-gray-200 rounded-xl shadow-xl z-30 flex flex-col"
+          style={{ position: 'fixed', top: panelPos.top, left: panelPos.left, width: 340 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-xl z-50 flex flex-col"
         >
           {/* Add input */}
           <div className="p-3 border-b border-gray-100">
@@ -221,7 +250,8 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
               Show results
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
