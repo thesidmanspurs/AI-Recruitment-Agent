@@ -56,6 +56,8 @@ export interface CandidateDto {
   outreachMessage: string | null;
   outreachChannel: OutreachChannel | null;
   outreachSentAt: string | null;
+  repliedAt: string | null;
+  replyPreview: string | null;
   daysSinceOutreach: number;
   alertTriggered: boolean;
   notes: string | null;

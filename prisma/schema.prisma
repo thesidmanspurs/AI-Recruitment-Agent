@@ -139,6 +139,11 @@ model Candidate {
   outreachMessage   String?          @db.Text
   outreachChannel   OutreachChannel?
   outreachSentAt    DateTime?
+  // Inbox-poller fills these when it finds a reply addressed to this
+  // candidate's outreach. repliedAt is the timestamp Apollo/Gmail
+  // reported; replyPreview is the first ~400 chars of the response body.
+  repliedAt         DateTime?
+  replyPreview      String?          @db.Text
   daysSinceOutreach Int              @default(0)
   alertTriggered    Boolean          @default(false)
   notes             String?          @db.Text

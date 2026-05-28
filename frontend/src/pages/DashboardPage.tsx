@@ -22,6 +22,7 @@ import { WorkflowGuideModal } from '../components/dashboard/WorkflowGuideModal';
 import { LocationFilter } from '../components/dashboard/LocationFilter';
 import { ScoreFilter } from '../components/dashboard/ScoreFilter';
 import { OutreachEditorModal } from '../components/dashboard/OutreachEditorModal';
+import { OutreachActivityPanel } from '../components/dashboard/OutreachActivityPanel';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -612,6 +613,24 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                   </SectionCard>
                 );
               })()}
+
+              {/* Outreach activity — only renders if anyone has been contacted */}
+              <OutreachActivityPanel
+                candidates={candidates}
+                onMarkReplied={async (id) => {
+                  try {
+                    await markReplied(id);
+                    toast.push({ title: 'Marked as replied', tone: 'success' });
+                  } catch (err) {
+                    toast.push({
+                      title: 'Could not mark replied',
+                      body: err instanceof Error ? err.message : String(err),
+                      tone: 'error',
+                    });
+                  }
+                }}
+                markingId={outreachId}
+              />
 
               {/* Candidate table */}
               <div id="candidates-table" />

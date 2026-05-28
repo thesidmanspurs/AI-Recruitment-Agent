@@ -16,6 +16,7 @@ import webhookRoutes from './routes/webhookRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import { trackingService } from './services/tracking/trackingService.js';
+import { inboxPollingService } from './services/outreach/inboxPollingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,6 +76,7 @@ async function startServer(): Promise<void> {
   app.listen(env.PORT, '0.0.0.0', () => {
     console.log(`[Server] Running at http://localhost:${env.PORT}`);
     trackingService.startAlertScheduler();
+    inboxPollingService.start();
   });
 }
 
