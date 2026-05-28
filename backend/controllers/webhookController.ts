@@ -40,6 +40,10 @@ export const webhookController = {
       }
 
       const body: WebhookPayload = req.body ?? {};
+      // DIAGNOSTIC: log every payload Apollo sends so we can see what
+      // fields they're actually using. Strip after the format is known.
+      console.log('[Apollo webhook payload]', JSON.stringify(body).slice(0, 1000));
+
       const apolloId = body.id ?? body.person?.id;
       const phones = body.person?.phone_numbers ?? body.phone_numbers ?? [];
       const phone =
@@ -49,11 +53,12 @@ export const webhookController = {
         undefined;
 
       if (!apolloId) {
-        // Apollo sends test pings without an id — ack but don't update anything.
-        res.json({ ok: true, ignored: 'no apollo id in payload' });
+        console.log('[Apollo webhook] ignored: no apollo id. Top-level keys =', Object.keys(body));
+        res.json({ ok: true, ignored: 'no apollo id in payload', topLevelKeys: Object.keys(body) });
         return;
       }
       if (!phone) {
+        console.log('[Apollo webhook] ignored: no phone for', apolloId, 'phones arr =', JSON.stringify(phones));
         res.json({ ok: true, ignored: 'no phone in payload', apolloId });
         return;
       }

@@ -113,19 +113,19 @@ export const candidateController = {
       const enrichmentByName = new Map<string, EnrichmentRow>();
       const rawProfiles = paired
         .map(({ search, match }) => {
-          // Apollo Search's `last_name_obfuscated` carries Apollo's own
-          // redaction characters (e.g. "Tu?N" for "Tuan") which look like
-          // an encoding bug to recruiters and aren't a real name. We only
-          // use it when it contains zero "?" placeholders; otherwise we
-          // fall back to "<FirstName>" alone or "<FirstName> <FirstInitial>."
-          // so the row never displays Apollo's mask glyph.
-          const cleanObfuscated =
-            search.last_name_obfuscated && !search.last_name_obfuscated.includes('?')
-              ? search.last_name_obfuscated.trim()
-              : '';
+          // Skip candidates Apollo has redacted. Apollo Basic returns
+          // last_name_obfuscated like "Tu?N" with "?" mask characters
+          // when the plan can't unlock the record. If Match-by-id ALSO
+          // failed to resolve the full name, we have no honest full name
+          // to show, so we drop the row entirely (per user preference —
+          // better fewer candidates than rows that look broken).
+          const isMaskedByApollo = !!(
+            search.last_name_obfuscated && search.last_name_obfuscated.includes('?')
+          );
+          if (isMaskedByApollo && !(match.found && match.name)) return null;
           const name = match.found && match.name
             ? match.name
-            : `${search.first_name ?? ''}${cleanObfuscated ? ' ' + cleanObfuscated : ''}`.trim();
+            : `${search.first_name ?? ''}${search.last_name_obfuscated ? ' ' + search.last_name_obfuscated : ''}`.trim();
           if (!name) return null;
           enrichmentByName.set(name.toLowerCase(), match);
           return {
