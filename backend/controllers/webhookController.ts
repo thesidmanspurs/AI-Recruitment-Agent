@@ -23,9 +23,20 @@ import { campaignRepository } from '../repositories/campaignRepository.js';
  * We always look up the Candidate row by Apollo `id` (stored at enrichment
  * time), so the webhook never trusts any other identifying data.
  */
-type WebhookPayload = {
+interface ApolloPersonReveal {
   id?: string;
-  person?: { id?: string; phone_numbers?: Array<{ sanitized_number?: string; raw_number?: string }> };
+  status?: string;
+  phone_numbers?: Array<{ sanitized_number?: string; raw_number?: string }>;
+}
+
+type WebhookPayload = {
+  // Apollo's real bulk-reveal envelope: { status, credits_consumed, people:[...] }
+  status?: string;
+  credits_consumed?: number;
+  people?: ApolloPersonReveal[];
+  // Legacy / alternate shapes we still accept defensively.
+  id?: string;
+  person?: ApolloPersonReveal;
   phone_numbers?: Array<{ sanitized_number?: string; raw_number?: string }>;
   phone?: string;
 };
@@ -40,50 +51,57 @@ export const webhookController = {
       }
 
       const body: WebhookPayload = req.body ?? {};
-      // DIAGNOSTIC: log every payload Apollo sends so we can see what
-      // fields they're actually using. Strip after the format is known.
       console.log('[Apollo webhook payload]', JSON.stringify(body).slice(0, 1000));
 
-      const apolloId = body.id ?? body.person?.id;
-      const phones = body.person?.phone_numbers ?? body.phone_numbers ?? [];
-      const phone =
-        phones[0]?.sanitized_number ??
-        phones[0]?.raw_number ??
-        body.phone ??
-        undefined;
+      // Normalise the payload into a list of {id, phone} updates. Apollo's
+      // real shape is { people: [{id, phone_numbers:[{sanitized_number}]}] }
+      // but we keep tolerant of the older single-record shapes for safety.
+      const people: ApolloPersonReveal[] =
+        body.people && Array.isArray(body.people) && body.people.length > 0
+          ? body.people
+          : body.person
+            ? [body.person]
+            : body.id
+              ? [{ id: body.id, phone_numbers: body.phone_numbers }]
+              : [];
 
-      if (!apolloId) {
-        console.log('[Apollo webhook] ignored: no apollo id. Top-level keys =', Object.keys(body));
-        res.json({ ok: true, ignored: 'no apollo id in payload', topLevelKeys: Object.keys(body) });
-        return;
-      }
-      if (!phone) {
-        console.log('[Apollo webhook] ignored: no phone for', apolloId, 'phones arr =', JSON.stringify(phones));
-        res.json({ ok: true, ignored: 'no phone in payload', apolloId });
-        return;
-      }
-
-      const candidate = await candidateRepository.findByApolloId(apolloId);
-      if (!candidate) {
-        // Apollo may push a reveal for a record we no longer track (campaign
-        // wiped, candidate deleted). Ack so Apollo stops retrying.
-        res.json({ ok: true, ignored: 'no candidate for apollo id', apolloId });
+      if (people.length === 0) {
+        console.log('[Apollo webhook] ignored: no people array. Keys =', Object.keys(body));
+        res.json({ ok: true, ignored: 'no people in payload', topLevelKeys: Object.keys(body) });
         return;
       }
 
-      await candidateRepository.updateByApolloId(apolloId, {
-        phone,
-        phoneEnriched: true,
-      });
+      const results: Array<{ apolloId: string; status: string; candidateId?: string }> = [];
+      for (const p of people) {
+        if (!p.id) continue;
+        const phone =
+          p.phone_numbers?.[0]?.sanitized_number ??
+          p.phone_numbers?.[0]?.raw_number ??
+          undefined;
+        if (!phone) {
+          results.push({ apolloId: p.id, status: 'no_phone_in_payload' });
+          continue;
+        }
+        const candidate = await candidateRepository.findByApolloId(p.id);
+        if (!candidate) {
+          results.push({ apolloId: p.id, status: 'no_candidate_match' });
+          continue;
+        }
+        await candidateRepository.updateByApolloId(p.id, {
+          phone,
+          phoneEnriched: true,
+        });
+        await campaignRepository.addLog(candidate.campaignId, {
+          message: `Apollo phone reveal received for ${candidate.name} (${phone}).`,
+          candidateId: candidate.id,
+          candidateName: candidate.name,
+          type: 'ENRICH',
+        });
+        results.push({ apolloId: p.id, status: 'updated', candidateId: candidate.id });
+      }
 
-      await campaignRepository.addLog(candidate.campaignId, {
-        message: `Apollo phone reveal received for ${candidate.name} (${phone}).`,
-        candidateId: candidate.id,
-        candidateName: candidate.name,
-        type: 'ENRICH',
-      });
-
-      res.json({ ok: true, candidateId: candidate.id });
+      console.log('[Apollo webhook] processed', JSON.stringify(results));
+      res.json({ ok: true, results });
     } catch (err) {
       next(err);
     }
