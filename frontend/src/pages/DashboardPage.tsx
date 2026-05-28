@@ -20,6 +20,7 @@ import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
 import { HeaderStepper, type StepperStatus } from '../components/dashboard/HeaderStepper';
 import { WorkflowGuideModal } from '../components/dashboard/WorkflowGuideModal';
 import { LocationFilter } from '../components/dashboard/LocationFilter';
+import { ScoreFilter } from '../components/dashboard/ScoreFilter';
 import { OutreachEditorModal } from '../components/dashboard/OutreachEditorModal';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
@@ -76,6 +77,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [sourceLocations, setSourceLocations] = useState<string[]>([]);
+  const [minScore, setMinScore] = useState<number>(9.0);
   const [outreachEditorId, setOutreachEditorId] = useState<string | null>(null);
   const toast = useToast();
   const lastSimReason = useRef<string | null>(null);
@@ -132,7 +134,17 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
     }));
   }, [candidates]);
 
+  // Full candidate set, mapped to the frontend Candidate shape. Used by the
+  // playbook + stats so the workflow progress reflects everything sourced.
   const tableCandidates = useMemo(() => candidates.map(toCandidate), [candidates]);
+
+  // View-only filter for the candidate table. Lets the recruiter narrow
+  // visibility by minimum AI score without affecting playbook progress or
+  // server-side state.
+  const visibleCandidates = useMemo(() => {
+    const epsilon = 1e-6;
+    return tableCandidates.filter(c => c.matchScore >= minScore - epsilon);
+  }, [tableCandidates, minScore]);
 
   // ── Workflow step state — shared by header stepper, playbook panel, guide modal ──
   const stepStatuses = useMemo<Record<string, StepperStatus>>(() => {
@@ -417,6 +429,11 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <ScoreFilter
+                      value={minScore}
+                      onChange={setMinScore}
+                      defaultValue={screening?.threshold ?? 9.0}
+                    />
                     <LocationFilter
                       applied={sourceLocations}
                       onApply={async (locs) => {
@@ -601,8 +618,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                 <EmptySourcing onSource={handleSource} sourcing={sourcing} />
               ) : (
                 <CandidateTable
-                  candidates={tableCandidates}
-                  threshold={screening?.threshold ?? 9.5}
+                  candidates={visibleCandidates}
+                  threshold={minScore}
                   enrichingId={enrichingId}
                   outreachId={outreachId}
                   onEnrich={async (candidateId, opts) => {

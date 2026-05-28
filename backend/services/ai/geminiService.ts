@@ -175,13 +175,14 @@ export const geminiService = {
       `Key tech / skills: ${params.jobKeywords.slice(0, 6).join(', ')}.`,
       ``,
       `Constraints:`,
-      `- 4-6 sentences total`,
-      `- Reference at least one specific strength to prove this isn't mass-spam`,
-      `- Tie that strength to one role keyword`,
-      `- End with a soft CTA (e.g. "open to a 15-min chat next week?")`,
+      `- 4-6 sentences total, broken into 3 short paragraphs separated by BLANK LINES (two newline characters between paragraphs).`,
+      `  Paragraph 1: greeting on its own line (e.g. "Hi {firstName},"), then a blank line.`,
+      `  Paragraph 2: 1-2 sentences referencing one specific strength + tying to a role keyword.`,
+      `  Paragraph 3: 1-2 sentences with a soft CTA (e.g. "Open to a 15-min chat next week?").`,
+      `- Do NOT include a sign-off line ("Best,", "Regards,", recruiter name etc.) — the user appends their own signature.`,
       `- No emojis, no exclamation marks, no "exciting opportunity"`,
       `- First name only, no honorifics`,
-      params.recruiterName ? `- Sign off as ${params.recruiterName}` : '',
+      `- The body field MUST contain the literal newline characters between paragraphs; do not return a single-line string.`,
     ].filter(Boolean).join('\n');
 
     const response = await client.models.generateContent({

@@ -17,8 +17,19 @@ export const authApi = {
 
   me(): Promise<{
     success: boolean;
-    user: { id: string; email: string; name: string; role: UserRole; createdAt: string; lastLoginAt: string | null };
+    user: {
+      id: string; email: string; name: string; role: UserRole;
+      outreachSignature?: string | null;
+      createdAt: string; lastLoginAt: string | null;
+    };
   }> {
     return apiClient.get('/auth/me');
+  },
+
+  updateProfile(input: { name?: string; outreachSignature?: string | null }) {
+    return apiClient.patch<{
+      success: boolean;
+      user: { id: string; email: string; name: string; outreachSignature?: string | null };
+    }>('/auth/profile', input);
   },
 };

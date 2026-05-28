@@ -60,4 +60,28 @@ export const authController = {
       next(err);
     }
   },
+
+  // PATCH /api/auth/profile  body: { name?, outreachSignature? }
+  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const { name, outreachSignature } = req.body as {
+        name?: string;
+        outreachSignature?: string | null;
+      };
+      const profile = await authService.updateProfile(userId, {
+        name: name?.trim(),
+        // Empty string ⇒ null so the user can clear their signature.
+        outreachSignature:
+          outreachSignature === undefined
+            ? undefined
+            : outreachSignature && outreachSignature.trim()
+              ? outreachSignature
+              : null,
+      });
+      res.json({ success: true, user: profile });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

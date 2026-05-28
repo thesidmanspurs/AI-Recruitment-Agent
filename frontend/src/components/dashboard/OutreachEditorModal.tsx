@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { X, Loader2, Send, Sparkles, AlertCircle, Mail, MessageSquare } from 'lucide-react';
+import { X, Loader2, Send, Sparkles, AlertCircle, Mail, MessageSquare, PencilLine, Check } from 'lucide-react';
 import { campaignApi } from '../../api/campaignApi';
+import { authApi } from '../../api/authApi';
 import { ApiError } from '../../api/client';
 import type { Candidate } from '../../types';
 
@@ -42,6 +43,36 @@ export function OutreachEditorModal({
   const [error, setError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [simulated, setSimulated] = useState(false);
+  const [showSigEditor, setShowSigEditor] = useState(false);
+  const [signature, setSignature] = useState('');
+  const [signatureSaved, setSignatureSaved] = useState(false);
+  const [savingSig, setSavingSig] = useState(false);
+
+  // Load the user's existing signature when the modal opens so it can be
+  // edited inline. Cached for the modal's lifetime; not re-fetched per open.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    authApi.me().then(res => {
+      if (!cancelled) setSignature(res.user.outreachSignature ?? '');
+    }).catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, [open]);
+
+  async function saveSignature() {
+    setSavingSig(true);
+    try {
+      await authApi.updateProfile({ outreachSignature: signature });
+      setSignatureSaved(true);
+      setTimeout(() => setSignatureSaved(false), 1800);
+      // Re-pull the draft so the new signature shows immediately.
+      void regenerate(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not save signature.');
+    } finally {
+      setSavingSig(false);
+    }
+  }
 
   // Hydrate draft when modal opens for a new candidate. If the candidate
   // already has a stored outreachMessage we hydrate from that to preserve
@@ -210,6 +241,50 @@ export function OutreachEditorModal({
             <p className="text-[11px] text-gray-500">
               {body.length.toLocaleString()} characters{dirty ? ' · edited' : ''}
             </p>
+          </div>
+
+          {/* Signature editor — saved per user, auto-appended to every draft */}
+          <div className="flex flex-col gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowSigEditor(s => !s)}
+              className="self-start inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-indigo-700 hover:text-indigo-800"
+            >
+              <PencilLine className="w-3.5 h-3.5" />
+              {showSigEditor ? 'Hide signature' : 'Edit your signature'}
+            </button>
+            {showSigEditor && (
+              <div className="flex flex-col gap-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+                  Email signature
+                </label>
+                <textarea
+                  value={signature}
+                  onChange={e => setSignature(e.target.value)}
+                  rows={5}
+                  placeholder={`Best,\nRayaz Siddiqi\nSenior Recruiter — ARIES\n+44 1234 567890`}
+                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 font-mono leading-relaxed"
+                />
+                <p className="text-[11px] text-gray-500">
+                  Saved on your account and auto-appended to every outreach. Use blank lines for paragraph breaks.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={saveSignature}
+                    disabled={savingSig}
+                    className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-60 px-3 py-1.5 rounded-md transition-colors"
+                  >
+                    {savingSig ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : signatureSaved ? (
+                      <Check className="w-3 h-3" />
+                    ) : null}
+                    {signatureSaved ? 'Saved' : 'Save signature'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

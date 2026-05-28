@@ -7,7 +7,16 @@ import { trackingService } from '../services/tracking/trackingService.js';
 import { usageService } from '../services/usage/usageService.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
+import { prisma } from '../config/database.js';
 import { createError } from '../middleware/errorHandler.js';
+
+async function getRecruiterSignature(userId: string): Promise<string | null> {
+  const u = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { outreachSignature: true },
+  });
+  return u?.outreachSignature ?? null;
+}
 
 export const outreachController = {
   // POST /api/campaigns/:campaignId/outreach/enrich/:candidateId
@@ -143,7 +152,8 @@ export const outreachController = {
       let messageSimulated = false;
       let messageSimReason: string | undefined;
       if (!subject || !body) {
-        const drafted = await draftMessage(campaign, candidate, req.user!.name);
+        const signature = await getRecruiterSignature(req.user!.id);
+        const drafted = await draftMessage(campaign, candidate, req.user!.name, signature);
         subject = drafted.subject;
         body = drafted.body;
         messageSimulated = drafted.isSimulated;
@@ -258,7 +268,8 @@ export const outreachController = {
       const candidate = await candidateRepository.findById(candidateId, campaignId);
       if (!candidate) return next(createError('Candidate not found.', 404));
 
-      const { subject, body, isSimulated, simulationReason } = await draftMessage(campaign, candidate, req.user!.name);
+      const signature = await getRecruiterSignature(req.user!.id);
+      const { subject, body, isSimulated, simulationReason } = await draftMessage(campaign, candidate, req.user!.name, signature);
       res.json({ success: true, subject, body, isSimulated, simulationReason });
     } catch (err) {
       next(err);
@@ -339,16 +350,45 @@ function applyTemplate(
   return { subject: `${campaign.jobTitle} — quick chat?`, body: filled.trim() };
 }
 
+/**
+ * Reformat Gemini output so the body always has visible paragraph breaks
+ * (some Gemini responses come back as a single squashed string), strip any
+ * trailing sign-off (we own the signature), and append the recruiter's
+ * configured signature.
+ */
+function formatBody(raw: string, signature: string | null | undefined): string {
+  // 1. Normalise whitespace — collapse runs of 3+ newlines, trim ends.
+  let body = raw.replace(/\r\n?/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+
+  // 2. Force a blank line after the greeting line ("Hi <name>," / "Hello <name>,").
+  body = body.replace(/^(Hi|Hello|Hey)([^,\n]{0,40}),\s*/i, '$1$2,\n\n');
+
+  // 3. Strip any sign-off Gemini snuck in — we append our own.
+  body = body.replace(
+    /\n+\s*(Best regards|Best wishes|Best|Regards|Kind regards|Cheers|Sincerely|Thanks|Thank you|Warm regards|Warmly)\s*,?\s*\n+.*$/is,
+    ''
+  );
+
+  // 4. Insert blank line before the closing CTA if it's glued to the previous
+  //    paragraph (typical pattern: "...real asset.Would you be open to ...").
+  body = body.replace(/([.?!])\s*(Would|Could|Are|Open)/g, '$1\n\n$2');
+
+  body = body.trim();
+  if (signature && signature.trim()) {
+    body += `\n\n${signature.trim()}`;
+  }
+  return body;
+}
+
 async function draftMessage(
   campaign: { jobTitle: string; extractedKeywords: string[]; outreachTemplate?: string | null },
   candidate: { name: string; currentTitle: string; company: string; strengths: string[] },
-  recruiterName: string
+  recruiterName: string,
+  recruiterSignature?: string | null
 ): Promise<{ subject: string; body: string; isSimulated: boolean; simulationReason?: string }> {
   if (campaign.outreachTemplate && campaign.outreachTemplate.trim()) {
-    return {
-      ...applyTemplate(campaign.outreachTemplate, campaign, candidate, recruiterName),
-      isSimulated: false,
-    };
+    const t = applyTemplate(campaign.outreachTemplate, campaign, candidate, recruiterName);
+    return { subject: t.subject, body: formatBody(t.body, recruiterSignature), isSimulated: false };
   }
   if (geminiService.isAvailable()) {
     try {
@@ -361,14 +401,17 @@ async function draftMessage(
         jobKeywords: campaign.extractedKeywords,
         recruiterName,
       });
-      return { ...msg, isSimulated: false };
+      return { subject: msg.subject, body: formatBody(msg.body, recruiterSignature), isSimulated: false };
     } catch (err) {
       console.warn('[Gemini] generateOutreachMessage failed:', err);
-      return { ...templateMessage(campaign, candidate, recruiterName), isSimulated: true, simulationReason: formatGeminiError(err) };
+      const t = templateMessage(campaign, candidate, recruiterName);
+      return { subject: t.subject, body: formatBody(t.body, recruiterSignature), isSimulated: true, simulationReason: formatGeminiError(err) };
     }
   }
+  const t = templateMessage(campaign, candidate, recruiterName);
   return {
-    ...templateMessage(campaign, candidate, recruiterName),
+    subject: t.subject,
+    body: formatBody(t.body, recruiterSignature),
     isSimulated: true,
     simulationReason: 'GEMINI_API_KEY not configured on the server.',
   };
@@ -388,8 +431,7 @@ function templateMessage(
       `Hi ${firstName},\n\n` +
       `I came across your ${candidate.currentTitle} work at ${candidate.company} — ` +
       `${topStrength} stood out, especially given how central ${topKeyword} is to the ${campaign.jobTitle} role we're hiring for.\n\n` +
-      `Would you be open to a 15-minute chat next week to compare notes?\n\n` +
-      `Best,\n${recruiterName}`,
+      `Would you be open to a 15-minute chat next week to compare notes?`,
   };
 }
 

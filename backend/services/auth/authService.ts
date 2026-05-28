@@ -57,9 +57,32 @@ export const authService = {
   async getProfile(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, role: true, createdAt: true, lastLoginAt: true },
+      select: {
+        id: true, email: true, name: true, role: true,
+        outreachSignature: true,
+        createdAt: true, lastLoginAt: true,
+      },
     });
     if (!user) throw createError('User not found.', 404);
+    return user;
+  },
+
+  async updateProfile(
+    userId: string,
+    data: { name?: string; outreachSignature?: string | null }
+  ) {
+    const update: Record<string, unknown> = {};
+    if (data.name) update.name = data.name;
+    if (data.outreachSignature !== undefined) update.outreachSignature = data.outreachSignature;
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: update,
+      select: {
+        id: true, email: true, name: true, role: true,
+        outreachSignature: true,
+        createdAt: true, lastLoginAt: true,
+      },
+    });
     return user;
   },
 };

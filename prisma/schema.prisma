@@ -24,6 +24,9 @@ model User {
   blockedReason      String?
   dailyLimitOverride Int?         // null = inherit the global daily_free_limit setting
   lastLoginAt        DateTime?
+  // Recruiter's email signature. Appended to every outreach body so Gemini
+  // never has to invent a closing block. Editable from the outreach modal.
+  outreachSignature  String?      @db.Text
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   campaigns          Campaign[]
