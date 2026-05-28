@@ -179,6 +179,9 @@ interface CandidateTableProps {
   threshold?: number;
   /** ID currently being enriched (shows spinner on its button). */
   enrichingId?: string | null;
+  /** IDs awaiting an async Apollo phone-reveal webhook. The row's phone slot
+   *  shows a spinner with "Awaiting phone…" until the webhook arrives. */
+  awaitingPhoneIds?: Map<string, number> | Set<string>;
   /** ID currently in flight for outreach send. */
   outreachId?: string | null;
   /** Triggers Phase 4 Apollo enrichment for one candidate.
@@ -194,11 +197,18 @@ export function CandidateTable({
   candidates,
   threshold = 9.5,
   enrichingId,
+  awaitingPhoneIds,
   outreachId,
   onEnrich,
   onSendOutreach,
   onMarkReplied,
 }: CandidateTableProps) {
+  const awaitingHas = (id: string) =>
+    awaitingPhoneIds instanceof Map
+      ? awaitingPhoneIds.has(id)
+      : awaitingPhoneIds instanceof Set
+        ? awaitingPhoneIds.has(id)
+        : false;
   const [tab, setTab] = useState<Tab>('approved');
   const [sort, setSort] = useState<SortKey>('matchScore');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -555,11 +565,21 @@ function renderExpandableRow(
                     href={candidate.contact.email ? `mailto:${candidate.contact.email}` : undefined}
                   />
                   <ContactRow
-                    icon={<Phone className="w-3.5 h-3.5 text-emerald-600" />}
+                    icon={
+                      awaitingHas(candidate.id) && !candidate.contact.phone ? (
+                        <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                      ) : (
+                        <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                      )
+                    }
                     label="Phone"
                     value={candidate.contact.phone}
                     href={candidate.contact.phone ? `tel:${candidate.contact.phone}` : undefined}
-                    fallback="Pending — Apollo delivers phones asynchronously via webhook; refresh in a few minutes"
+                    fallback={
+                      awaitingHas(candidate.id)
+                        ? 'Awaiting phone… Apollo will deliver it within a few minutes.'
+                        : 'Pending — click Re-enrich to request a phone reveal.'
+                    }
                   />
                   <ContactRow
                     icon={<MapPin className="w-3.5 h-3.5 text-gray-500" />}

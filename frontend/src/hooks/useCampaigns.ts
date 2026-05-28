@@ -223,6 +223,43 @@ export function useCampaigns() {
   );
 
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
+  // Candidates we've just enriched and are waiting on Apollo's async phone
+  // webhook for. A polling effect (below) refreshes /candidates every 8s
+  // while this set is non-empty, then removes entries as phones land or
+  // a 6-minute timeout elapses. Lets the UI go from "Pending" to the
+  // real phone number without the user manually refreshing.
+  const [awaitingPhone, setAwaitingPhone] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    if (!activeId || awaitingPhone.size === 0) return;
+    const POLL_MS = 8_000;
+    const TIMEOUT_MS = 6 * 60 * 1000;
+    let cancelled = false;
+    const interval = setInterval(async () => {
+      if (cancelled) return;
+      try {
+        const fresh = await campaignApi.listCandidates(activeId);
+        if (cancelled) return;
+        setCandidates(fresh.data);
+        const now = Date.now();
+        setAwaitingPhone(prev => {
+          const next = new Map(prev);
+          for (const [id, startedAt] of prev) {
+            const c = fresh.data.find(x => x.id === id);
+            if (c?.phoneEnriched && c.phone) next.delete(id);
+            else if (now - startedAt > TIMEOUT_MS) next.delete(id);
+          }
+          return next;
+        });
+      } catch {
+        /* swallow — next tick will retry */
+      }
+    }, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeId, awaitingPhone.size]);
 
   const enrichCandidate = useCallback(
     async (
@@ -237,6 +274,17 @@ export function useCampaigns() {
         setCandidates(prev =>
           prev.map(c => (c.id === candidateId ? res.candidate : c))
         );
+        // If Apollo didn't return a phone on the synchronous enrich response,
+        // start watching for the async webhook delivery. The polling effect
+        // above will refresh candidates every 8s until the phone arrives
+        // or the 6-minute timeout elapses.
+        if (!res.candidate.phoneEnriched || !res.candidate.phone) {
+          setAwaitingPhone(prev => {
+            const next = new Map(prev);
+            next.set(candidateId, Date.now());
+            return next;
+          });
+        }
         return {
           isSimulated: res.isSimulated,
           simulationReason: res.simulationReason,
@@ -318,6 +366,7 @@ export function useCampaigns() {
     refreshUsage,
     enrichCandidate,
     enrichingId,
+    awaitingPhoneIds: awaitingPhone,
     sendOutreach,
     reloadCandidates,
     markReplied,

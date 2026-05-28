@@ -58,6 +58,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
     sourcingPagination,
     enrichCandidate,
     enrichingId,
+    awaitingPhoneIds,
     sendOutreach,
     reloadCandidates,
     markReplied,
@@ -621,6 +622,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                   candidates={visibleCandidates}
                   threshold={minScore}
                   enrichingId={enrichingId}
+                  awaitingPhoneIds={awaitingPhoneIds}
                   outreachId={outreachId}
                   onEnrich={async (candidateId, opts) => {
                     try {
