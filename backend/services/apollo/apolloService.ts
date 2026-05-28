@@ -128,8 +128,12 @@ export const apolloService = {
     const p = json.person;
     if (!p) return { found: false };
 
-    const first = (p as { first_name?: string }).first_name?.trim();
-    const last = (p as { last_name?: string }).last_name?.trim();
+    // Drop Apollo's "?" redaction glyphs — when present they aren't a real
+    // name, they're the masking Apollo applies when a plan can't unlock the
+    // full record. Showing "Tu?N" looks like a font/encoding bug to users.
+    const stripMask = (s?: string) => (s && !s.includes('?') ? s.trim() : '');
+    const first = stripMask((p as { first_name?: string }).first_name);
+    const last = stripMask((p as { last_name?: string }).last_name);
     const fullName = [first, last].filter(Boolean).join(' ');
     const phone = p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number;
     const location = [p.city, p.state, p.country].filter(Boolean).join(', ') || undefined;
@@ -201,8 +205,12 @@ export const apolloService = {
     }
     const p = json.person;
     if (!p) return { found: false };
-    const first = (p as { first_name?: string }).first_name?.trim();
-    const last = (p as { last_name?: string }).last_name?.trim();
+    // Drop Apollo's "?" redaction glyphs — when present they aren't a real
+    // name, they're the masking Apollo applies when a plan can't unlock the
+    // full record. Showing "Tu?N" looks like a font/encoding bug to users.
+    const stripMask = (s?: string) => (s && !s.includes('?') ? s.trim() : '');
+    const first = stripMask((p as { first_name?: string }).first_name);
+    const last = stripMask((p as { last_name?: string }).last_name);
     const fullName = [first, last].filter(Boolean).join(' ');
     const phone = p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number;
     const location = [p.city, p.state, p.country].filter(Boolean).join(', ') || undefined;
