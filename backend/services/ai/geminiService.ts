@@ -158,31 +158,73 @@ export const geminiService = {
     candidateTitle: string;
     candidateCompany: string;
     candidateStrengths: string[];
+    candidateBio?: string;
     jobTitle: string;
     jobKeywords: string[];
+    jobLocation?: string | null;
+    jobType?: string | null;
+    jobRequirements?: string[];
     recruiterName?: string;
   }): Promise<{ subject: string; body: string }> {
     const client = getClient();
     if (!client) throw new Error('Gemini client not initialised — check GEMINI_API_KEY');
 
+    // Few-shot exemplar (one of the recruiter-supplied gold examples).
+    // Drives Gemini toward the right tone, paragraph count, length, and
+    // sign-off discipline (no auto sign-off — signature is appended later).
+    const exemplar = [
+      `Subject: Oracle HFM Engineer Opportunity | Walmart to McLean/Richmond Project`,
+      ``,
+      `Hi Venkata,`,
+      ``,
+      `I was impressed by your extensive 18-year career in the EPM space, particularly your current role as a Senior Software Engineer at Walmart and your deep background in HFM and DRM architecture.`,
+      ``,
+      `I am currently recruiting for a 12-month Oracle Hyperion (HFM) Engineer contract that specifically seeks a hybrid professional—someone who understands the intricacies of HFM applications but operates with a modern engineering mindset. The project involves utilizing AWS and DevOps practices to modernize financial systems, which aligns well with your background in automation and system upgrades.`,
+      ``,
+      `Given your experience leading Hyperion upgrades and your technical certifications, I believe you would be a perfect fit for this engineering-heavy initiative in the McLean/Richmond area.`,
+      ``,
+      `Are you open to a brief conversation to discuss the technical scope and the hybrid model?`,
+    ].join('\n');
+
     const prompt = [
-      `Write a short, warm, personalised recruiter outreach email.`,
+      `Write a personalised recruiter outreach email in the EXACT structure shown in the exemplar below.`,
       ``,
-      `Candidate: ${params.candidateName}, ${params.candidateTitle} at ${params.candidateCompany}.`,
-      `Their notable strengths: ${params.candidateStrengths.slice(0, 3).join('; ') || '—'}.`,
+      `── EXEMPLAR (style, length, and structure to copy) ──`,
+      exemplar,
+      `── END EXEMPLAR ──`,
       ``,
-      `Role on offer: ${params.jobTitle}.`,
-      `Key tech / skills: ${params.jobKeywords.slice(0, 6).join(', ')}.`,
+      `Now write a NEW email for THIS candidate and role:`,
       ``,
-      `Constraints:`,
-      `- 4-6 sentences total, broken into 3 short paragraphs separated by BLANK LINES (two newline characters between paragraphs).`,
-      `  Paragraph 1: greeting on its own line (e.g. "Hi {firstName},"), then a blank line.`,
-      `  Paragraph 2: 1-2 sentences referencing one specific strength + tying to a role keyword.`,
-      `  Paragraph 3: 1-2 sentences with a soft CTA (e.g. "Open to a 15-min chat next week?").`,
-      `- Do NOT include a sign-off line ("Best,", "Regards,", recruiter name etc.) — the user appends their own signature.`,
-      `- No emojis, no exclamation marks, no "exciting opportunity"`,
-      `- First name only, no honorifics`,
-      `- The body field MUST contain the literal newline characters between paragraphs; do not return a single-line string.`,
+      `Candidate:`,
+      `  Name: ${params.candidateName}`,
+      `  Current role: ${params.candidateTitle} at ${params.candidateCompany}`,
+      params.candidateBio ? `  Background: ${params.candidateBio.slice(0, 600)}` : '',
+      params.candidateStrengths.length
+        ? `  Notable strengths: ${params.candidateStrengths.slice(0, 5).join('; ')}`
+        : '',
+      ``,
+      `Role:`,
+      `  Title: ${params.jobTitle}`,
+      params.jobLocation ? `  Location: ${params.jobLocation}` : '',
+      params.jobType ? `  Employment type: ${params.jobType}` : '',
+      `  Key tech / skills: ${params.jobKeywords.slice(0, 8).join(', ')}`,
+      params.jobRequirements?.length
+        ? `  Top requirements: ${params.jobRequirements.slice(0, 4).join('; ')}`
+        : '',
+      ``,
+      `Hard requirements:`,
+      `- 4 body paragraphs separated by BLANK LINES (two newline characters between paragraphs):`,
+      `   1) Greeting on its own line (e.g. "Hi {firstName},"). Then blank line.`,
+      `   2) Personal observation paragraph: reference a SPECIFIC detail about the candidate's background (years of experience, current company, a key skill from their strengths/background).`,
+      `   3) Role pitch paragraph: name the role, location/employment type if provided, and 1-2 concrete role specifics (tech stack, modernization angle, project scope).`,
+      `   4) Fit rationale paragraph: tie ONE specific candidate strength to ONE role need.`,
+      `   5) Closing CTA paragraph: ONE soft question (e.g. "Are you open to a brief conversation about the scope?").`,
+      `- Total length: 130-200 words for the body (not counting greeting).`,
+      `- DO NOT include any sign-off line ("Best,", "Best regards,", "Cheers,", recruiter name, [Your Name], etc.) — the user's signature is appended automatically afterwards.`,
+      `- No emojis. No exclamation marks. No "exciting opportunity", "rockstar", "ninja", "reach out".`,
+      `- First name only for the greeting; no honorifics ("Mr./Ms.").`,
+      `- Subject line: descriptive, includes role + a candidate or project hook. 6-12 words. Use a separator like "|" or "—" if helpful.`,
+      `- The body field MUST contain literal newline characters between paragraphs. Do not collapse to a single line.`,
     ].filter(Boolean).join('\n');
 
     const response = await client.models.generateContent({
@@ -190,14 +232,16 @@ export const geminiService = {
       contents: prompt,
       config: {
         systemInstruction:
-          'You are an experienced technical recruiter writing personalised outreach. ' +
-          'Sound like a human, not a template. Be concise, specific, and respectful of the candidate\'s time.',
+          'You are an experienced senior technical recruiter writing personalised outreach. ' +
+          'You write the way a thoughtful human writes — specific, well-formatted into paragraphs, ' +
+          'and never templated. Always match the exemplar structure exactly. ' +
+          'Never auto-sign emails — the user appends their own signature.',
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            subject: { type: Type.STRING, description: '6-10 word subject line, no clickbait.' },
-            body: { type: Type.STRING, description: 'The email body, 4-6 sentences, plain text.' },
+            subject: { type: Type.STRING, description: '6-12 word descriptive subject line including the role + a candidate or project hook.' },
+            body: { type: Type.STRING, description: 'Email body with 4 paragraphs separated by blank lines. 130-200 words. No sign-off.' },
           },
           required: ['subject', 'body'],
         },

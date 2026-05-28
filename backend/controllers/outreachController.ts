@@ -381,8 +381,15 @@ function formatBody(raw: string, signature: string | null | undefined): string {
 }
 
 async function draftMessage(
-  campaign: { jobTitle: string; extractedKeywords: string[]; outreachTemplate?: string | null },
-  candidate: { name: string; currentTitle: string; company: string; strengths: string[] },
+  campaign: {
+    jobTitle: string;
+    extractedKeywords: string[];
+    outreachTemplate?: string | null;
+    location?: string | null;
+    jobType?: string | null;
+    requirements?: string[];
+  },
+  candidate: { name: string; currentTitle: string; company: string; strengths: string[]; bio?: string },
   recruiterName: string,
   recruiterSignature?: string | null
 ): Promise<{ subject: string; body: string; isSimulated: boolean; simulationReason?: string }> {
@@ -397,8 +404,12 @@ async function draftMessage(
         candidateTitle: candidate.currentTitle,
         candidateCompany: candidate.company,
         candidateStrengths: candidate.strengths,
+        candidateBio: candidate.bio,
         jobTitle: campaign.jobTitle,
         jobKeywords: campaign.extractedKeywords,
+        jobLocation: campaign.location,
+        jobType: campaign.jobType,
+        jobRequirements: campaign.requirements,
         recruiterName,
       });
       return { subject: msg.subject, body: formatBody(msg.body, recruiterSignature), isSimulated: false };
