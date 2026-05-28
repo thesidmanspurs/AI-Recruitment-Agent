@@ -337,6 +337,7 @@ export function CandidateTable({
                   onMarkReplied,
                   isEnriching: enrichingId === candidate.id,
                   isSendingOutreach: outreachId === candidate.id,
+                  isAwaitingPhone: awaitingHas(candidate.id),
                 }
               );
             })}
@@ -353,6 +354,7 @@ interface RowActions {
   onMarkReplied?: (candidateId: string) => Promise<void> | void;
   isEnriching?: boolean;
   isSendingOutreach?: boolean;
+  isAwaitingPhone?: boolean;
 }
 
 function renderExpandableRow(
@@ -363,8 +365,14 @@ function renderExpandableRow(
   onToggle: () => void,
   actions: RowActions = {}
 ): ReactNode[] {
-  const { onEnrich, onSendOutreach, onMarkReplied, isEnriching = false, isSendingOutreach = false } =
-    actions;
+  const {
+    onEnrich,
+    onSendOutreach,
+    onMarkReplied,
+    isEnriching = false,
+    isSendingOutreach = false,
+    isAwaitingPhone = false,
+  } = actions;
   // "Has actual data" — true only when at least one contact field was found.
   const hasContactData = candidate.contact.emailEnriched || candidate.contact.phoneEnriched;
   // "Attempt made" — true if user has clicked Enrich at least once (status moved
@@ -566,7 +574,7 @@ function renderExpandableRow(
                   />
                   <ContactRow
                     icon={
-                      awaitingHas(candidate.id) && !candidate.contact.phone ? (
+                      isAwaitingPhone && !candidate.contact.phone ? (
                         <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
                       ) : (
                         <Phone className="w-3.5 h-3.5 text-emerald-600" />
@@ -576,7 +584,7 @@ function renderExpandableRow(
                     value={candidate.contact.phone}
                     href={candidate.contact.phone ? `tel:${candidate.contact.phone}` : undefined}
                     fallback={
-                      awaitingHas(candidate.id)
+                      isAwaitingPhone
                         ? 'Awaiting phone… Apollo will deliver it within a few minutes.'
                         : 'Pending — click Re-enrich to request a phone reveal.'
                     }
