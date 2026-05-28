@@ -246,7 +246,10 @@ export function useCampaigns() {
           const next = new Map(prev);
           for (const [id, startedAt] of prev) {
             const c = fresh.data.find(x => x.id === id);
-            if (c?.phoneEnriched && c.phone) next.delete(id);
+            // phoneEnriched=true means Apollo answered. Either with a phone
+            // (success) or without one (record has no phone). Either way,
+            // stop waiting — Re-enrich won't change the answer.
+            if (c?.phoneEnriched) next.delete(id);
             else if (now - startedAt > TIMEOUT_MS) next.delete(id);
           }
           return next;

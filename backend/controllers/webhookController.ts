@@ -78,13 +78,28 @@ export const webhookController = {
           p.phone_numbers?.[0]?.sanitized_number ??
           p.phone_numbers?.[0]?.raw_number ??
           undefined;
-        if (!phone) {
-          results.push({ apolloId: p.id, status: 'no_phone_in_payload' });
-          continue;
-        }
         const candidate = await candidateRepository.findByApolloId(p.id);
         if (!candidate) {
           results.push({ apolloId: p.id, status: 'no_candidate_match' });
+          continue;
+        }
+        if (!phone) {
+          // Apollo replied but had no phone on file (people[].status="failure"
+          // or empty phone_numbers). Mark the candidate phone slot as
+          // "enriched but empty" so the row moves out of the "Pending" state
+          // and the recruiter knows Re-enrich won't help. Polling stops
+          // because phoneEnriched is now true.
+          await candidateRepository.updateByApolloId(p.id, {
+            phoneEnriched: true,
+            phone: null,
+          });
+          await campaignRepository.addLog(candidate.campaignId, {
+            message: `Apollo confirmed no phone on file for ${candidate.name}.`,
+            candidateId: candidate.id,
+            candidateName: candidate.name,
+            type: 'ENRICH',
+          });
+          results.push({ apolloId: p.id, status: 'no_phone_available', candidateId: candidate.id });
           continue;
         }
         await candidateRepository.updateByApolloId(p.id, {

@@ -586,7 +586,9 @@ function renderExpandableRow(
                     fallback={
                       isAwaitingPhone
                         ? 'Awaiting phone… Apollo will deliver it within a few minutes.'
-                        : 'Pending — click Re-enrich to request a phone reveal.'
+                        : candidate.contact.phoneEnriched
+                          ? 'Not available — Apollo has no phone on file for this record.'
+                          : 'Pending — click Re-enrich to request a phone reveal.'
                     }
                   />
                   <ContactRow
