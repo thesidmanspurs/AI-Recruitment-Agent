@@ -110,16 +110,16 @@ export const candidateController = {
       const paired: Array<{ search: typeof searchHits[number]; match: EnrichmentRow }> =
         searchHits.map((s, i) => ({ search: s, match: enrichments[i] }));
 
-      // "Verify before showing" gate: drop rows where Apollo can't confirm
-      // the title is current AND the data is older than 18 months. Stops
-      // ARIES from displaying job titles that have likely changed since
-      // Apollo last refreshed the record (e.g. someone's moved companies
-      // but Apollo still shows their old employer).
-      const STALE_MONTHS = 18;
-      const stalenessCutoffMs = Date.now() - STALE_MONTHS * 30 * 24 * 60 * 60 * 1000;
+      // STRICT verify-before-showing gate (user preference: title must be
+      // 100% correct). Drop every Apollo row where:
+      //   - the name was redacted (Apollo "?" mask), OR
+      //   - Apollo's employment_history doesn't confirm the displayed title
+      //     is the candidate's CURRENT role (isCurrentRole=true).
+      // This drastically reduces page volume but every row that survives
+      // has Apollo's freshest data backing it.
       const enrichmentByName = new Map<string, EnrichmentRow>();
       let droppedMasked = 0;
-      let droppedStale = 0;
+      let droppedUnverified = 0;
       const rawProfiles = paired
         .map(({ search, match }) => {
           // Skip Apollo-redacted rows (last_name_obfuscated with "?" masks).
@@ -131,13 +131,12 @@ export const candidateController = {
             return null;
           }
 
-          // Skip rows where Apollo can't confirm the title is current AND
-          // its snapshot is > 18 months old. With no employment_history
-          // signal, an old snapshot likely shows a job they've already left.
-          const apolloAt = match.apolloUpdatedAt ? Date.parse(match.apolloUpdatedAt) : NaN;
-          const isStale = Number.isFinite(apolloAt) && apolloAt < stalenessCutoffMs;
-          if (!match.isCurrentRole && isStale) {
-            droppedStale++;
+          // Strict mode: require Apollo to confirm the current role. Without
+          // that signal the title is unreliable (Apollo may be showing a
+          // stale snapshot) and we'd rather show fewer candidates than
+          // wrong titles.
+          if (!match.isCurrentRole) {
+            droppedUnverified++;
             return null;
           }
 
@@ -176,11 +175,11 @@ export const candidateController = {
         })
         .filter((p): p is NonNullable<typeof p> => p !== null);
 
-      if (droppedMasked > 0 || droppedStale > 0) {
+      if (droppedMasked > 0 || droppedUnverified > 0) {
         await campaignRepository.addLog(campaignId, {
           message:
-            `Quality filter dropped ${droppedMasked + droppedStale} Apollo row(s): ` +
-            `${droppedMasked} redacted name, ${droppedStale} Apollo data >18 months old with unconfirmed current role.`,
+            `Strict-title filter dropped ${droppedMasked + droppedUnverified} Apollo row(s): ` +
+            `${droppedMasked} redacted name, ${droppedUnverified} role not confirmed as current by Apollo.`,
           type: 'INFO',
         });
       }
