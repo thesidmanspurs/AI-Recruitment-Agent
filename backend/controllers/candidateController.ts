@@ -110,29 +110,49 @@ export const candidateController = {
       const paired: Array<{ search: typeof searchHits[number]; match: EnrichmentRow }> =
         searchHits.map((s, i) => ({ search: s, match: enrichments[i] }));
 
+      // "Verify before showing" gate: drop rows where Apollo can't confirm
+      // the title is current AND the data is older than 18 months. Stops
+      // ARIES from displaying job titles that have likely changed since
+      // Apollo last refreshed the record (e.g. someone's moved companies
+      // but Apollo still shows their old employer).
+      const STALE_MONTHS = 18;
+      const stalenessCutoffMs = Date.now() - STALE_MONTHS * 30 * 24 * 60 * 60 * 1000;
       const enrichmentByName = new Map<string, EnrichmentRow>();
+      let droppedMasked = 0;
+      let droppedStale = 0;
       const rawProfiles = paired
         .map(({ search, match }) => {
-          // Skip candidates Apollo has redacted. Apollo Basic returns
-          // last_name_obfuscated like "Tu?N" with "?" mask characters
-          // when the plan can't unlock the record. If Match-by-id ALSO
-          // failed to resolve the full name, we have no honest full name
-          // to show, so we drop the row entirely (per user preference —
-          // better fewer candidates than rows that look broken).
+          // Skip Apollo-redacted rows (last_name_obfuscated with "?" masks).
           const isMaskedByApollo = !!(
             search.last_name_obfuscated && search.last_name_obfuscated.includes('?')
           );
-          if (isMaskedByApollo && !(match.found && match.name)) return null;
+          if (isMaskedByApollo && !(match.found && match.name)) {
+            droppedMasked++;
+            return null;
+          }
+
+          // Skip rows where Apollo can't confirm the title is current AND
+          // its snapshot is > 18 months old. With no employment_history
+          // signal, an old snapshot likely shows a job they've already left.
+          const apolloAt = match.apolloUpdatedAt ? Date.parse(match.apolloUpdatedAt) : NaN;
+          const isStale = Number.isFinite(apolloAt) && apolloAt < stalenessCutoffMs;
+          if (!match.isCurrentRole && isStale) {
+            droppedStale++;
+            return null;
+          }
+
           const name = match.found && match.name
             ? match.name
             : `${search.first_name ?? ''}${search.last_name_obfuscated ? ' ' + search.last_name_obfuscated : ''}`.trim();
           if (!name) return null;
           enrichmentByName.set(name.toLowerCase(), match);
+          const title = match.title ?? search.title ?? 'Unknown';
+          const company = match.company ?? search.organization?.name ?? 'Independent';
           return {
             name,
-            currentTitle: match.title ?? search.title ?? 'Unknown',
-            company: match.company ?? search.organization?.name ?? 'Independent',
-            bio: `${match.title ?? search.title ?? ''}${match.company ? ' at ' + match.company : ''}`.trim() ||
+            currentTitle: title,
+            company,
+            bio: `${title}${company ? ' at ' + company : ''}`.trim() ||
               'Apollo-verified candidate.',
             openToWork: false,
             platform: 'LinkedIn' as const,
@@ -143,15 +163,27 @@ export const candidateController = {
                 ? 'Apollo Match resolved profile, email not revealed on this tier.'
                 : 'Apollo Search hit; Match could not resolve full record.',
             skills: [],
+            // Strengths are now data-quality signals, not role re-statements.
             strengths: [
+              match.isCurrentRole ? 'Current role confirmed by Apollo' : '',
               match.email ? 'Verified email on file' : '',
-              match.location ? `Based in ${match.location}` : '',
-              match.linkedinUrl ? 'LinkedIn profile linked' : '',
             ].filter(Boolean),
-            gaps: match.email ? [] : ['Email reveal needed (Apollo plan-gated)'],
+            gaps: [
+              match.email ? '' : 'Email reveal needed (Apollo plan-gated)',
+              !match.isCurrentRole ? 'Role not confirmed as current — verify on LinkedIn' : '',
+            ].filter(Boolean),
           };
         })
         .filter((p): p is NonNullable<typeof p> => p !== null);
+
+      if (droppedMasked > 0 || droppedStale > 0) {
+        await campaignRepository.addLog(campaignId, {
+          message:
+            `Quality filter dropped ${droppedMasked + droppedStale} Apollo row(s): ` +
+            `${droppedMasked} redacted name, ${droppedStale} Apollo data >18 months old with unconfirmed current role.`,
+          type: 'INFO',
+        });
+      }
 
       // Reddit sourcing — runs in parallel intent (we already have the Apollo
       // result by this point, so this is sequential but cheap). We never let
@@ -221,6 +253,9 @@ export const candidateController = {
           location: snap.location ?? null,
           linkedinUrl: snap.linkedinUrl ?? null,
           apolloId: snap.apolloId ?? null,
+          apolloUpdatedAt: snap.apolloUpdatedAt ? new Date(snap.apolloUpdatedAt) : null,
+          currentRoleSince: snap.currentRoleSince ? new Date(snap.currentRoleSince) : null,
+          isCurrentRole: !!snap.isCurrentRole,
           emailEnriched: !!snap.email,
           phoneEnriched: !!snap.phone,
           outreachStatus: 'ENRICHED',
@@ -375,6 +410,9 @@ export const candidateController = {
           location: result.location ?? null,
           linkedinUrl: result.linkedinUrl ?? url,
           apolloId: result.apolloId ?? null,
+          apolloUpdatedAt: result.apolloUpdatedAt ? new Date(result.apolloUpdatedAt) : null,
+          currentRoleSince: result.currentRoleSince ? new Date(result.currentRoleSince) : null,
+          isCurrentRole: !!result.isCurrentRole,
           emailEnriched: !!result.email,
           phoneEnriched: !!result.phone,
           outreachStatus: 'ENRICHED',

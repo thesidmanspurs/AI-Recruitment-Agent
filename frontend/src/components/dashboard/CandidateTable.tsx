@@ -405,7 +405,24 @@ function renderExpandableRow(
         <div className="flex items-center gap-3">
           <Avatar name={candidate.name} />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{candidate.name}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-gray-900 truncate">{candidate.name}</p>
+              {candidate.isCurrentRole ? (
+                <span
+                  title="Apollo confirms this is their current role."
+                  className="inline-flex items-center text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1 py-0.5 rounded uppercase tracking-wider"
+                >
+                  Current
+                </span>
+              ) : candidate.currentTitle && candidate.currentTitle !== 'Unknown' ? (
+                <span
+                  title="Apollo couldn't confirm this is their current role. Click 'Verify on LinkedIn' before outreach."
+                  className="inline-flex items-center text-[9.5px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded uppercase tracking-wider"
+                >
+                  Unverified
+                </span>
+              ) : null}
+            </div>
             <p className="text-xs text-gray-400 truncate">
               {candidate.currentTitle} @ {candidate.company}
             </p>
@@ -447,6 +464,10 @@ function renderExpandableRow(
     rows.push(
       <tr key={`detail-${candidate.id}`} className="bg-gray-50/60 border-b border-gray-100">
         <td colSpan={7} className="px-12 py-5">
+          {/* Data-freshness banner — surfaces Apollo's snapshot age + a
+              prominent "Verify on LinkedIn" button so the recruiter never
+              acts on stale title/employer data without confirming. */}
+          <DataFreshnessBanner candidate={candidate} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailBlock
               icon={<Sparkles className="w-3.5 h-3.5 text-indigo-500" />}
@@ -695,6 +716,59 @@ function renderExpandableRow(
   }
 
   return rows;
+}
+
+function DataFreshnessBanner({ candidate }: { candidate: Candidate }) {
+  // Reddit candidates don't go through Apollo; their data is real-time
+  // by definition. Nothing to surface.
+  if (candidate.platform !== 'LinkedIn') return null;
+
+  const updated = candidate.apolloUpdatedAt ? new Date(candidate.apolloUpdatedAt) : null;
+  const monthsAgo = updated
+    ? Math.floor((Date.now() - updated.getTime()) / (30 * 24 * 60 * 60 * 1000))
+    : null;
+  const isStale = monthsAgo !== null && monthsAgo >= 12;
+  const showWarning = !candidate.isCurrentRole || isStale;
+
+  return (
+    <div
+      className={`mb-4 flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border ${
+        showWarning
+          ? 'bg-amber-50/60 border-amber-200'
+          : 'bg-emerald-50/60 border-emerald-200'
+      }`}
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <span
+          className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+            showWarning ? 'bg-amber-200/70 text-amber-900' : 'bg-emerald-200/70 text-emerald-900'
+          }`}
+        >
+          Data check
+        </span>
+        <span className="text-xs text-gray-800 truncate">
+          {candidate.isCurrentRole
+            ? `Apollo confirms current role`
+            : `Apollo couldn't confirm this is their current role`}
+          {monthsAgo !== null
+            ? ` · snapshot ${monthsAgo === 0 ? 'less than a month' : `${monthsAgo} month${monthsAgo === 1 ? '' : 's'}`} old`
+            : ' · snapshot age unknown'}
+          {showWarning ? ' · verify on LinkedIn before outreach' : ''}
+        </span>
+      </div>
+      {candidate.contact.linkedinUrl && (
+        <a
+          href={candidate.contact.linkedinUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-white bg-[#0a66c2] hover:bg-[#084d8d] px-3 py-1.5 rounded-full transition-colors shrink-0"
+        >
+          <Linkedin className="w-3.5 h-3.5" />
+          Verify on LinkedIn
+        </a>
+      )}
+    </div>
+  );
 }
 
 function DetailBlock({

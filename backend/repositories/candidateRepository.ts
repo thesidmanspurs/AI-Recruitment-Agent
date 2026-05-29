@@ -19,10 +19,13 @@ export type CreateCandidateInput = {
 
 export type UpdateCandidateInput = {
   email?: string;
-  phone?: string;
+  phone?: string | null;
   location?: string;
   linkedinUrl?: string;
   apolloId?: string | null;
+  apolloUpdatedAt?: Date | null;
+  currentRoleSince?: Date | null;
+  isCurrentRole?: boolean;
   emailEnriched?: boolean;
   phoneEnriched?: boolean;
   outreachStatus?: OutreachStatus;

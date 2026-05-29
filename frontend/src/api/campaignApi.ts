@@ -58,6 +58,9 @@ export interface CandidateDto {
   outreachSentAt: string | null;
   repliedAt: string | null;
   replyPreview: string | null;
+  apolloUpdatedAt: string | null;
+  currentRoleSince: string | null;
+  isCurrentRole: boolean;
   daysSinceOutreach: number;
   alertTriggered: boolean;
   notes: string | null;

@@ -17,6 +17,14 @@ import type { EnrichmentRequest, ApolloEnrichmentResult } from '../../types/outr
  * the response and surfaces clean errors.
  */
 
+interface ApolloEmployment {
+  organization_name?: string | null;
+  title?: string | null;
+  current?: boolean | null;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
 interface ApolloPersonResponse {
   person?: {
     id?: string | null;
@@ -28,7 +36,51 @@ interface ApolloPersonResponse {
     linkedin_url?: string | null;
     organization?: { name?: string | null; primary_domain?: string | null } | null;
     title?: string | null;
+    // Apollo's chronological work history. The entry marked current:true (or
+    // with end_date:null and the latest start_date) is the only field we can
+    // trust as "their job right now" — the top-level title can be stale.
+    employment_history?: ApolloEmployment[];
+    updated_at?: string | null;
+    last_updated_at?: string | null;
   } | null;
+}
+
+/**
+ * Resolve the freshest title + company by walking employment_history.
+ * Falls back to the top-level title/organization fields when no history
+ * is available. Also returns the start_date of that current role so the
+ * UI can show "Title since MMM YYYY" instead of blindly trusting Apollo.
+ */
+function freshestRole(p: NonNullable<ApolloPersonResponse['person']>): {
+  title?: string;
+  company?: string;
+  since?: string;
+  isCurrent: boolean;
+} {
+  const history = (p.employment_history ?? []) as ApolloEmployment[];
+  // Sort: current jobs first, then by latest start_date desc.
+  const sorted = [...history].sort((a, b) => {
+    if (a.current && !b.current) return -1;
+    if (!a.current && b.current) return 1;
+    const ta = a.start_date ? Date.parse(a.start_date) : 0;
+    const tb = b.start_date ? Date.parse(b.start_date) : 0;
+    return tb - ta;
+  });
+  const top = sorted[0];
+  if (top && top.current) {
+    return {
+      title: top.title?.trim() || undefined,
+      company: top.organization_name?.trim() || undefined,
+      since: top.start_date ?? undefined,
+      isCurrent: true,
+    };
+  }
+  return {
+    title: p.title?.trim() || undefined,
+    company: p.organization?.name?.trim() || undefined,
+    since: top?.start_date ?? undefined,
+    isCurrent: false,
+  };
 }
 
 // Builds the absolute callback URL Apollo will POST the revealed phone to.
@@ -93,6 +145,9 @@ export const apolloService = {
     location?: string;
     linkedinUrl?: string;
     photoUrl?: string;
+    currentRoleSince?: string;
+    isCurrentRole?: boolean;
+    apolloUpdatedAt?: string;
   }> {
     if (!env.APOLLO_API_KEY) {
       throw new ApolloError(401, 'APOLLO_API_KEY is not configured on the server.');
@@ -137,20 +192,24 @@ export const apolloService = {
     const fullName = [first, last].filter(Boolean).join(' ');
     const phone = p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number;
     const location = [p.city, p.state, p.country].filter(Boolean).join(', ') || undefined;
+    const role = freshestRole(p);
     return {
       found: true,
       apolloId: p.id ?? undefined,
       name: fullName || undefined,
       firstName: first,
       lastName: last,
-      title: p.title ?? undefined,
-      company: p.organization?.name ?? undefined,
+      title: role.title,
+      company: role.company,
       companyDomain: p.organization?.primary_domain ?? undefined,
       email: p.email ?? undefined,
       phone,
       location,
       linkedinUrl: p.linkedin_url ?? undefined,
       photoUrl: (p as { photo_url?: string }).photo_url ?? undefined,
+      currentRoleSince: role.since,
+      isCurrentRole: role.isCurrent,
+      apolloUpdatedAt: p.updated_at ?? p.last_updated_at ?? undefined,
     };
   },
 
@@ -214,20 +273,24 @@ export const apolloService = {
     const fullName = [first, last].filter(Boolean).join(' ');
     const phone = p.phone_numbers?.[0]?.sanitized_number ?? p.phone_numbers?.[0]?.raw_number;
     const location = [p.city, p.state, p.country].filter(Boolean).join(', ') || undefined;
+    const role = freshestRole(p);
     return {
       found: true,
       apolloId: p.id ?? undefined,
       name: fullName || undefined,
       firstName: first,
       lastName: last,
-      title: p.title ?? undefined,
-      company: p.organization?.name ?? undefined,
+      title: role.title,
+      company: role.company,
       companyDomain: p.organization?.primary_domain ?? undefined,
       email: p.email ?? undefined,
       phone,
       location,
       linkedinUrl: p.linkedin_url ?? undefined,
       photoUrl: (p as { photo_url?: string }).photo_url ?? undefined,
+      currentRoleSince: role.since,
+      isCurrentRole: role.isCurrent,
+      apolloUpdatedAt: p.updated_at ?? p.last_updated_at ?? undefined,
     };
   },
 

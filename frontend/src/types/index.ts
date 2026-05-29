@@ -37,6 +37,9 @@ export interface Candidate {
   outreachMessage?: string;
   outreachChannel?: OutreachChannel;
   outreachSentAt?: string;
+  apolloUpdatedAt?: string;
+  currentRoleSince?: string;
+  isCurrentRole?: boolean;
   daysSinceOutreach: number;
   alertTriggered: boolean;
   notes?: string;

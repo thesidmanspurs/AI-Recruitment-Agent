@@ -133,6 +133,15 @@ model Candidate {
   // Apollo internal person id — needed to correlate async phone webhooks back
   // to this row when Apollo POSTs the revealed phone minutes/hours later.
   apolloId      String? @unique
+  // When Apollo last refreshed this person's record (their updated_at).
+  // Used to render "Data verified MMM YYYY" and warn on stale rows.
+  apolloUpdatedAt    DateTime?
+  // Start date of the candidate's current role per Apollo's
+  // employment_history. Lets the UI show "Title since YYYY".
+  currentRoleSince   DateTime?
+  // True when Apollo's employment_history confirms the displayed title +
+  // company are the candidate's CURRENT role (not the stale top-level one).
+  isCurrentRole      Boolean   @default(false)
 
   // Outreach (Phase 5)
   outreachStatus    OutreachStatus   @default(SOURCED)
