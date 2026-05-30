@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { apolloSourcingService } from '../services/apollo/apolloSourcingService.js';
 import { apolloService, ApolloError } from '../services/apollo/apolloService.js';
 import { redditService } from '../services/reddit/redditService.js';
+import { geminiService } from '../services/ai/geminiService.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
 import { screenProfiles } from '../services/screening/screeningService.js';
@@ -110,13 +111,72 @@ export const candidateController = {
       const paired: Array<{ search: typeof searchHits[number]; match: EnrichmentRow }> =
         searchHits.map((s, i) => ({ search: s, match: enrichments[i] }));
 
-      // STRICT verify-before-showing gate (user preference: title must be
-      // 100% correct). Drop every Apollo row where:
-      //   - the name was redacted (Apollo "?" mask), OR
-      //   - Apollo's employment_history doesn't confirm the displayed title
-      //     is the candidate's CURRENT role (isCurrentRole=true).
-      // This drastically reduces page volume but every row that survives
-      // has Apollo's freshest data backing it.
+      // ── Step 2.5: Gemini + Google Search title verification ───────────
+      // For every Apollo row where employment_history did NOT confirm the
+      // current role, run a grounded Google-search query so Gemini can
+      // verify the title against the candidate's public web presence
+      // (LinkedIn snippets, company sites). Either confirms Apollo, replaces
+      // the title with the real one Gemini found, or marks the row to be
+      // dropped when no signal can be obtained. ~$0.035 per call, only
+      // invoked on the subset Apollo couldn't auto-verify, max parallelism
+      // capped at 6 so we don't melt Gemini's rate limit.
+      const needsVerify = paired.filter(
+        ({ match }) => match.found && match.name && !match.isCurrentRole
+      );
+      const verifications = new Map<string, Awaited<ReturnType<typeof geminiService.verifyCurrentRole>>>();
+      let verifiedConfirmed = 0;
+      let verifiedReplaced = 0;
+      let verifiedDropped = 0;
+      if (needsVerify.length > 0 && geminiService.isAvailable()) {
+        // Process in batches of 6 in parallel.
+        const BATCH = 6;
+        for (let i = 0; i < needsVerify.length; i += BATCH) {
+          const slice = needsVerify.slice(i, i + BATCH);
+          await Promise.all(
+            slice.map(async ({ match }) => {
+              if (!match.found || !match.name) return;
+              try {
+                const v = await geminiService.verifyCurrentRole({
+                  candidateName: match.name,
+                  apolloTitle: match.title ?? 'Unknown',
+                  apolloCompany: match.company ?? 'Unknown',
+                  linkedinUrl: match.linkedinUrl,
+                  email: match.email,
+                  location: match.location,
+                });
+                verifications.set(match.name.toLowerCase(), v);
+                if (v.verdict === 'confirmed' && v.confidence !== 'low') {
+                  verifiedConfirmed++;
+                } else if (
+                  v.verdict === 'mismatch' &&
+                  v.confidence !== 'low' &&
+                  v.suggestedTitle
+                ) {
+                  verifiedReplaced++;
+                } else {
+                  verifiedDropped++;
+                }
+              } catch (err) {
+                console.warn('[Gemini verify] failed:', err instanceof Error ? err.message : err);
+              }
+            })
+          );
+        }
+        await campaignRepository.addLog(campaignId, {
+          message:
+            `Gemini grounded-search verification on ${needsVerify.length} Apollo row(s): ` +
+            `${verifiedConfirmed} confirmed, ${verifiedReplaced} title corrected, ${verifiedDropped} dropped (no signal).`,
+          type: 'INFO',
+        });
+      }
+
+      // STRICT verify-before-showing gate. After Apollo + Gemini verification,
+      // drop every row that still has no confirmation:
+      //   - Apollo redacted the name ("?"), OR
+      //   - Apollo employment_history said "current"     → keep
+      //   - Gemini grounded-search said "confirmed"      → keep (apply Apollo title)
+      //   - Gemini grounded-search said "mismatch+title" → keep (apply Gemini's title)
+      //   - everything else                              → drop
       const enrichmentByName = new Map<string, EnrichmentRow>();
       let droppedMasked = 0;
       let droppedUnverified = 0;
@@ -131,11 +191,38 @@ export const candidateController = {
             return null;
           }
 
-          // Strict mode: require Apollo to confirm the current role. Without
-          // that signal the title is unreliable (Apollo may be showing a
-          // stale snapshot) and we'd rather show fewer candidates than
-          // wrong titles.
-          if (!match.isCurrentRole) {
+          // Resolve the final title + company by combining Apollo + Gemini
+          // verification. Three paths to "keep this row":
+          //   1. Apollo's employment_history said current → trust Apollo.
+          //   2. Gemini grounded-search verdict=confirmed → trust Apollo.
+          //   3. Gemini grounded-search verdict=mismatch with a suggested
+          //      title → keep but REPLACE Apollo's title/company with what
+          //      Gemini found.
+          // Anything else (uncertain, low confidence, no Gemini available)
+          // gets dropped — better to show nothing than a wrong title.
+          let finalTitle = match.title;
+          let finalCompany = match.company;
+          let titleVerifiedBy: 'apollo' | 'gemini' | null = null;
+
+          if (match.isCurrentRole) {
+            titleVerifiedBy = 'apollo';
+          } else if (match.found && match.name) {
+            const v = verifications.get(match.name.toLowerCase());
+            if (v && v.verdict === 'confirmed' && v.confidence !== 'low') {
+              titleVerifiedBy = 'apollo'; // Apollo title was right, Gemini confirmed
+            } else if (
+              v &&
+              v.verdict === 'mismatch' &&
+              v.confidence !== 'low' &&
+              v.suggestedTitle
+            ) {
+              finalTitle = v.suggestedTitle;
+              if (v.suggestedCompany) finalCompany = v.suggestedCompany;
+              titleVerifiedBy = 'gemini';
+            }
+          }
+
+          if (!titleVerifiedBy) {
             droppedUnverified++;
             return null;
           }
@@ -145,8 +232,8 @@ export const candidateController = {
             : `${search.first_name ?? ''}${search.last_name_obfuscated ? ' ' + search.last_name_obfuscated : ''}`.trim();
           if (!name) return null;
           enrichmentByName.set(name.toLowerCase(), match);
-          const title = match.title ?? search.title ?? 'Unknown';
-          const company = match.company ?? search.organization?.name ?? 'Independent';
+          const title = finalTitle ?? search.title ?? 'Unknown';
+          const company = finalCompany ?? search.organization?.name ?? 'Independent';
           return {
             name,
             currentTitle: title,
@@ -156,20 +243,20 @@ export const candidateController = {
             openToWork: false,
             platform: 'LinkedIn' as const,
             matchScore: match.email ? 9.5 : (match.found ? 8.5 : 7.0),
-            matchExplanation: match.email
-              ? `Apollo Match verified email on file (${match.email}).`
-              : match.found
-                ? 'Apollo Match resolved profile, email not revealed on this tier.'
-                : 'Apollo Search hit; Match could not resolve full record.',
+            matchExplanation:
+              titleVerifiedBy === 'gemini'
+                ? `Title corrected by Gemini grounded-search; Apollo had "${match.title ?? 'unknown'}".`
+                : match.email
+                  ? `Apollo Match verified email on file (${match.email}).`
+                  : 'Apollo Match resolved profile and current role confirmed.',
             skills: [],
-            // Strengths are now data-quality signals, not role re-statements.
             strengths: [
-              match.isCurrentRole ? 'Current role confirmed by Apollo' : '',
+              titleVerifiedBy === 'apollo' ? 'Current role confirmed by Apollo' : '',
+              titleVerifiedBy === 'gemini' ? 'Current role verified via Google search' : '',
               match.email ? 'Verified email on file' : '',
             ].filter(Boolean),
             gaps: [
               match.email ? '' : 'Email reveal needed (Apollo plan-gated)',
-              !match.isCurrentRole ? 'Role not confirmed as current — verify on LinkedIn' : '',
             ].filter(Boolean),
           };
         })
@@ -179,7 +266,7 @@ export const candidateController = {
         await campaignRepository.addLog(campaignId, {
           message:
             `Strict-title filter dropped ${droppedMasked + droppedUnverified} Apollo row(s): ` +
-            `${droppedMasked} redacted name, ${droppedUnverified} role not confirmed as current by Apollo.`,
+            `${droppedMasked} redacted name, ${droppedUnverified} role couldn't be verified by Apollo or Gemini grounded search.`,
           type: 'INFO',
         });
       }

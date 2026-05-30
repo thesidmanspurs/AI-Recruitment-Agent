@@ -254,4 +254,131 @@ export const geminiService = {
     const parsed = JSON.parse(text.trim()) as { subject: string; body: string };
     return { subject: parsed.subject.trim(), body: parsed.body.trim() };
   },
+
+  /**
+   * Verify a candidate's current title using Gemini + Google Search grounding.
+   *
+   * Apollo's snapshot can be 1-2 years stale, especially for non-US records.
+   * This method runs a Google-search-grounded query so Gemini can look at the
+   * candidate's public web presence (LinkedIn snippets in search results,
+   * company sites, conference bios) and either confirm or correct Apollo's
+   * title/company claim.
+   *
+   * Output is text-mode (Gemini disallows responseSchema + grounding
+   * simultaneously); we parse a small key:value envelope.
+   *
+   * Cost: ~$0.035 per call (Google's grounding pricing on top of token cost).
+   * Latency: 3-5s per call. Call only on rows Apollo couldn't auto-confirm.
+   */
+  async verifyCurrentRole(params: {
+    candidateName: string;
+    apolloTitle: string;
+    apolloCompany: string;
+    linkedinUrl?: string;
+    email?: string;
+    location?: string;
+  }): Promise<{
+    verdict: 'confirmed' | 'mismatch' | 'uncertain';
+    suggestedTitle?: string;
+    suggestedCompany?: string;
+    confidence: 'high' | 'medium' | 'low';
+    reasoning: string;
+    grounded: boolean;
+  }> {
+    const client = getClient();
+    if (!client) {
+      return {
+        verdict: 'uncertain',
+        confidence: 'low',
+        reasoning: 'Gemini not configured.',
+        grounded: false,
+      };
+    }
+
+    const prompt = [
+      `You are a recruiter verifying whether a third-party data vendor's snapshot of a candidate's job title is still accurate.`,
+      ``,
+      `CANDIDATE:`,
+      `  Name: ${params.candidateName}`,
+      params.linkedinUrl ? `  LinkedIn: ${params.linkedinUrl}` : '',
+      params.email ? `  Email: ${params.email}` : '',
+      params.location ? `  Location: ${params.location}` : '',
+      ``,
+      `VENDOR (Apollo.io) CLAIMS:`,
+      `  Title: ${params.apolloTitle}`,
+      `  Company: ${params.apolloCompany}`,
+      ``,
+      `TASK: Search the public web (LinkedIn results, company sites, github, twitter, conference talks) for this exact person and decide whether the Apollo claim is still their CURRENT role. Be especially careful with common names — only trust matches where the LinkedIn URL, email domain, or location aligns.`,
+      ``,
+      `Reply STRICTLY in this format on separate lines, no extra prose:`,
+      `VERDICT: confirmed | mismatch | uncertain`,
+      `CURRENT_TITLE: <their actual current title, or "unknown">`,
+      `CURRENT_COMPANY: <their actual current company, or "unknown">`,
+      `CONFIDENCE: high | medium | low`,
+      `REASONING: <one short sentence citing what you found>`,
+      ``,
+      `Rules:`,
+      `- "confirmed" only when public evidence clearly matches Apollo's title AND company.`,
+      `- "mismatch" only when you found strong evidence (LinkedIn snippet, recent post, company-employee page) of a DIFFERENT current title.`,
+      `- "uncertain" when you can't find this specific person in public results or the signal is weak.`,
+      `- If CURRENT_TITLE differs only by seniority phrasing (e.g. "Sr." vs "Senior"), call it confirmed.`,
+      `- Never invent a title without web evidence — prefer "uncertain" over guessing.`,
+    ].filter(Boolean).join('\n');
+
+    let response;
+    try {
+      response = await client.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: prompt,
+        config: {
+          // Grounding tool. Gemini will run real Google searches as part of
+          // generating the answer. Cannot be combined with responseSchema.
+          tools: [{ googleSearch: {} }],
+          temperature: 0.1, // keep verifier deterministic
+        },
+      });
+    } catch (err) {
+      return {
+        verdict: 'uncertain',
+        confidence: 'low',
+        reasoning: `Verification call failed: ${err instanceof Error ? err.message : 'unknown'}`,
+        grounded: false,
+      };
+    }
+
+    const text = (response.text ?? '').trim();
+    if (!text) {
+      return {
+        verdict: 'uncertain',
+        confidence: 'low',
+        reasoning: 'Empty verifier response.',
+        grounded: false,
+      };
+    }
+
+    const pick = (key: string): string => {
+      const m = text.match(new RegExp(`^${key}\\s*:\\s*(.+)$`, 'im'));
+      return m ? m[1].trim() : '';
+    };
+
+    const verdictRaw = pick('VERDICT').toLowerCase();
+    const verdict: 'confirmed' | 'mismatch' | 'uncertain' =
+      verdictRaw === 'confirmed' ? 'confirmed' :
+      verdictRaw === 'mismatch' ? 'mismatch' : 'uncertain';
+
+    const confRaw = pick('CONFIDENCE').toLowerCase();
+    const confidence: 'high' | 'medium' | 'low' =
+      confRaw === 'high' ? 'high' :
+      confRaw === 'medium' ? 'medium' : 'low';
+
+    const titleVal = pick('CURRENT_TITLE');
+    const companyVal = pick('CURRENT_COMPANY');
+    const suggestedTitle =
+      titleVal && titleVal.toLowerCase() !== 'unknown' ? titleVal : undefined;
+    const suggestedCompany =
+      companyVal && companyVal.toLowerCase() !== 'unknown' ? companyVal : undefined;
+    const reasoning = pick('REASONING') || 'No reasoning provided.';
+
+    return { verdict, suggestedTitle, suggestedCompany, confidence, reasoning, grounded: true };
+  },
 };
