@@ -17,7 +17,7 @@ We're hiring a Senior Azure Infrastructure Engineer to lead our cloud migration.
 export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalProps) {
   const [name, setName] = useState('');
   const [jobText, setJobText] = useState('');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState('On-site');
   const [jobType, setJobType] = useState('Full-time');
   const [department, setDepartment] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -137,13 +137,15 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                 Location
               </label>
-              <input
-                type="text"
+              <select
                 value={location}
                 onChange={e => setLocation(e.target.value)}
-                placeholder="Remote · EU"
-                className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-              />
+                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+              >
+                <option>On-site</option>
+                <option>Hybrid</option>
+                <option>Fully Remote</option>
+              </select>
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
