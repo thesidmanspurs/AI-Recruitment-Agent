@@ -286,25 +286,39 @@ export const geminiService = {
     }
 
     const prompt = [
-      `Score how well this candidate fits the role, from 0 to 10 (one decimal allowed).`,
+      `You are an expert Technical Recruiter and HR Manager with a sharp eye for`,
+      `aligning candidate capabilities with business needs. Analyze this candidate`,
+      `against the job spec and rank them 1-10 (1 = completely unsuitable,`,
+      `10 = perfect match). Be highly objective and critical.`,
       ``,
-      `ROLE`,
+      `STEP 1 — Extract from the job spec: the non-negotiable MUST-HAVE skills, the`,
+      `NICE-TO-HAVE skills, and the required years of experience.`,
+      `STEP 2 — Map the candidate's title, company and background to those`,
+      `requirements. Weight MUST-HAVEs and years-of-experience far more heavily than`,
+      `nice-to-haves. A candidate missing a must-have cannot score above ~6.`,
+      ``,
+      `[JOB SPECIFICATION]`,
       `  Title: ${params.jobTitle}`,
       params.alternateTitles?.length ? `  Acceptable equivalent titles: ${params.alternateTitles.join(', ')}` : '',
       `  Key skills / keywords: ${params.jobKeywords.slice(0, 12).join(', ')}`,
-      params.jobRequirements?.length ? `  Requirements: ${params.jobRequirements.slice(0, 6).join('; ')}` : '',
+      params.jobRequirements?.length ? `  Requirements: ${params.jobRequirements.slice(0, 8).join('; ')}` : '',
       ``,
-      `CANDIDATE`,
+      `[CANDIDATE]`,
       `  Current title: ${params.candidateTitle}`,
       `  Company: ${params.candidateCompany}`,
-      params.candidateBio ? `  Background: ${params.candidateBio.slice(0, 600)}` : '',
+      params.candidateBio ? `  Background: ${params.candidateBio.slice(0, 800)}` : '',
       ``,
-      `Calibration:`,
-      `  9.0-10  near-perfect: title matches (or an acceptable equivalent) AND most key skills evident`,
-      `  7.0-8.9 strong: clearly relevant background, a couple of gaps`,
-      `  5.0-6.9 partial: adjacent role or only some skills overlap`,
-      `  below 5 weak or unrelated`,
-      `Be honest and discriminating — do NOT default everyone to a high score. Most sourced candidates should land between 6 and 9 with real variation.`,
+      `Scoring calibration (1-10, one decimal allowed):`,
+      `  9-10  perfect/near-perfect: all must-haves + meets experience + most nice-to-haves`,
+      `  7-8.9 strong: all or nearly all must-haves, minor gaps`,
+      `  5-6.9 partial: some must-haves missing or experience short`,
+      `  3-4.9 weak: adjacent field, most must-haves absent`,
+      `  1-2.9 unsuitable: unrelated`,
+      `Do NOT inflate. With limited data, judge conservatively from the title +`,
+      `background rather than assuming unstated skills. Provide:`,
+      `  - strengths: the exact skills/experience that MATCH the spec (the match)`,
+      `  - gaps: required/preferred items the candidate is missing (the weaknesses)`,
+      `  - reasoning: a brief objective justification for the score`,
     ].filter(Boolean).join('\n');
 
     try {
@@ -313,17 +327,18 @@ export const geminiService = {
         contents: prompt,
         config: {
           systemInstruction:
-            'You are a senior technical recruiter scoring candidate-job fit. ' +
-            'You are discriminating and calibrated — you reserve 9+ for genuinely strong matches.',
+            'You are an expert Technical Recruiter and HR Manager scoring candidate-job fit. ' +
+            'You are highly objective and critical, weight must-have skills and years of ' +
+            'experience heavily, and reserve 9+ only for genuinely strong matches.',
           temperature: 0.2,
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              score: { type: Type.NUMBER, description: '0-10 fit score, one decimal allowed.' },
-              reasoning: { type: Type.STRING, description: 'One sentence explaining the score.' },
-              strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: '1-4 concrete strengths vs the role.' },
-              gaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: '0-3 concrete gaps vs the role.' },
+              score: { type: Type.NUMBER, description: '1-10 fit score, one decimal allowed. Critical & objective.' },
+              reasoning: { type: Type.STRING, description: 'Brief objective justification for the score.' },
+              strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: '1-4 exact skills/experience that MATCH the spec.' },
+              gaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: '0-3 required/preferred items the candidate is missing.' },
             },
             required: ['score', 'reasoning', 'strengths', 'gaps'],
           },
