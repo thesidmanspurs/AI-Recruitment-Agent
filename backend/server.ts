@@ -23,6 +23,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const frontendRoot = path.resolve(__dirname, '../frontend');
 
+// Safety net: on Node 22 an unhandled promise rejection (or uncaught
+// exception) terminates the process by default. A background task like the
+// inbox poller throwing must NOT take the whole server down — log it and
+// keep serving. Per-request errors are still handled by errorHandler.
+process.on('unhandledRejection', reason => {
+  console.error('[unhandledRejection]', reason instanceof Error ? reason.stack ?? reason.message : reason);
+});
+process.on('uncaughtException', err => {
+  console.error('[uncaughtException]', err instanceof Error ? err.stack ?? err.message : err);
+});
+
 const app = express();
 
 app.use(express.json());

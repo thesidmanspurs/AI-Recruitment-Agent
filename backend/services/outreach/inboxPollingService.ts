@@ -184,19 +184,19 @@ export const inboxPollingService = {
   start(): void {
     if (pollTimer || !isConfigured()) return;
     console.log('[Inbox poll] starting (every 5 min)');
-    // Fire once shortly after start so the first poll runs without
-    // waiting the full interval.
-    setTimeout(() => {
-      if (!isPolling) {
-        isPolling = true;
-        pollOnce().finally(() => { isPolling = false; });
-      }
-    }, 15_000);
-    pollTimer = setInterval(() => {
-      if (isPolling) return; // skip if previous run still in flight
+    // Every run is fully guarded: .catch() ensures a rejected pollOnce can
+    // NEVER become an unhandled rejection (which would crash the process on
+    // Node 22). The .finally() only resets the in-flight flag.
+    const runGuarded = () => {
+      if (isPolling) return;
       isPolling = true;
-      pollOnce().finally(() => { isPolling = false; });
-    }, POLL_INTERVAL_MS);
+      Promise.resolve()
+        .then(() => pollOnce())
+        .catch(err => console.warn('[Inbox poll] run error:', err instanceof Error ? err.message : err))
+        .finally(() => { isPolling = false; });
+    };
+    setTimeout(runGuarded, 15_000);
+    pollTimer = setInterval(runGuarded, POLL_INTERVAL_MS);
   },
 
   stop(): void {
