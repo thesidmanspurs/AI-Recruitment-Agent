@@ -191,6 +191,10 @@ interface CandidateTableProps {
   onSendOutreach?: (candidateId: string) => Promise<void> | void;
   /** Manual reply confirmation (until we have real IMAP/webhook tracking). */
   onMarkReplied?: (candidateId: string) => Promise<void> | void;
+  /** Bulk-enrich the selected (un-enriched) candidate ids — spends credits. */
+  onEnrichSelected?: (candidateIds: string[]) => Promise<void> | void;
+  /** True while a bulk enrich is in flight. */
+  enrichingSelected?: boolean;
 }
 
 export function CandidateTable({
@@ -202,7 +206,16 @@ export function CandidateTable({
   onEnrich,
   onSendOutreach,
   onMarkReplied,
+  onEnrichSelected,
+  enrichingSelected = false,
 }: CandidateTableProps) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleSelect = (id: string) =>
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   const awaitingHas = (id: string) =>
     awaitingPhoneIds instanceof Map
       ? awaitingPhoneIds.has(id)
@@ -297,6 +310,38 @@ export function CandidateTable({
         </div>
       </div>
 
+      {/* Bulk-enrich bar — appears when un-enriched candidates are selected */}
+      {selected.size > 0 && (
+        <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-indigo-50 border-b border-indigo-100">
+          <span className="text-xs font-medium text-indigo-900">
+            {selected.size} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-xs font-medium text-gray-600 hover:text-gray-800 px-2 py-1.5"
+            >
+              Clear
+            </button>
+            <button
+              onClick={async () => {
+                const ids = [...selected];
+                await onEnrichSelected?.(ids);
+                setSelected(new Set());
+              }}
+              disabled={enrichingSelected}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            >
+              {enrichingSelected ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Revealing…</>
+              ) : (
+                <><Mail className="w-3.5 h-3.5" /> Get email ({selected.size} credit{selected.size === 1 ? '' : 's'})</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Scrollable table — native horizontal scroll when min-width exceeds container */}
       <div className="overflow-x-auto">
         <table className="w-full table-fixed">
@@ -353,6 +398,9 @@ export function CandidateTable({
                   isEnriching: enrichingId === candidate.id,
                   isSendingOutreach: outreachId === candidate.id,
                   isAwaitingPhone: awaitingHas(candidate.id),
+                  isSelected: selected.has(candidate.id),
+                  onToggleSelect: () => toggleSelect(candidate.id),
+                  selectable: !candidate.contact.emailEnriched && candidate.platform === 'LinkedIn',
                 }
               );
             })}
@@ -398,6 +446,9 @@ interface RowActions {
   isEnriching?: boolean;
   isSendingOutreach?: boolean;
   isAwaitingPhone?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+  selectable?: boolean;
 }
 
 function renderExpandableRow(
@@ -415,6 +466,9 @@ function renderExpandableRow(
     isEnriching = false,
     isSendingOutreach = false,
     isAwaitingPhone = false,
+    isSelected = false,
+    onToggleSelect,
+    selectable = false,
   } = actions;
   // "Has actual data" — true only when at least one contact field was found.
   const hasContactData = candidate.contact.emailEnriched || candidate.contact.phoneEnriched;
@@ -446,6 +500,16 @@ function renderExpandableRow(
       </td>
       <td className="px-3 py-3.5">
         <div className="flex items-center gap-3">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onClick={e => e.stopPropagation()}
+              onChange={() => onToggleSelect?.()}
+              title="Select to reveal email"
+              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0"
+            />
+          )}
           <Avatar name={candidate.name} />
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">

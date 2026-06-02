@@ -125,6 +125,23 @@ export function useCampaigns() {
     }
   }, [refreshCampaigns]);
 
+  const [enrichingSelected, setEnrichingSelected] = useState(false);
+  const enrichSelected = useCallback(async (candidateIds: string[]): Promise<{ enriched: number; creditsExhausted: boolean }> => {
+    if (!activeId) return { enriched: 0, creditsExhausted: false };
+    setEnrichingSelected(true);
+    setError(null);
+    try {
+      const res = await campaignApi.enrichSelected(activeId, candidateIds);
+      setCandidates(res.candidates);
+      return { enriched: res.enriched, creditsExhausted: res.creditsExhausted };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Enrichment failed.');
+      throw err;
+    } finally {
+      setEnrichingSelected(false);
+    }
+  }, [activeId]);
+
   const [rescoring, setRescoring] = useState(false);
   const rescoreCandidates = useCallback(async (): Promise<number> => {
     if (!activeId) return 0;
@@ -391,6 +408,8 @@ export function useCampaigns() {
     reloadCandidates,
     rescoreCandidates,
     rescoring,
+    enrichSelected,
+    enrichingSelected,
     markReplied,
     outreachId,
     alerts,

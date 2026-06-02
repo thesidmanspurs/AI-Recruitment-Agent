@@ -185,6 +185,16 @@ export const campaignApi = {
     );
   },
 
+  enrichSelected(campaignId: string, candidateIds: string[]) {
+    return apiClient.post<{
+      success: boolean;
+      enriched: number;
+      creditsExhausted: boolean;
+      skipped: Array<{ id: string; reason: string }>;
+      candidates: CandidateDto[];
+    }>(`/campaigns/${campaignId}/candidates/enrich-selected`, { candidateIds });
+  },
+
   listCandidates(campaignId: string) {
     return apiClient.get<{ success: boolean; data: CandidateDto[] }>(
       `/campaigns/${campaignId}/candidates`

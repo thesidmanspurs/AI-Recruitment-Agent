@@ -67,6 +67,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
     reloadCandidates,
     rescoreCandidates,
     rescoring,
+    enrichSelected,
+    enrichingSelected,
     markReplied,
     outreachId,
     alerts,
@@ -644,6 +646,21 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                   threshold={minScore}
                   enrichingId={enrichingId}
                   awaitingPhoneIds={awaitingPhoneIds}
+                  enrichingSelected={enrichingSelected}
+                  onEnrichSelected={async (ids) => {
+                    try {
+                      const r = await enrichSelected(ids);
+                      toast.push({
+                        title: r.creditsExhausted ? 'Some emails revealed' : 'Emails revealed',
+                        body: r.creditsExhausted
+                          ? `Revealed ${r.enriched}, then Apollo credits ran out.`
+                          : `Revealed email for ${r.enriched} candidate${r.enriched === 1 ? '' : 's'}.`,
+                        tone: r.creditsExhausted ? 'warning' : 'success',
+                      });
+                    } catch (err) {
+                      toast.push({ title: 'Get email failed', body: err instanceof Error ? err.message : String(err), tone: 'error' });
+                    }
+                  }}
                   outreachId={outreachId}
                   onEnrich={async (candidateId, opts) => {
                     try {

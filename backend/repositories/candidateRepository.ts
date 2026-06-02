@@ -18,7 +18,8 @@ export type CreateCandidateInput = {
 };
 
 export type UpdateCandidateInput = {
-  email?: string;
+  name?: string;
+  email?: string | null;
   phone?: string | null;
   location?: string;
   linkedinUrl?: string;

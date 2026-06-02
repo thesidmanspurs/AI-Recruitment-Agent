@@ -17,6 +17,7 @@ router.delete('/:id', jobSpecController.deleteCampaign);
 router.post('/:campaignId/candidates/source', candidateController.sourceCandidates);
 router.post('/:campaignId/candidates/from-linkedin', candidateController.addFromLinkedIn);
 router.post('/:campaignId/candidates/rescore', candidateController.rescoreCandidates);
+router.post('/:campaignId/candidates/enrich-selected', candidateController.enrichSelected);
 router.delete('/:campaignId/candidates', candidateController.resetCandidates);
 router.get('/:campaignId/candidates', candidateController.listCandidates);
 router.get('/:campaignId/candidates/approved', candidateController.getApprovedQueue);

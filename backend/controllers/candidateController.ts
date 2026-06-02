@@ -88,191 +88,56 @@ export const candidateController = {
       }
 
       const searchHits = searchResult?.hits ?? [];
+      const apolloCreditsExhausted = false; // Search step doesn't spend match credits
 
-      // Step 2: chain Match-by-id for each hit — the unlock on Basic.
-      // Search alone gives us first_name + obfuscated last_name + id; Match
-      // by id returns the FULL verified record. 1 Apollo credit per match.
-      // Run in parallel with concurrency cap to respect rate limits.
-      let apolloCreditsExhausted = false;
-      const enrichments = await Promise.all(
-        searchHits.map(h =>
-          apolloService
-            .enrichById(h.id)
-            .catch(err => {
-              const msg = err instanceof Error ? err.message : String(err);
-              if (/insufficient credits|lead credits|upgrade your plan/i.test(msg)) {
-                apolloCreditsExhausted = true;
-              }
-              console.warn(`[Apollo] match-by-id failed for ${h.id}:`, msg);
-              return { found: false } as Awaited<ReturnType<typeof apolloService.enrichById>>;
-            })
-        )
-      );
+      // ── Search-only sourcing (NO Apollo Match) ────────────────────────
+      // We do NOT call Match-by-id here, so sourcing spends no lead credits
+      // and fetches no email/phone. We persist what Search gives: a masked
+      // name (first name + obfuscated surname with "?"→"•"), title, company,
+      // location, linkedin_url, and the Apollo person id (so the user can
+      // later enrich the ones they pick). Real name + email arrive only when
+      // the recruiter selects candidates and clicks "Get email".
+      const maskSurname = (s?: string | null): string =>
+        (s ?? '').replace(/\?/g, '•').trim();
 
-      // Pair each Match result with its Search source so we can fall back
-      // to Search-only data (first_name, organization) when Match returns
-      // nothing — still a real person, just unenriched.
-      type EnrichmentRow = (typeof enrichments)[number];
-      const paired: Array<{ search: typeof searchHits[number]; match: EnrichmentRow }> =
-        searchHits.map((s, i) => ({ search: s, match: enrichments[i] }));
+      // searchMeta keeps the per-candidate Apollo id / linkedin / location so
+      // we can attach them after persistence (keyed by the display name).
+      const searchMeta = new Map<string, { apolloId?: string; linkedinUrl?: string; location?: string }>();
 
-      // ── Step 2.5: Gemini + Google Search title verification ───────────
-      // For every Apollo row where employment_history did NOT confirm the
-      // current role, run a grounded Google-search query so Gemini can
-      // verify the title against the candidate's public web presence
-      // (LinkedIn snippets, company sites). Either confirms Apollo, replaces
-      // the title with the real one Gemini found, or marks the row to be
-      // dropped when no signal can be obtained. ~$0.035 per call, only
-      // invoked on the subset Apollo couldn't auto-verify, max parallelism
-      // capped at 6 so we don't melt Gemini's rate limit.
-      const needsVerify = paired.filter(
-        ({ match }) => match.found && match.name && !match.isCurrentRole
-      );
-      const verifications = new Map<string, Awaited<ReturnType<typeof geminiService.verifyCurrentRole>>>();
-      let verifiedConfirmed = 0;
-      let verifiedReplaced = 0;
-      let verifiedDropped = 0;
-      if (needsVerify.length > 0 && geminiService.isAvailable()) {
-        // Process in batches of 6 in parallel.
-        const BATCH = 6;
-        for (let i = 0; i < needsVerify.length; i += BATCH) {
-          const slice = needsVerify.slice(i, i + BATCH);
-          await Promise.all(
-            slice.map(async ({ match }) => {
-              if (!match.found || !match.name) return;
-              try {
-                const v = await geminiService.verifyCurrentRole({
-                  candidateName: match.name,
-                  apolloTitle: match.title ?? 'Unknown',
-                  apolloCompany: match.company ?? 'Unknown',
-                  linkedinUrl: match.linkedinUrl,
-                  email: match.email,
-                  location: match.location,
-                });
-                verifications.set(match.name.toLowerCase(), v);
-                if (v.verdict === 'confirmed' && v.confidence !== 'low') {
-                  verifiedConfirmed++;
-                } else if (
-                  v.verdict === 'mismatch' &&
-                  v.confidence !== 'low' &&
-                  v.suggestedTitle
-                ) {
-                  verifiedReplaced++;
-                } else {
-                  verifiedDropped++;
-                }
-              } catch (err) {
-                console.warn('[Gemini verify] failed:', err instanceof Error ? err.message : err);
-              }
-            })
-          );
-        }
-        await campaignRepository.addLog(campaignId, {
-          message:
-            `Gemini grounded-search verification on ${needsVerify.length} Apollo row(s): ` +
-            `${verifiedConfirmed} confirmed, ${verifiedReplaced} title corrected, ${verifiedDropped} dropped (no signal).`,
-          type: 'INFO',
-        });
-      }
-
-      // STRICT verify-before-showing gate. After Apollo + Gemini verification,
-      // drop every row that still has no confirmation:
-      //   - Apollo redacted the name ("?"), OR
-      //   - Apollo employment_history said "current"     → keep
-      //   - Gemini grounded-search said "confirmed"      → keep (apply Apollo title)
-      //   - Gemini grounded-search said "mismatch+title" → keep (apply Gemini's title)
-      //   - everything else                              → drop
-      const enrichmentByName = new Map<string, EnrichmentRow>();
-      let droppedMasked = 0;
-      let droppedUnverified = 0;
-      const rawProfiles = paired
-        .map(({ search, match }) => {
-          // Skip Apollo-redacted rows (last_name_obfuscated with "?" masks).
-          const isMaskedByApollo = !!(
-            search.last_name_obfuscated && search.last_name_obfuscated.includes('?')
-          );
-          if (isMaskedByApollo && !(match.found && match.name)) {
-            droppedMasked++;
-            return null;
-          }
-
-          // Resolve the final title + company by combining Apollo + Gemini
-          // verification. Three paths to "keep this row":
-          //   1. Apollo's employment_history said current → trust Apollo.
-          //   2. Gemini grounded-search verdict=confirmed → trust Apollo.
-          //   3. Gemini grounded-search verdict=mismatch with a suggested
-          //      title → keep but REPLACE Apollo's title/company with what
-          //      Gemini found.
-          // Anything else (uncertain, low confidence, no Gemini available)
-          // gets dropped — better to show nothing than a wrong title.
-          let finalTitle = match.title;
-          let finalCompany = match.company;
-          let titleVerifiedBy: 'apollo' | 'gemini' | null = null;
-
-          if (match.isCurrentRole) {
-            titleVerifiedBy = 'apollo';
-          } else if (match.found && match.name) {
-            const v = verifications.get(match.name.toLowerCase());
-            if (v && v.verdict === 'confirmed' && v.confidence !== 'low') {
-              titleVerifiedBy = 'apollo'; // Apollo title was right, Gemini confirmed
-            } else if (
-              v &&
-              v.verdict === 'mismatch' &&
-              v.confidence !== 'low' &&
-              v.suggestedTitle
-            ) {
-              finalTitle = v.suggestedTitle;
-              if (v.suggestedCompany) finalCompany = v.suggestedCompany;
-              titleVerifiedBy = 'gemini';
-            }
-          }
-
-          if (!titleVerifiedBy) {
-            droppedUnverified++;
-            return null;
-          }
-
-          const name = match.found && match.name
-            ? match.name
-            : `${search.first_name ?? ''}${search.last_name_obfuscated ? ' ' + search.last_name_obfuscated : ''}`.trim();
+      const rawProfiles = searchHits
+        .map(search => {
+          const first = (search.first_name ?? '').trim();
+          const maskedLast = maskSurname(search.last_name_obfuscated);
+          // Display name: "First •••" style. Keep the obfuscated surname (it
+          // differs per person, preserving uniqueness for the DB) but masked.
+          const name = [first, maskedLast].filter(Boolean).join(' ').trim()
+            || (search.name ?? '').replace(/\?/g, '•').trim();
           if (!name) return null;
-          enrichmentByName.set(name.toLowerCase(), match);
-          const title = finalTitle ?? search.title ?? 'Unknown';
-          const company = finalCompany ?? search.organization?.name ?? 'Independent';
+          const title = search.title ?? search.headline ?? 'Unknown';
+          const company = search.organization?.name ?? 'Independent';
+          const location = [search.city, search.state, search.country].filter(Boolean).join(', ') || undefined;
+          searchMeta.set(name.toLowerCase(), {
+            apolloId: search.id,
+            linkedinUrl: search.linkedin_url ?? undefined,
+            location,
+          });
           return {
             name,
             currentTitle: title,
             company,
-            bio: `${title}${company ? ' at ' + company : ''}`.trim() ||
-              'Apollo-verified candidate.',
+            bio: `${title}${company ? ' at ' + company : ''}`.trim() || 'Sourced from LinkedIn via Apollo.',
             openToWork: false,
             platform: 'LinkedIn' as const,
-            // Placeholder — replaced by a real Gemini fit score below.
-            matchScore: 6,
-            matchExplanation:
-              titleVerifiedBy === 'gemini'
-                ? `Title corrected by Gemini grounded-search; Apollo had "${match.title ?? 'unknown'}".`
-                : match.email
-                  ? `Apollo Match verified email on file (${match.email}).`
-                  : 'Apollo Match resolved profile and current role confirmed.',
+            matchScore: 6, // replaced by Gemini fit score below
+            matchExplanation: 'Sourced from Apollo Search. Select to reveal email.',
             skills: [],
-            strengths: [
-              titleVerifiedBy === 'apollo' ? 'Current role confirmed by Apollo' : '',
-              titleVerifiedBy === 'gemini' ? 'Current role verified via Google search' : '',
-              match.email ? 'Verified email on file' : '',
-            ].filter(Boolean),
-            gaps: [
-              match.email ? '' : 'Email reveal needed (Apollo plan-gated)',
-            ].filter(Boolean),
+            strengths: [] as string[],
+            gaps: ['Email not yet revealed — select and Get email'] as string[],
           };
         })
         .filter((p): p is NonNullable<typeof p> => p !== null);
 
-      // ── Real Gemini fit scoring ───────────────────────────────────────
-      // Replaces the old hardcoded 9.5. Each kept candidate is scored 0-10
-      // against the campaign's title/keywords/requirements. Batched (6 at a
-      // time) to respect the rate limit. Falls back to the placeholder score
-      // if Gemini is unavailable.
+      // ── Gemini fit scoring on the Search data (title/company vs the spec) ─
       if (geminiService.isAvailable() && rawProfiles.length > 0) {
         const BATCH = 6;
         for (let i = 0; i < rawProfiles.length; i += BATCH) {
@@ -292,21 +157,11 @@ export const candidateController = {
               if (!fit) return;
               p.matchScore = fit.score;
               p.matchExplanation = fit.reasoning;
-              // Merge Gemini's fit strengths/gaps with the data-quality ones.
-              p.strengths = [...fit.strengths, ...p.strengths].slice(0, 6);
-              p.gaps = [...fit.gaps, ...p.gaps].slice(0, 4);
+              p.strengths = fit.strengths.slice(0, 6);
+              p.gaps = [...fit.gaps, 'Email not yet revealed — select and Get email'].slice(0, 4);
             })
           );
         }
-      }
-
-      if (droppedMasked > 0 || droppedUnverified > 0) {
-        await campaignRepository.addLog(campaignId, {
-          message:
-            `Strict-title filter dropped ${droppedMasked + droppedUnverified} Apollo row(s): ` +
-            `${droppedMasked} redacted name, ${droppedUnverified} role couldn't be verified by Apollo or Gemini grounded search.`,
-          type: 'INFO',
-        });
       }
 
       // Reddit sourcing — runs in parallel intent (we already have the Apollo
@@ -374,28 +229,19 @@ export const candidateController = {
         fresh.map(p => ({ ...p, campaignId }))
       );
 
-      // Attach Match-by-id enrichment to each freshly-persisted candidate —
-      // since Match already ran during sourcing, the rows land in the UI
-      // already ENRICHED (email + linkedin + location filled in). Saves the
-      // recruiter a click and a credit.
+      // Attach Search metadata (Apollo id, linkedin, location) so the rows
+      // can be enriched later. NO email/phone yet — these stay SOURCED until
+      // the recruiter selects them and clicks "Get email" (Apollo Match).
       for (const c of candidates) {
-        const snap = enrichmentByName.get(c.name.toLowerCase());
-        if (!snap || !snap.found) continue;
+        const meta = searchMeta.get(c.name.toLowerCase());
+        if (!meta) continue;
         await candidateRepository.update(c.id, {
-          email: snap.email ?? null,
-          phone: snap.phone ?? null,
-          location: snap.location ?? null,
-          linkedinUrl: snap.linkedinUrl ?? null,
-          apolloId: snap.apolloId ?? null,
-          apolloUpdatedAt: snap.apolloUpdatedAt ? new Date(snap.apolloUpdatedAt) : null,
-          currentRoleSince: snap.currentRoleSince ? new Date(snap.currentRoleSince) : null,
-          isCurrentRole: !!snap.isCurrentRole,
-          emailEnriched: !!snap.email,
-          phoneEnriched: !!snap.phone,
-          outreachStatus: 'ENRICHED',
+          location: meta.location ?? null,
+          linkedinUrl: meta.linkedinUrl ?? null,
+          apolloId: meta.apolloId ?? null,
         });
       }
-      // Re-read so the response reflects the enriched fields
+      // Re-read so the response reflects the attached fields
       const enrichedCandidates = await candidateRepository.findAllByCampaign(campaignId);
 
       await campaignRepository.addLog(campaignId, {
@@ -426,7 +272,7 @@ export const candidateController = {
         simulationReason: undefined,
         source: searchHits.length > 0 ? 'apollo+reddit' : 'reddit',
         sources: {
-          apollo: { count: enrichmentByName.size, error: apolloErrorMsg },
+          apollo: { count: searchMeta.size, error: apolloErrorMsg },
           reddit: { count: redditProfiles.length },
         },
         usage,
@@ -511,6 +357,83 @@ export const candidateController = {
       });
       const fresh = await candidateRepository.findAllByCampaign(campaignId);
       res.json({ success: true, rescored, candidates: fresh });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /api/campaigns/:campaignId/candidates/enrich-selected
+  // body: { candidateIds: string[] }
+  // Spends Apollo Match credits ONLY on the selected candidates to reveal
+  // their real name + email (and the data-freshness fields). This is the
+  // on-demand enrichment step in the new flow: source cheaply, then the
+  // recruiter picks who's worth a credit.
+  async enrichSelected(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { campaignId } = req.params;
+      const userId = req.user!.id;
+      const { candidateIds } = req.body as { candidateIds?: string[] };
+      if (!Array.isArray(candidateIds) || candidateIds.length === 0) {
+        return next(createError('candidateIds (string[]) is required.', 400));
+      }
+      const campaign = await campaignRepository.findById(campaignId, userId);
+      if (!campaign) return next(createError('Campaign not found.', 404));
+      if (!apolloService.isAvailable()) {
+        return next(createError('Apollo is not configured on the server.', 503));
+      }
+      await usageService.assertWithinLimit(userId);
+
+      const all = await candidateRepository.findAllByCampaign(campaignId);
+      const selected = all.filter(c => candidateIds.includes(c.id));
+
+      let enriched = 0;
+      let creditsExhausted = false;
+      const skipped: Array<{ id: string; reason: string }> = [];
+
+      for (const c of selected) {
+        if (c.emailEnriched) { skipped.push({ id: c.id, reason: 'Already enriched.' }); continue; }
+        if (!c.apolloId) { skipped.push({ id: c.id, reason: 'No Apollo id — cannot enrich.' }); continue; }
+        try {
+          const m = await apolloService.enrichById(c.apolloId);
+          if (!m.found) { skipped.push({ id: c.id, reason: 'Apollo could not resolve.' }); continue; }
+          await candidateRepository.update(c.id, {
+            // Reveal the real full name (was masked at sourcing).
+            name: m.name && m.name.trim() ? m.name.trim() : undefined,
+            email: m.email ?? null,
+            location: m.location ?? c.location ?? null,
+            linkedinUrl: m.linkedinUrl ?? c.linkedinUrl ?? null,
+            apolloUpdatedAt: m.apolloUpdatedAt ? new Date(m.apolloUpdatedAt) : null,
+            currentRoleSince: m.currentRoleSince ? new Date(m.currentRoleSince) : null,
+            isCurrentRole: !!m.isCurrentRole,
+            emailEnriched: !!m.email,
+            outreachStatus: 'ENRICHED',
+          });
+          enriched++;
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (/insufficient credits|lead credits|upgrade your plan/i.test(msg)) {
+            creditsExhausted = true;
+            break;
+          }
+          skipped.push({ id: c.id, reason: msg });
+        }
+      }
+
+      if (enriched > 0) await usageService.record(userId);
+      const fresh = await candidateRepository.findAllByCampaign(campaignId);
+      await campaignRepository.addLog(campaignId, {
+        message: `Enriched ${enriched} selected candidate(s) via Apollo Match.` +
+          (creditsExhausted ? ' Stopped early — Apollo credits exhausted.' : ''),
+        type: 'ENRICH',
+      });
+
+      if (creditsExhausted && enriched === 0) {
+        return next(createError(
+          'Your Apollo lead credits are used up — could not reveal email. Credits reset on your Apollo billing cycle.',
+          402
+        ));
+      }
+      res.json({ success: true, enriched, creditsExhausted, skipped, candidates: fresh });
     } catch (err) {
       next(err);
     }
