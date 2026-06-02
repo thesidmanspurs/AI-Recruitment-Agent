@@ -1,69 +1,160 @@
-import nodemailer, { type Transporter } from 'nodemailer';
+import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { env } from '../../config/env.js';
+import { prisma } from '../../config/database.js';
+import { decryptSecret } from '../../utils/crypto.js';
 
 export interface SendEmailParams {
   to: string;
   subject: string;
   body: string;
-  replyTo?: string;
 }
 
 export interface SendResult {
   success: boolean;
   messageId?: string;
-  /** True when SMTP isn't configured — the email was logged, not sent. */
-  simulated: boolean;
+}
+
+export class EmailNotConfiguredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EmailNotConfiguredError';
+  }
 }
 
 /**
- * Email transport for Phase 5 outreach.
+ * Per-user outreach email. There is NO shared mailbox — every recruiter
+ * sends from their own Gmail (App Password / SMTP) or Resend (API + verified
+ * domain). Outreach is blocked until the user has verified their config via
+ * a successful test send.
  *
- * If SMTP credentials are present we open a single persistent Nodemailer
- * connection (`createTransport` is reused across calls — Nodemailer pools).
- * Without creds we run in simulation mode: log the would-be email and return
- * `{ success: true, simulated: true }`. The controller treats either as a
- * successful dispatch from the campaign's perspective — the difference only
- * matters for the audit trail / banner.
+ * Credentials are decrypted from the User row at send time and never cached
+ * in plaintext beyond the lifetime of the call.
  */
 
-let _transport: Transporter | null = null;
+type UserEmailConfig = {
+  emailProvider: 'GMAIL' | 'RESEND' | null;
+  emailFromAddress: string | null;
+  emailFromName: string | null;
+  gmailAppPasswordEnc: string | null;
+  resendApiKeyEnc: string | null;
+};
 
-function getTransport(): Transporter | null {
-  if (_transport) return _transport;
-  const isReal = (v: string) => !!v && v !== 'PLACEHOLDER';
-  if (!isReal(env.SMTP_HOST) || !isReal(env.SMTP_USER) || !isReal(env.SMTP_PASS)) return null;
-  _transport = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_PORT === 465, // SSL/TLS on 465; STARTTLS on 587 / 25
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+function fromHeader(cfg: UserEmailConfig): string {
+  const addr = cfg.emailFromAddress ?? '';
+  return cfg.emailFromName ? `${cfg.emailFromName} <${addr}>` : addr;
+}
+
+async function sendViaGmail(cfg: UserEmailConfig, params: SendEmailParams): Promise<SendResult> {
+  if (!cfg.gmailAppPasswordEnc || !cfg.emailFromAddress) {
+    throw new EmailNotConfiguredError('Gmail is selected but not fully configured.');
+  }
+  const pass = decryptSecret(cfg.gmailAppPasswordEnc);
+  // A fresh transport per send keeps user creds isolated (no shared pool).
+  const transport = nodemailer.createTransport({
+    host: env.GMAIL_SMTP_HOST,
+    port: env.GMAIL_SMTP_PORT,
+    secure: true, // 465 = implicit TLS
+    auth: { user: cfg.emailFromAddress, pass },
   });
-  return _transport;
+  const info = await transport.sendMail({
+    from: fromHeader(cfg),
+    to: params.to,
+    subject: params.subject,
+    text: params.body,
+  });
+  return { success: true, messageId: info.messageId };
+}
+
+async function sendViaResend(cfg: UserEmailConfig, params: SendEmailParams): Promise<SendResult> {
+  if (!cfg.resendApiKeyEnc || !cfg.emailFromAddress) {
+    throw new EmailNotConfiguredError('Resend is selected but not fully configured.');
+  }
+  const apiKey = decryptSecret(cfg.resendApiKeyEnc);
+  const resend = new Resend(apiKey);
+  const { data, error } = await resend.emails.send({
+    from: fromHeader(cfg),
+    to: params.to,
+    subject: params.subject,
+    text: params.body,
+  });
+  if (error) {
+    throw new Error(`Resend error: ${error.message ?? JSON.stringify(error)}`);
+  }
+  return { success: true, messageId: data?.id };
 }
 
 export const emailService = {
-  isAvailable(): boolean {
-    // Treat the literal "PLACEHOLDER" same as empty so cloudbuild can ship
-    // before real SMTP credentials are provisioned.
-    const real = (v: string) => !!v && v !== 'PLACEHOLDER';
-    return real(env.SMTP_HOST) && real(env.SMTP_USER) && real(env.SMTP_PASS);
+  /** Whether a given user can send outreach (config present + verified). */
+  async canUserSend(userId: string): Promise<boolean> {
+    const u = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailProvider: true, emailVerifiedAt: true },
+    });
+    return !!(u?.emailProvider && u.emailVerifiedAt);
   },
 
-  async sendEmail(params: SendEmailParams): Promise<SendResult> {
-    const transport = getTransport();
-    if (!transport) {
-      console.warn(`[Email simulated] -> ${params.to} | ${params.subject}`);
-      return { success: true, simulated: true };
-    }
-
-    const info = await transport.sendMail({
-      from: env.SMTP_FROM,
-      to: params.to,
-      subject: params.subject,
-      text: params.body,
-      replyTo: params.replyTo,
+  /**
+   * Send using a user's configured provider. Throws EmailNotConfiguredError
+   * if the user hasn't set up + verified an email — callers surface this as
+   * a 400 so the recruiter is told to configure their email first.
+   */
+  async sendForUser(userId: string, params: SendEmailParams): Promise<SendResult> {
+    const cfg = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        emailProvider: true,
+        emailFromAddress: true,
+        emailFromName: true,
+        gmailAppPasswordEnc: true,
+        resendApiKeyEnc: true,
+        emailVerifiedAt: true,
+      },
     });
+    if (!cfg || !cfg.emailProvider) {
+      throw new EmailNotConfiguredError(
+        'You have not configured your outreach email yet. Open Email Settings to set up Gmail or Resend.'
+      );
+    }
+    if (!cfg.emailVerifiedAt) {
+      throw new EmailNotConfiguredError(
+        'Your email is configured but not yet verified. Send a test email from Email Settings first.'
+      );
+    }
+    return cfg.emailProvider === 'RESEND'
+      ? sendViaResend(cfg, params)
+      : sendViaGmail(cfg, params);
+  },
 
-    return { success: true, simulated: false, messageId: info.messageId };
+  /**
+   * Test send used by the verify flow — same as sendForUser but works with
+   * a not-yet-verified config (the whole point is to verify it). Accepts the
+   * raw (already-decrypted-on-input is not needed; we re-read from DB) config.
+   */
+  async testSendForUser(userId: string, to: string): Promise<SendResult> {
+    const cfg = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        emailProvider: true,
+        emailFromAddress: true,
+        emailFromName: true,
+        gmailAppPasswordEnc: true,
+        resendApiKeyEnc: true,
+      },
+    });
+    if (!cfg || !cfg.emailProvider) {
+      throw new EmailNotConfiguredError('No email provider configured to test.');
+    }
+    const params: SendEmailParams = {
+      to,
+      subject: 'ARIES — test email ✓',
+      body:
+        'This is a test from ARIES confirming your outreach email is configured correctly.\n\n' +
+        'If you received this, you can now send candidate outreach from your own address.\n\n' +
+        '— ARIES',
+    };
+    return cfg.emailProvider === 'RESEND'
+      ? sendViaResend(cfg, params)
+      : sendViaGmail(cfg, params);
   },
 };

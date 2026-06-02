@@ -14,6 +14,7 @@ import {
   Send,
   Bell,
   Globe,
+  Mail,
 } from 'lucide-react';
 import { CandidateTable } from '../components/dashboard/CandidateTable';
 import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
@@ -23,6 +24,7 @@ import { LocationFilter } from '../components/dashboard/LocationFilter';
 import { ScoreFilter } from '../components/dashboard/ScoreFilter';
 import { OutreachEditorModal } from '../components/dashboard/OutreachEditorModal';
 import { OutreachActivityPanel } from '../components/dashboard/OutreachActivityPanel';
+import { EmailSettingsModal } from '../components/settings/EmailSettingsModal';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -78,6 +80,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   const [showDelete, setShowDelete] = useState(false);
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [sourceLocations, setSourceLocations] = useState<string[]>([]);
   const [minScore, setMinScore] = useState<number>(9.0);
   const [outreachEditorId, setOutreachEditorId] = useState<string | null>(null);
@@ -238,6 +241,10 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
         onClose={() => setShowGuide(false)}
         liveStatuses={stepStatuses}
       />
+      <EmailSettingsModal
+        open={showEmailSettings}
+        onClose={() => setShowEmailSettings(false)}
+      />
       <OutreachEditorModal
         open={outreachEditorId !== null}
         campaignId={activeId ?? ''}
@@ -304,6 +311,14 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                   <p className="text-[10px] text-gray-500 mt-0.5 truncate">{user.email}</p>
                 </div>
               </div>
+              <button
+                onClick={() => setShowEmailSettings(true)}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                title="Configure the email you send outreach from"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                Email
+              </button>
               {user.role === 'ADMIN' && onOpenAdmin && (
                 <button
                   onClick={onOpenAdmin}

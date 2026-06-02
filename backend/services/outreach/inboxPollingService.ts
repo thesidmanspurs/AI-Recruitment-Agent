@@ -1,6 +1,7 @@
 import { ImapFlow } from 'imapflow';
 import { env } from '../../config/env.js';
 import { prisma } from '../../config/database.js';
+import { decryptSecret } from '../../utils/crypto.js';
 
 /**
  * Inbox polling — connects to Gmail via IMAP using the existing SMTP
@@ -33,8 +34,9 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const LOOKBACK_DAYS = 14; // only scan inbox messages from the last 14 days
 
 function isConfigured(): boolean {
-  const real = (v: string) => !!v && v !== 'PLACEHOLDER';
-  return real(env.SMTP_USER) && real(env.SMTP_PASS);
+  // The poller runs whenever encryption is available; it discovers Gmail
+  // users at poll time. Resend users have no inbox to poll.
+  return !!env.ENCRYPTION_KEY;
 }
 
 /** Strip HTML / quoted-reply blocks for a clean preview. */
@@ -46,20 +48,29 @@ function cleanPreview(raw: string): string {
   return s.slice(0, 400);
 }
 
-async function pollOnce(): Promise<{ scanned: number; matched: number }> {
-  if (!isConfigured()) return { scanned: 0, matched: 0 };
+/** Poll one Gmail user's inbox for replies to THEIR campaigns' candidates. */
+async function pollUser(user: {
+  id: string;
+  emailFromAddress: string;
+  gmailAppPasswordEnc: string;
+}): Promise<{ scanned: number; matched: number }> {
+  let pass: string;
+  try {
+    pass = decryptSecret(user.gmailAppPasswordEnc);
+  } catch {
+    return { scanned: 0, matched: 0 };
+  }
 
   const client = new ImapFlow({
-    host: 'imap.gmail.com',
+    host: env.GMAIL_IMAP_HOST,
     port: 993,
     secure: true,
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+    auth: { user: user.emailFromAddress, pass },
     logger: false,
   });
 
   let scanned = 0;
   let matched = 0;
-
   try {
     await client.connect();
     const lock = await client.getMailboxLock('INBOX');
@@ -68,44 +79,35 @@ async function pollOnce(): Promise<{ scanned: number; matched: number }> {
       const uids = await client.search({ since });
       if (!uids || uids.length === 0) return { scanned: 0, matched: 0 };
 
-      // Fetch only envelopes (headers) first — cheap. Bodies pulled
-      // on a per-match basis below.
       for await (const msg of client.fetch(uids, { envelope: true, internalDate: true })) {
         scanned++;
-        const fromList = msg.envelope?.from ?? [];
-        if (fromList.length === 0) continue;
-        const senderEmail = fromList[0]?.address?.toLowerCase().trim();
+        const senderEmail = msg.envelope?.from?.[0]?.address?.toLowerCase().trim();
         if (!senderEmail) continue;
 
-        // Look for a candidate whose email matches and who's already been
-        // contacted. Restricted to OUTREACH_SENT / OPENED / NO_RESPONSE so
-        // we don't flip already-REPLIED rows back and forth.
+        // Match only candidates on THIS user's campaigns — strict tenant
+        // isolation so one recruiter's inbox never flips another's rows.
         const candidate = await prisma.candidate.findFirst({
           where: {
             email: { equals: senderEmail, mode: 'insensitive' },
             outreachStatus: { in: ['OUTREACH_SENT', 'OPENED', 'NO_RESPONSE'] },
             outreachSentAt: { not: null },
+            campaign: { userId: user.id },
           },
           select: { id: true, name: true, campaignId: true, outreachSentAt: true },
         });
         if (!candidate) continue;
 
-        // Skip if the message arrived before we sent the outreach — it's
-        // an older email from the same person, not a reply.
         const messageDate = msg.internalDate ?? new Date();
         if (candidate.outreachSentAt && messageDate < candidate.outreachSentAt) continue;
 
-        // Pull the body for the preview. Prefer text/plain; fall back to
-        // a stripped HTML version.
         let preview = '';
         try {
           const dl = await client.download(String(msg.uid), undefined, { uid: true });
-          const stream = dl.content;
           const chunks: Buffer[] = [];
-          for await (const chunk of stream) chunks.push(chunk as Buffer);
+          for await (const chunk of dl.content) chunks.push(chunk as Buffer);
           preview = cleanPreview(Buffer.concat(chunks).toString('utf8'));
         } catch {
-          /* preview is best-effort */
+          /* preview best-effort */
         }
 
         await prisma.candidate.update({
@@ -132,13 +134,42 @@ async function pollOnce(): Promise<{ scanned: number; matched: number }> {
       lock.release();
     }
   } catch (err) {
-    console.warn('[Inbox poll] failed:', err instanceof Error ? err.message : err);
+    console.warn(`[Inbox poll] user ${user.id} failed:`, err instanceof Error ? err.message : err);
   } finally {
     try { await client.logout(); } catch { /* ignore */ }
   }
+  return { scanned, matched };
+}
+
+async function pollOnce(): Promise<{ scanned: number; matched: number }> {
+  if (!isConfigured()) return { scanned: 0, matched: 0 };
+
+  // Discover every verified Gmail user and poll each one's inbox.
+  const gmailUsers = await prisma.user.findMany({
+    where: {
+      emailProvider: 'GMAIL',
+      emailVerifiedAt: { not: null },
+      gmailAppPasswordEnc: { not: null },
+      emailFromAddress: { not: null },
+    },
+    select: { id: true, emailFromAddress: true, gmailAppPasswordEnc: true },
+  });
+
+  let scanned = 0;
+  let matched = 0;
+  for (const u of gmailUsers) {
+    if (!u.emailFromAddress || !u.gmailAppPasswordEnc) continue;
+    const r = await pollUser({
+      id: u.id,
+      emailFromAddress: u.emailFromAddress,
+      gmailAppPasswordEnc: u.gmailAppPasswordEnc,
+    });
+    scanned += r.scanned;
+    matched += r.matched;
+  }
 
   if (scanned > 0 || matched > 0) {
-    console.log(`[Inbox poll] scanned=${scanned} matched=${matched}`);
+    console.log(`[Inbox poll] users=${gmailUsers.length} scanned=${scanned} matched=${matched}`);
   }
   return { scanned, matched };
 }

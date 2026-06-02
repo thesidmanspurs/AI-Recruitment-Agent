@@ -60,12 +60,14 @@ export const env = {
   REDDIT_CLIENT_SECRET: process.env.REDDIT_CLIENT_SECRET || '',
   REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT || 'aries-sourcing/0.1',
 
-  // Email Outreach
-  SMTP_HOST: process.env.SMTP_HOST || '',
-  SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
-  SMTP_USER: process.env.SMTP_USER || '',
-  SMTP_PASS: process.env.SMTP_PASS || '',
-  SMTP_FROM: process.env.SMTP_FROM || 'recruiter@agent.local',
+  // Email Outreach is now PER-USER (no shared mailbox). Each recruiter
+  // configures their own Gmail App Password or Resend key, encrypted at
+  // rest with ENCRYPTION_KEY. The legacy shared SMTP_* vars are gone.
+  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
+  // Gmail SMTP host/port are fixed for the per-user Gmail provider.
+  GMAIL_SMTP_HOST: 'smtp.gmail.com',
+  GMAIL_SMTP_PORT: 465,
+  GMAIL_IMAP_HOST: 'imap.gmail.com',
 
   // Tracking
   ALERT_THRESHOLD_HOURS: parseInt(process.env.ALERT_THRESHOLD_HOURS || '48', 10),

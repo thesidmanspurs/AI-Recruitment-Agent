@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { apolloService, ApolloError } from '../services/apollo/apolloService.js';
 import { geminiService } from '../services/ai/geminiService.js';
-import { emailService } from '../services/outreach/emailService.js';
+import { emailService, EmailNotConfiguredError } from '../services/outreach/emailService.js';
 import { formatGeminiError } from '../services/ai/geminiErrors.js';
 import { trackingService } from '../services/tracking/trackingService.js';
 import { usageService } from '../services/usage/usageService.js';
@@ -172,12 +172,17 @@ export const outreachController = {
           return next(createError('Candidate has no email yet — enrich first or pick a different channel.', 400));
         }
         try {
-          const r = await emailService.sendEmail({ to: candidate.email, subject, body });
-          sendSimulated = r.simulated;
-          if (r.simulated) sendReason = 'SMTP not configured — outreach logged but not actually delivered.';
+          // Per-user send. Throws EmailNotConfiguredError (→ 400) if the
+          // recruiter hasn't set up + verified their own email.
+          await emailService.sendForUser(req.user!.id, {
+            to: candidate.email,
+            subject,
+            body,
+          });
         } catch (err) {
-          // We don't fall back to mock here; an SMTP error is a real failure
-          // the recruiter should see and retry. Return 502.
+          if (err instanceof EmailNotConfiguredError) {
+            return next(createError(err.message, 400));
+          }
           return next(createError(`Email send failed: ${err instanceof Error ? err.message : String(err)}`, 502));
         }
       } else {

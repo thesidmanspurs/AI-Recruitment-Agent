@@ -27,6 +27,19 @@ model User {
   // Recruiter's email signature. Appended to every outreach body so Gemini
   // never has to invent a closing block. Editable from the outreach modal.
   outreachSignature  String?      @db.Text
+
+  // ── Per-user outreach email config ────────────────────────────────────
+  // Each recruiter sends from their OWN email. No shared mailbox. Outreach
+  // is blocked until emailVerifiedAt is set via a successful test send.
+  emailProvider      EmailProvider?            // GMAIL | RESEND | null (unset)
+  emailFromAddress   String?                   // e.g. "jane@acme.com"
+  emailFromName      String?                   // e.g. "Jane Smith"
+  // Credentials are AES-256-GCM encrypted at rest (see utils/crypto.ts).
+  // Never returned to the client — the API exposes only a "configured" flag.
+  gmailAppPasswordEnc String?     @db.Text     // encrypted Gmail app password
+  resendApiKeyEnc     String?     @db.Text     // encrypted Resend API key
+  emailVerifiedAt    DateTime?                 // last successful test-send
+
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   campaigns          Campaign[]
@@ -38,6 +51,11 @@ model User {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum EmailProvider {
+  GMAIL
+  RESEND
 }
 
 // Singleton key/value table for global settings. Admin-editable.

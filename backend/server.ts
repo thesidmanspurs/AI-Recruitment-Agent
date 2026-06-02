@@ -15,6 +15,7 @@ import usageRoutes from './routes/usageRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
+import emailSettingsRoutes from './routes/emailSettingsRoutes.js';
 import { trackingService } from './services/tracking/trackingService.js';
 import { inboxPollingService } from './services/outreach/inboxPollingService.js';
 
@@ -46,6 +47,7 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/campaigns', authenticate, campaignRoutes);
 app.use('/api/upload', authenticate, uploadRoutes);
 app.use('/api/locations', authenticate, locationRoutes);
+app.use('/api/email-settings', authenticate, emailSettingsRoutes);
 app.use('/api/usage', authenticate, usageRoutes);
 app.use('/api/admin', authenticate, requireAdmin, adminRoutes);
 
