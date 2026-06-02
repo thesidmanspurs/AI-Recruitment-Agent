@@ -93,12 +93,17 @@ export const candidateController = {
       // Search alone gives us first_name + obfuscated last_name + id; Match
       // by id returns the FULL verified record. 1 Apollo credit per match.
       // Run in parallel with concurrency cap to respect rate limits.
+      let apolloCreditsExhausted = false;
       const enrichments = await Promise.all(
         searchHits.map(h =>
           apolloService
             .enrichById(h.id)
             .catch(err => {
-              console.warn(`[Apollo] match-by-id failed for ${h.id}:`, err instanceof Error ? err.message : err);
+              const msg = err instanceof Error ? err.message : String(err);
+              if (/insufficient credits|lead credits|upgrade your plan/i.test(msg)) {
+                apolloCreditsExhausted = true;
+              }
+              console.warn(`[Apollo] match-by-id failed for ${h.id}:`, msg);
               return { found: false } as Awaited<ReturnType<typeof apolloService.enrichById>>;
             })
         )
@@ -332,6 +337,16 @@ export const candidateController = {
       const combinedProfiles = [...rawProfiles, ...redditProfiles];
 
       if (combinedProfiles.length === 0) {
+        if (apolloCreditsExhausted) {
+          return next(
+            createError(
+              'Your Apollo lead credits are used up — Apollo could not unlock any of the ' +
+                'profiles it found. Credits reset on your Apollo billing cycle. In the ' +
+                'meantime, use “Re-score” to re-evaluate existing candidates (no Apollo credits needed).',
+              402
+            )
+          );
+        }
         return next(
           createError(
             'No candidates resolved from either Apollo or Reddit. ' +
