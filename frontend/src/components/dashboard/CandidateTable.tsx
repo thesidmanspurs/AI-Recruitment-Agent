@@ -1,4 +1,4 @@
-import { useState, useMemo, type ReactNode } from 'react';
+import { useState, useMemo, useEffect, type ReactNode } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -213,6 +213,8 @@ export function CandidateTable({
   const [sort, setSort] = useState<SortKey>('matchScore');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const tabCounts = useMemo(() => {
     const approved = candidates.filter(c => c.matchScore >= threshold).length;
@@ -230,13 +232,26 @@ export function CandidateTable({
   }, [candidates, tab, threshold]);
 
   const sorted = useMemo(() => {
+    const newest = (c: Candidate) => (c.createdAt ? new Date(c.createdAt).getTime() : 0);
     return [...filtered].sort((a, b) => {
       const av = a[sort] as unknown as number | string;
       const bv = b[sort] as unknown as number | string;
       const cmp = typeof av === 'number' ? (av as number) - (bv as number) : String(av).localeCompare(String(bv));
-      return sortDir === 'desc' ? -cmp : cmp;
+      if (cmp !== 0) return sortDir === 'desc' ? -cmp : cmp;
+      // Tie-break: newest sourced first, so a fresh batch surfaces at the top.
+      return newest(b) - newest(a);
     });
   }, [filtered, sort, sortDir]);
+
+  // Pagination — 25 rows/page.
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const pageClamped = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => sorted.slice((pageClamped - 1) * PAGE_SIZE, pageClamped * PAGE_SIZE),
+    [sorted, pageClamped]
+  );
+  // Reset to page 1 whenever the filter/tab/sort changes or the data shrinks.
+  useEffect(() => { setPage(1); }, [tab, sort, sortDir, threshold, candidates.length]);
 
   function toggleSort(key: SortKey) {
     if (sort === key) setSortDir(d => (d === 'desc' ? 'asc' : 'desc'));
@@ -322,7 +337,7 @@ export function CandidateTable({
                 </td>
               </tr>
             )}
-            {sorted.flatMap(candidate => {
+            {paged.flatMap(candidate => {
               const expanded = expandedId === candidate.id;
               const below = candidate.matchScore < threshold;
               return renderExpandableRow(
@@ -344,6 +359,34 @@ export function CandidateTable({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination footer — 25 rows/page */}
+      {sorted.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-gray-100 text-sm">
+          <span className="text-gray-500 text-xs">
+            Showing {(pageClamped - 1) * PAGE_SIZE + 1}–{Math.min(pageClamped * PAGE_SIZE, sorted.length)} of {sorted.length}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={pageClamped <= 1}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="px-2 text-xs text-gray-600 tabular-nums">
+              Page {pageClamped} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={pageClamped >= totalPages}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

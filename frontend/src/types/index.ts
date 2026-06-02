@@ -40,6 +40,7 @@ export interface Candidate {
   apolloUpdatedAt?: string;
   currentRoleSince?: string;
   isCurrentRole?: boolean;
+  createdAt?: string;
   daysSinceOutreach: number;
   alertTriggered: boolean;
   notes?: string;

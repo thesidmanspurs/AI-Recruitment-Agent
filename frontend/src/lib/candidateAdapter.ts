@@ -45,6 +45,7 @@ export function toCandidate(c: CandidateDto): Candidate {
     apolloUpdatedAt: c.apolloUpdatedAt ?? undefined,
     currentRoleSince: c.currentRoleSince ?? undefined,
     isCurrentRole: c.isCurrentRole ?? false,
+    createdAt: c.createdAt,
     daysSinceOutreach: c.daysSinceOutreach,
     alertTriggered: c.alertTriggered,
     notes: c.notes ?? undefined,
