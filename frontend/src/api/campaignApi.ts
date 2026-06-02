@@ -178,6 +178,13 @@ export const campaignApi = {
     });
   },
 
+  rescore(campaignId: string) {
+    return apiClient.post<{ success: boolean; rescored: number; candidates: CandidateDto[] }>(
+      `/campaigns/${campaignId}/candidates/rescore`,
+      {}
+    );
+  },
+
   listCandidates(campaignId: string) {
     return apiClient.get<{ success: boolean; data: CandidateDto[] }>(
       `/campaigns/${campaignId}/candidates`

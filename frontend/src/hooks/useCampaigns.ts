@@ -125,6 +125,23 @@ export function useCampaigns() {
     }
   }, [refreshCampaigns]);
 
+  const [rescoring, setRescoring] = useState(false);
+  const rescoreCandidates = useCallback(async (): Promise<number> => {
+    if (!activeId) return 0;
+    setRescoring(true);
+    setError(null);
+    try {
+      const res = await campaignApi.rescore(activeId);
+      setCandidates(res.candidates);
+      return res.rescored;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Re-score failed.');
+      throw err;
+    } finally {
+      setRescoring(false);
+    }
+  }, [activeId]);
+
   const reloadCandidates = useCallback(async (): Promise<void> => {
     if (!activeId) return;
     try {
@@ -372,6 +389,8 @@ export function useCampaigns() {
     awaitingPhoneIds: awaitingPhone,
     sendOutreach,
     reloadCandidates,
+    rescoreCandidates,
+    rescoring,
     markReplied,
     outreachId,
     alerts,

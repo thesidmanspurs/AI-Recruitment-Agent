@@ -65,6 +65,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
     awaitingPhoneIds,
     sendOutreach,
     reloadCandidates,
+    rescoreCandidates,
+    rescoring,
     markReplied,
     outreachId,
     alerts,
@@ -512,6 +514,24 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                         </>
                       )}
                     </button>
+                    {candidates.length > 0 && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const n = await rescoreCandidates();
+                            toast.push({ title: `Re-scored ${n} candidate${n === 1 ? '' : 's'}`, tone: 'success' });
+                          } catch (err) {
+                            toast.push({ title: 'Re-score failed', body: err instanceof Error ? err.message : String(err), tone: 'error' });
+                          }
+                        }}
+                        disabled={rescoring}
+                        title="Re-run Gemini fit scoring on existing candidates (no Apollo credits)"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 bg-white border border-violet-200 rounded-lg hover:bg-violet-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {rescoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        {rescoring ? 'Re-scoring…' : 'Re-score'}
+                      </button>
+                    )}
                     <button
                       onClick={() => setShowEdit(true)}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

@@ -16,6 +16,7 @@ router.delete('/:id', jobSpecController.deleteCampaign);
 // ── Candidates (scoped to campaign) ──────────────────────────────────────────
 router.post('/:campaignId/candidates/source', candidateController.sourceCandidates);
 router.post('/:campaignId/candidates/from-linkedin', candidateController.addFromLinkedIn);
+router.post('/:campaignId/candidates/rescore', candidateController.rescoreCandidates);
 router.delete('/:campaignId/candidates', candidateController.resetCandidates);
 router.get('/:campaignId/candidates', candidateController.listCandidates);
 router.get('/:campaignId/candidates/approved', candidateController.getApprovedQueue);

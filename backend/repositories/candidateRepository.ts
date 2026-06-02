@@ -114,6 +114,16 @@ export const candidateRepository = {
     return prisma.candidate.update({ where: { id }, data });
   },
 
+  // Update the AI fit score + its rationale/strengths/gaps. Separate from
+  // UpdateCandidateInput (contact fields) because rescoring touches the
+  // assessment columns, not the contact ones.
+  updateScore(
+    id: string,
+    data: { matchScore: number; matchExplanation: string; strengths: string[]; gaps: string[] }
+  ) {
+    return prisma.candidate.update({ where: { id }, data });
+  },
+
   findByApolloId(apolloId: string) {
     return prisma.candidate.findUnique({ where: { apolloId } });
   },

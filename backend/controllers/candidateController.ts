@@ -435,6 +435,72 @@ export const candidateController = {
     }
   },
 
+  // POST /api/campaigns/:campaignId/candidates/rescore
+  // Re-runs the Gemini fit score on EVERY candidate already on the campaign
+  // and updates their matchScore/explanation/strengths/gaps in place. No
+  // Apollo credits — purely a Gemini re-evaluation. Fixes legacy rows that
+  // were saved with the old hardcoded 9.5 (re-sourcing can't touch them
+  // because of the existing-name dedupe).
+  async rescoreCandidates(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { campaignId } = req.params;
+      const userId = req.user!.id;
+      const campaign = await campaignRepository.findById(campaignId, userId);
+      if (!campaign) return next(createError('Campaign not found.', 404));
+      if (!geminiService.isAvailable()) {
+        return next(createError('Gemini is not configured on the server.', 503));
+      }
+
+      const candidates = await candidateRepository.findAllByCampaign(campaignId);
+      if (candidates.length === 0) {
+        res.json({ success: true, rescored: 0 });
+        return;
+      }
+
+      let rescored = 0;
+      const BATCH = 6;
+      for (let i = 0; i < candidates.length; i += BATCH) {
+        const slice = candidates.slice(i, i + BATCH);
+        await Promise.all(
+          slice.map(async c => {
+            const fit = await geminiService.scoreCandidateFit({
+              candidateName: c.name,
+              candidateTitle: c.currentTitle,
+              candidateCompany: c.company,
+              candidateBio: c.bio,
+              jobTitle: campaign.jobTitle,
+              jobKeywords: campaign.extractedKeywords,
+              jobRequirements: campaign.requirements,
+              alternateTitles: campaign.alternateTitles,
+            }).catch(() => null);
+            if (!fit) return;
+            // Preserve any data-quality strengths/gaps that aren't fit-based.
+            const keepStrengths = c.strengths.filter(s =>
+              /confirmed by Apollo|verified via Google|email on file/i.test(s)
+            );
+            const keepGaps = c.gaps.filter(g => /Email reveal needed/i.test(g));
+            await candidateRepository.updateScore(c.id, {
+              matchScore: fit.score,
+              matchExplanation: fit.reasoning,
+              strengths: [...fit.strengths, ...keepStrengths].slice(0, 6),
+              gaps: [...fit.gaps, ...keepGaps].slice(0, 4),
+            });
+            rescored++;
+          })
+        );
+      }
+
+      await campaignRepository.addLog(campaignId, {
+        message: `Re-scored ${rescored} candidate(s) with Gemini fit scoring.`,
+        type: 'INFO',
+      });
+      const fresh = await candidateRepository.findAllByCampaign(campaignId);
+      res.json({ success: true, rescored, candidates: fresh });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // DELETE /api/campaigns/:campaignId/candidates
   // Wipe every candidate row on this campaign so the user can re-source from
   // scratch. Cascade-deletes their activity log rows via Prisma onDelete.
