@@ -25,6 +25,7 @@ import { ScoreFilter } from '../components/dashboard/ScoreFilter';
 import { OutreachEditorModal } from '../components/dashboard/OutreachEditorModal';
 import { OutreachActivityPanel } from '../components/dashboard/OutreachActivityPanel';
 import { EmailSettingsModal } from '../components/settings/EmailSettingsModal';
+import { emailSettingsApi } from '../api/emailSettingsApi';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -81,7 +82,21 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [emailCanSend, setEmailCanSend] = useState<boolean | null>(null); // null = unknown/loading
   const [sourceLocations, setSourceLocations] = useState<string[]>([]);
+
+  // Load the user's email-send capability so we can gate the outreach editor
+  // before they waste time drafting. Re-checked when the settings modal closes.
+  const refreshEmailStatus = () => {
+    emailSettingsApi
+      .get()
+      .then(res => setEmailCanSend(res.settings.canSend))
+      .catch(() => setEmailCanSend(false));
+  };
+  useEffect(() => {
+    if (user) refreshEmailStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
   const [minScore, setMinScore] = useState<number>(9.0);
   const [outreachEditorId, setOutreachEditorId] = useState<string | null>(null);
   const toast = useToast();
@@ -243,7 +258,11 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
       />
       <EmailSettingsModal
         open={showEmailSettings}
-        onClose={() => setShowEmailSettings(false)}
+        onClose={() => {
+          setShowEmailSettings(false);
+          refreshEmailStatus();
+        }}
+        onChanged={canSend => setEmailCanSend(canSend)}
       />
       <OutreachEditorModal
         open={outreachEditorId !== null}
@@ -412,6 +431,24 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
             <EmptyDashboard onNew={() => setShowCreate(true)} />
           ) : activeCampaign ? (
             <>
+              {/* Email-not-configured banner — outreach is blocked until set up */}
+              {emailCanSend === false && (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Mail className="w-4 h-4 text-amber-600 shrink-0" />
+                    <p className="text-sm text-amber-800 truncate">
+                      Outreach is blocked until you set up and verify your own sending email.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowEmailSettings(true)}
+                    className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-md transition-colors"
+                  >
+                    Set up email
+                  </button>
+                </div>
+              )}
+
               {/* Sourcing Playbook — 4-step roadmap derived from campaign state */}
               <OnboardingPlaybook
                 campaign={activeCampaign}
@@ -685,6 +722,17 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                     }
                   }}
                   onSendOutreach={candidateId => {
+                    // Gate: don't open the editor if the user can't actually
+                    // send yet — point them to Email Settings instead.
+                    if (emailCanSend === false) {
+                      toast.push({
+                        title: 'Configure your email first',
+                        body: 'You need to set up and verify your own outreach email before sending. Opening Email settings…',
+                        tone: 'warning',
+                      });
+                      setShowEmailSettings(true);
+                      return;
+                    }
                     // Replaces fire-and-forget send with the editable modal.
                     // Modal handles its own send call + result toast.
                     setOutreachEditorId(candidateId);
