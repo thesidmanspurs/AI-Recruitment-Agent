@@ -55,26 +55,34 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
     onChanged?.(res.settings.canSend);
   }
 
+  // Persist the current form. Returns true on success. Shared by Save and
+  // the test flow (which auto-saves first so the user never has to remember
+  // the two-step order).
+  async function saveConfig(silent = false): Promise<boolean> {
+    if (!fromAddress.trim()) {
+      setError('Enter the email address you will send from.');
+      return false;
+    }
+    await emailSettingsApi.update({
+      provider,
+      fromAddress: fromAddress.trim(),
+      fromName: fromName.trim() || undefined,
+      gmailAppPassword: provider === 'GMAIL' ? gmailAppPassword.trim() || undefined : undefined,
+      resendApiKey: provider === 'RESEND' ? resendApiKey.trim() || undefined : undefined,
+    });
+    setGmailAppPassword('');
+    setResendApiKey('');
+    await refresh();
+    if (!silent) setNotice('Saved. Now click “Send test email” to verify before you can send outreach.');
+    return true;
+  }
+
   async function handleSave() {
     setError(null);
     setNotice(null);
-    if (!fromAddress.trim()) {
-      setError('Enter the email address you will send from.');
-      return;
-    }
     setSaving(true);
     try {
-      await emailSettingsApi.update({
-        provider,
-        fromAddress: fromAddress.trim(),
-        fromName: fromName.trim() || undefined,
-        gmailAppPassword: provider === 'GMAIL' ? gmailAppPassword.trim() || undefined : undefined,
-        resendApiKey: provider === 'RESEND' ? resendApiKey.trim() || undefined : undefined,
-      });
-      setGmailAppPassword('');
-      setResendApiKey('');
-      await refresh();
-      setNotice('Saved. Now click “Send test email” to verify before you can send outreach.');
+      await saveConfig(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Save failed.');
     } finally {
@@ -87,6 +95,10 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
     setNotice(null);
     setTesting(true);
     try {
+      // Auto-save the current form first so the test always reflects what's
+      // on screen — removes the "Save then Test" gotcha.
+      const ok = await saveConfig(true);
+      if (!ok) return;
       const r = await emailSettingsApi.test();
       await refresh();
       setNotice(`✓ Test email sent to ${r.sentTo}. Your email is verified — you can now send outreach.`);
