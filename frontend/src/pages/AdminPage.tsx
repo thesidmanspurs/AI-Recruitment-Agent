@@ -18,6 +18,10 @@ import {
   LogOut,
   Sliders,
   Save,
+  Mail,
+  Loader2,
+  CheckCircle2,
+  Send,
 } from 'lucide-react';
 import {
   adminApi,
@@ -30,7 +34,9 @@ import {
   type ScoreBucket,
   type RecentSignup,
   type SettingRow,
+  type EmailRequestRow,
 } from '../api/adminApi';
+import { ApiError } from '../api/client';
 import { Tabs, type TabSpec } from '../components/shared/Tabs';
 import { Pagination } from '../components/shared/Pagination';
 import { UserDetailModal } from '../components/admin/UserDetailModal';
@@ -42,7 +48,7 @@ interface AdminPageProps {
   onLogout: () => void;
 }
 
-type AdminTab = 'overview' | 'campaigns' | 'activity' | 'users' | 'settings';
+type AdminTab = 'overview' | 'campaigns' | 'activity' | 'users' | 'email' | 'settings';
 
 export function AdminPage({ currentUser, onLogout }: AdminPageProps) {
   const [tab, setTab] = useState<AdminTab>('overview');
@@ -83,6 +89,7 @@ export function AdminPage({ currentUser, onLogout }: AdminPageProps) {
       icon: <Users className="w-3.5 h-3.5" />,
       badge: stats?.userCount ?? null,
     },
+    { key: 'email', label: 'Email Requests', icon: <Mail className="w-3.5 h-3.5" /> },
     { key: 'settings', label: 'Settings', icon: <Sliders className="w-3.5 h-3.5" /> },
   ];
 
@@ -169,6 +176,7 @@ export function AdminPage({ currentUser, onLogout }: AdminPageProps) {
           {tab === 'campaigns' && <CampaignsTab onError={msg => setError(msg)} />}
           {tab === 'activity' && <ActivityTab onError={msg => setError(msg)} />}
           {tab === 'users' && <UsersTab currentUser={currentUser} onError={msg => setError(msg)} />}
+          {tab === 'email' && <EmailRequestsTab onError={msg => setError(msg)} />}
           {tab === 'settings' && <SettingsTab onError={msg => setError(msg)} />}
         </main>
       </div>
@@ -1022,4 +1030,188 @@ function formatRelative(iso: string | Date | null): string {
   const d = Math.floor(hr / 24);
   if (d < 30) return `${d}d ago`;
   return formatDate(iso);
+}
+
+// ─── Tab: Email Requests ───────────────────────────────────────────────────────
+function EmailRequestsTab({ onError }: { onError: (msg: string) => void }) {
+  const [requests, setRequests] = useState<EmailRequestRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [configuring, setConfiguring] = useState<EmailRequestRow | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminApi.listEmailRequests();
+      setRequests(res.requests);
+    } catch (err) {
+      onError(err instanceof ApiError ? err.message : 'Failed to load email requests.');
+    } finally {
+      setLoading(false);
+    }
+  }, [onError]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (loading) {
+    return <div className="py-12 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>;
+  }
+  if (requests.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center text-sm text-gray-500">
+        No Resend setup requests yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-100 text-left text-[11px] uppercase tracking-wider text-gray-500">
+            <th className="px-5 py-3 font-semibold">User</th>
+            <th className="px-3 py-3 font-semibold">WhatsApp</th>
+            <th className="px-3 py-3 font-semibold">Email / Domain</th>
+            <th className="px-3 py-3 font-semibold">Status</th>
+            <th className="px-3 py-3 font-semibold">Requested</th>
+            <th className="px-5 py-3 font-semibold text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {requests.map(r => (
+            <tr key={r.id}>
+              <td className="px-5 py-3">
+                <div className="font-semibold text-gray-900">{r.contactName}</div>
+                <div className="text-[11px] text-gray-500">{r.user.email}</div>
+              </td>
+              <td className="px-3 py-3 text-gray-700">{r.whatsapp}</td>
+              <td className="px-3 py-3">
+                <div className="text-gray-900">{r.emailAccount}</div>
+                <div className="text-[11px] text-gray-500">{r.domain}</div>
+              </td>
+              <td className="px-3 py-3">
+                <span className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full border ${
+                  r.status === 'CONFIGURED'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : r.status === 'REJECTED'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>{r.status}</span>
+              </td>
+              <td className="px-3 py-3 text-gray-500">{formatRelative(r.createdAt)}</td>
+              <td className="px-5 py-3 text-right">
+                <button onClick={() => setConfiguring(r)}
+                  className="text-xs font-semibold text-indigo-700 hover:text-indigo-800">
+                  {r.status === 'CONFIGURED' ? 'Reconfigure' : 'Configure'}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {configuring && (
+        <ConfigureEmailModal
+          request={configuring}
+          onClose={() => setConfiguring(null)}
+          onDone={() => { setConfiguring(null); void load(); }}
+          onError={onError}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfigureEmailModal({
+  request, onClose, onDone, onError,
+}: {
+  request: EmailRequestRow;
+  onClose: () => void;
+  onDone: () => void;
+  onError: (msg: string) => void;
+}) {
+  const [fromAddress, setFromAddress] = useState(request.emailAccount);
+  const [fromName, setFromName] = useState(request.contactName);
+  const [resendApiKey, setResendApiKey] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function save() {
+    await adminApi.configureUserEmail({
+      userId: request.user.id,
+      provider: 'RESEND',
+      fromAddress: fromAddress.trim(),
+      fromName: fromName.trim() || undefined,
+      resendApiKey: resendApiKey.trim() || undefined,
+      requestId: request.id,
+    });
+    setResendApiKey('');
+  }
+
+  async function handleSave() {
+    setSaving(true); setNotice(null);
+    try { await save(); setNotice('Saved. Click Save & send test to verify before the user can send.'); }
+    catch (err) { onError(err instanceof ApiError ? err.message : 'Save failed.'); }
+    finally { setSaving(false); }
+  }
+
+  async function handleTest() {
+    setTesting(true); setNotice(null);
+    try {
+      await save();
+      const r = await adminApi.testUserEmail(request.user.id);
+      setNotice(`Test sent to ${r.sentTo}. ${request.contactName} can now send outreach.`);
+    } catch (err) {
+      onError(err instanceof ApiError ? err.message : 'Test failed.');
+    } finally { setTesting(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+        <div>
+          <h3 className="text-base font-bold text-gray-900">Configure Resend — {request.contactName}</h3>
+          <p className="text-xs text-gray-500 mt-0.5">{request.user.email} · WhatsApp {request.whatsapp}</p>
+        </div>
+        {notice && (
+          <div className="flex items-start gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+            <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-indigo-800">{notice}</p>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">From address *</label>
+            <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">From name</label>
+            <input value={fromName} onChange={e => setFromName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Resend API key (leave blank to keep)</label>
+          <input type="password" value={resendApiKey} onChange={e => setResendApiKey(e.target.value)}
+            placeholder="re_xxxxxxxxxxxxxxxx"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+          <p className="text-[11px] text-gray-500">The from-address domain ({request.domain}) must be verified in your Resend account.</p>
+        </div>
+        <div className="flex items-center justify-end gap-3 pt-1">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
+          <button onClick={handleSave} disabled={saving || testing}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+          </button>
+          <button onClick={handleTest} disabled={saving || testing}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
+            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Save &amp; send test
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

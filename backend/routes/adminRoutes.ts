@@ -21,4 +21,8 @@ router.put('/users/:userId/password', adminController.resetPassword);
 router.get('/settings', adminController.listSettings);
 router.put('/settings/:key', adminController.updateSetting);
 
+router.get('/email-requests', adminController.listEmailRequests);
+router.post('/email-config', adminController.configureUserEmail);
+router.post('/users/:userId/email-test', adminController.testUserEmail);
+
 export default router;

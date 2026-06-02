@@ -25,29 +25,63 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
   const [fromAddress, setFromAddress] = useState('');
   const [fromName, setFromName] = useState('');
   const [gmailAppPassword, setGmailAppPassword] = useState('');
-  const [resendApiKey, setResendApiKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(true);
 
+  // Resend request form (admin-fulfilled) state
+  const [reqName, setReqName] = useState('');
+  const [reqWhatsapp, setReqWhatsapp] = useState('');
+  const [reqEmail, setReqEmail] = useState('');
+  const [reqDomain, setReqDomain] = useState('');
+  const [submittingReq, setSubmittingReq] = useState(false);
+  const [resendRequest, setResendRequest] = useState<
+    null | { status: 'PENDING' | 'CONFIGURED' | 'REJECTED'; emailAccount: string; domain: string }
+  >(null);
+
   useEffect(() => {
     if (!open) return;
     setError(null);
     setNotice(null);
     setLoading(true);
-    emailSettingsApi
-      .get()
-      .then(res => {
+    Promise.all([emailSettingsApi.get(), emailSettingsApi.myResendRequest()])
+      .then(([res, reqRes]) => {
         setSettings(res.settings);
         if (res.settings.provider) setProvider(res.settings.provider);
         setFromAddress(res.settings.fromAddress ?? '');
         setFromName(res.settings.fromName ?? '');
+        setResendRequest(reqRes.request);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [open]);
+
+  async function submitResendRequest() {
+    setError(null);
+    setNotice(null);
+    if (!reqName.trim() || !reqWhatsapp.trim() || !reqEmail.trim() || !reqDomain.trim()) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    setSubmittingReq(true);
+    try {
+      await emailSettingsApi.submitResendRequest({
+        contactName: reqName.trim(),
+        whatsapp: reqWhatsapp.trim(),
+        emailAccount: reqEmail.trim(),
+        domain: reqDomain.trim(),
+      });
+      const r = await emailSettingsApi.myResendRequest();
+      setResendRequest(r.request);
+      setNotice('Request submitted. An admin will configure your Resend email and notify you.');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not submit request.');
+    } finally {
+      setSubmittingReq(false);
+    }
+  }
 
   async function refresh() {
     const res = await emailSettingsApi.get();
@@ -64,14 +98,12 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
       return false;
     }
     await emailSettingsApi.update({
-      provider,
+      provider: 'GMAIL', // self-serve path is Gmail only; Resend is admin-fulfilled
       fromAddress: fromAddress.trim(),
       fromName: fromName.trim() || undefined,
-      gmailAppPassword: provider === 'GMAIL' ? gmailAppPassword.trim() || undefined : undefined,
-      resendApiKey: provider === 'RESEND' ? resendApiKey.trim() || undefined : undefined,
+      gmailAppPassword: gmailAppPassword.trim() || undefined,
     });
     setGmailAppPassword('');
-    setResendApiKey('');
     await refresh();
     if (!silent) setNotice('Saved. Now click “Send test email” to verify before you can send outreach.');
     return true;
@@ -197,76 +229,124 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
                 ))}
               </div>
 
-              {/* From fields */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">From address *</label>
-                  <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
-                    placeholder={provider === 'GMAIL' ? 'you@gmail.com' : 'you@yourdomain.com'}
-                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">From name</label>
-                  <input value={fromName} onChange={e => setFromName(e.target.value)}
-                    placeholder="Jane Smith"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
-                </div>
-              </div>
-
-              {/* Credential field */}
               {provider === 'GMAIL' ? (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Gmail App Password {settings?.gmailConfigured && <span className="text-emerald-600 normal-case font-normal">· saved (leave blank to keep)</span>}
-                  </label>
-                  <input type="password" value={gmailAppPassword} onChange={e => setGmailAppPassword(e.target.value)}
-                    placeholder="abcd efgh ijkl mnop"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                    Resend API Key {settings?.resendConfigured && <span className="text-emerald-600 normal-case font-normal">· saved (leave blank to keep)</span>}
-                  </label>
-                  <input type="password" value={resendApiKey} onChange={e => setResendApiKey(e.target.value)}
-                    placeholder="re_xxxxxxxxxxxxxxxx"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
-                </div>
-              )}
-
-              {/* Inline guide */}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <button onClick={() => setShowGuide(s => !s)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 bg-gray-50 text-sm font-semibold text-gray-800">
-                  <span>How to set up {provider === 'GMAIL' ? 'Gmail App Password' : 'Resend'}</span>
-                  {showGuide ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {showGuide && (
-                  <div className="px-4 py-3 text-[13px] text-gray-700 leading-relaxed">
-                    {provider === 'GMAIL' ? <GmailGuide /> : <ResendGuide />}
+                <>
+                  {/* From fields */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">From address *</label>
+                      <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
+                        placeholder="you@gmail.com"
+                        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">From name</label>
+                      <input value={fromName} onChange={e => setFromName(e.target.value)}
+                        placeholder="Jane Smith"
+                        className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                    </div>
                   </div>
-                )}
-              </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      Gmail App Password {settings?.gmailConfigured && <span className="text-emerald-600 normal-case font-normal">· saved (leave blank to keep)</span>}
+                    </label>
+                    <input type="password" value={gmailAppPassword} onChange={e => setGmailAppPassword(e.target.value)}
+                      placeholder="abcd efgh ijkl mnop"
+                      className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                  </div>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <button onClick={() => setShowGuide(s => !s)}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 bg-gray-50 text-sm font-semibold text-gray-800">
+                      <span>How to set up Gmail App Password</span>
+                      {showGuide ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    {showGuide && (
+                      <div className="px-4 py-3 text-[13px] text-gray-700 leading-relaxed"><GmailGuide /></div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Resend = admin-fulfilled request form */
+                resendRequest && resendRequest.status === 'PENDING' ? (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                    <p className="font-semibold mb-1">Request pending</p>
+                    <p>Your Resend setup request for <strong>{resendRequest.emailAccount}</strong> ({resendRequest.domain}) has been sent to an admin. You'll be able to send outreach once they configure it.</p>
+                  </div>
+                ) : resendRequest && resendRequest.status === 'CONFIGURED' ? (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+                    <p className="font-semibold mb-1">Resend configured by admin ✓</p>
+                    <p>Sending from <strong>{resendRequest.emailAccount}</strong>. You can send outreach.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[13px] text-gray-600 -mt-1">
+                      Resend is set up for you by an admin. Submit your details below and an admin will configure your sending domain.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Your name *</label>
+                        <input value={reqName} onChange={e => setReqName(e.target.value)} placeholder="Jane Smith"
+                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">WhatsApp *</label>
+                        <input value={reqWhatsapp} onChange={e => setReqWhatsapp(e.target.value)} placeholder="+44 7123 456789"
+                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Email account *</label>
+                        <input value={reqEmail} onChange={e => setReqEmail(e.target.value)} placeholder="jane@company.com"
+                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Domain *</label>
+                        <input value={reqDomain} onChange={e => setReqDomain(e.target.value)} placeholder="company.com"
+                          className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                      </div>
+                    </div>
+                  </>
+                )
+              )}
             </>
           )}
         </div>
 
         <footer className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0">
-          <button onClick={handleClear} disabled={saving || testing}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50">
-            <Trash2 className="w-3.5 h-3.5" /> Clear config
-          </button>
-          <div className="flex items-center gap-3">
-            <button onClick={handleSave} disabled={saving || testing}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
-            </button>
-            <button onClick={handleTest} disabled={saving || testing}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
-              {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Send test email
-            </button>
-          </div>
+          {provider === 'GMAIL' ? (
+            <>
+              <button onClick={handleClear} disabled={saving || testing}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50">
+                <Trash2 className="w-3.5 h-3.5" /> Clear config
+              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={handleSave} disabled={saving || testing}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                </button>
+                <button onClick={handleTest} disabled={saving || testing}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
+                  {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Send test email
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Resend footer: submit / resubmit request, unless already pending */
+            <>
+              <span className="text-[11px] text-gray-500">
+                {resendRequest?.status === 'CONFIGURED'
+                  ? 'Configured by admin.'
+                  : 'An admin will set up your Resend sending.'}
+              </span>
+              {resendRequest?.status !== 'PENDING' && resendRequest?.status !== 'CONFIGURED' && (
+                <button onClick={submitResendRequest} disabled={submittingReq}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
+                  {submittingReq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Submit request to admin
+                </button>
+              )}
+            </>
+          )}
         </footer>
       </div>
     </div>
@@ -299,19 +379,3 @@ function GmailGuide() {
   );
 }
 
-function ResendGuide() {
-  return (
-    <div>
-      <p className="mb-2 text-gray-600">Best for teams/agencies. Send from your own <code className="bg-gray-100 px-1 rounded">@company.com</code> with top-tier deliverability.</p>
-      <ol>
-        <Step n={1}>Sign up at <a className="text-indigo-600 underline" href="https://resend.com" target="_blank" rel="noreferrer">resend.com</a> (free tier: 3,000 emails/month).</Step>
-        <Step n={2}>Go to <strong>Domains → Add Domain</strong> and enter your company domain.</Step>
-        <Step n={3}>Add the <strong>SPF, DKIM and DMARC</strong> DNS records Resend shows you to your domain's DNS. Wait for the domain to show <strong>Verified</strong> (usually minutes).</Step>
-        <Step n={4}>Go to <strong>API Keys → Create API Key</strong> (Sending access is enough). Copy the <code className="bg-gray-100 px-1 rounded">re_…</code> key.</Step>
-        <Step n={5}>Paste it into the <strong>Resend API Key</strong> field above, set <strong>From address</strong> to an address on your verified domain (e.g. <code className="bg-gray-100 px-1 rounded">jane@company.com</code>), and click <strong>Save</strong>.</Step>
-        <Step n={6}>Click <strong>Send test email</strong>. When it arrives, you're verified and can send outreach.</Step>
-      </ol>
-      <p className="mt-1 text-[12px] text-gray-500">The from-address domain must match a domain you verified in Resend, or sends will fail. Resend has no inbox, so replies are tracked by clicking “Mark replied”.</p>
-    </div>
-  );
-}

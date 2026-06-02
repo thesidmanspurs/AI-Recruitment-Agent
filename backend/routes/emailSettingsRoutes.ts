@@ -6,4 +6,6 @@ router.get('/', emailSettingsController.get);
 router.put('/', emailSettingsController.update);
 router.post('/test', emailSettingsController.test);
 router.delete('/', emailSettingsController.clear);
+router.post('/resend-request', emailSettingsController.submitResendRequest);
+router.get('/resend-request', emailSettingsController.myResendRequest);
 export default router;

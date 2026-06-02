@@ -37,4 +37,31 @@ export const emailSettingsApi = {
   clear() {
     return apiClient.delete<{ success: boolean }>('/email-settings');
   },
+
+  submitResendRequest(input: {
+    contactName: string;
+    whatsapp: string;
+    emailAccount: string;
+    domain: string;
+  }) {
+    return apiClient.post<{ success: boolean; request: { id: string; status: string } }>(
+      '/email-settings/resend-request',
+      input
+    );
+  },
+
+  myResendRequest() {
+    return apiClient.get<{
+      success: boolean;
+      request: null | {
+        id: string;
+        status: 'PENDING' | 'CONFIGURED' | 'REJECTED';
+        emailAccount: string;
+        domain: string;
+        createdAt: string;
+        handledAt: string | null;
+        adminNote: string | null;
+      };
+    }>('/email-settings/resend-request');
+  },
 };

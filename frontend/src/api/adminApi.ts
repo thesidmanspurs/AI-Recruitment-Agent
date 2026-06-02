@@ -190,7 +190,39 @@ export const adminApi = {
       { value }
     );
   },
+
+  listEmailRequests(): Promise<{ success: boolean; requests: EmailRequestRow[] }> {
+    return apiClient.get('/admin/email-requests');
+  },
+
+  configureUserEmail(input: {
+    userId: string;
+    provider: 'GMAIL' | 'RESEND';
+    fromAddress: string;
+    fromName?: string;
+    resendApiKey?: string;
+    gmailAppPassword?: string;
+    requestId?: string;
+  }): Promise<{ success: boolean }> {
+    return apiClient.post('/admin/email-config', input);
+  },
+
+  testUserEmail(userId: string, to?: string): Promise<{ success: boolean; sentTo: string }> {
+    return apiClient.post(`/admin/users/${userId}/email-test`, to ? { to } : {});
+  },
 };
+
+export interface EmailRequestRow {
+  id: string;
+  contactName: string;
+  whatsapp: string;
+  emailAccount: string;
+  domain: string;
+  status: 'PENDING' | 'CONFIGURED' | 'REJECTED';
+  createdAt: string;
+  handledAt: string | null;
+  user: { id: string; name: string; email: string; emailProvider: string | null; emailVerifiedAt: string | null };
+}
 
 export interface SettingRow {
   key: string;

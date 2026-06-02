@@ -3,6 +3,9 @@ import { adminService } from '../services/admin/adminService.js';
 import { settingsService, SETTING_KEYS } from '../services/admin/settingsService.js';
 import { parsePageParams } from '../services/admin/paginate.js';
 import { createError } from '../middleware/errorHandler.js';
+import { prisma } from '../config/database.js';
+import { encryptSecret, isEncryptionAvailable } from '../utils/crypto.js';
+import { emailService, EmailNotConfiguredError } from '../services/outreach/emailService.js';
 
 export const adminController = {
   async listUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -204,6 +207,112 @@ export const adminController = {
       }
       const settings = await settingsService.listAll();
       res.json({ success: true, settings });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ── Email requests + admin email config ────────────────────────────────
+  async listEmailRequests(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const status = (req.query.status as string) || undefined;
+      const rows = await prisma.emailRequest.findMany({
+        where: status ? { status: status as 'PENDING' | 'CONFIGURED' | 'REJECTED' } : undefined,
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, emailProvider: true, emailVerifiedAt: true },
+          },
+        },
+      });
+      res.json({ success: true, requests: rows });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Admin configures a user's email (typically Resend) on their behalf.
+  // body: { userId, provider, fromAddress, fromName?, resendApiKey?, gmailAppPassword?, requestId? }
+  async configureUserEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!isEncryptionAvailable()) {
+        return next(createError('Server encryption is not configured (ENCRYPTION_KEY missing).', 500));
+      }
+      const { userId, provider, fromAddress, fromName, resendApiKey, gmailAppPassword, requestId } =
+        req.body as {
+          userId?: string;
+          provider?: 'GMAIL' | 'RESEND';
+          fromAddress?: string;
+          fromName?: string;
+          resendApiKey?: string;
+          gmailAppPassword?: string;
+          requestId?: string;
+        };
+      if (!userId) return next(createError('userId is required.', 400));
+      if (provider !== 'GMAIL' && provider !== 'RESEND') {
+        return next(createError('provider must be GMAIL or RESEND.', 400));
+      }
+      if (!fromAddress || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fromAddress.trim())) {
+        return next(createError('A valid fromAddress is required.', 400));
+      }
+      const data: Record<string, unknown> = {
+        emailProvider: provider,
+        emailFromAddress: fromAddress.trim(),
+        emailFromName: fromName?.trim() || null,
+        emailVerifiedAt: null, // admin must run a test send to verify
+      };
+      if (provider === 'RESEND') {
+        if (resendApiKey && resendApiKey.trim()) {
+          data.resendApiKeyEnc = encryptSecret(resendApiKey.trim());
+        } else {
+          const existing = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { resendApiKeyEnc: true },
+          });
+          if (!existing?.resendApiKeyEnc) return next(createError('resendApiKey is required.', 400));
+        }
+      } else {
+        if (gmailAppPassword && gmailAppPassword.trim()) {
+          data.gmailAppPasswordEnc = encryptSecret(gmailAppPassword.replace(/\s+/g, ''));
+        } else {
+          const existing = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { gmailAppPasswordEnc: true },
+          });
+          if (!existing?.gmailAppPasswordEnc) return next(createError('gmailAppPassword is required.', 400));
+        }
+      }
+      await prisma.user.update({ where: { id: userId }, data });
+      if (requestId) {
+        await prisma.emailRequest.update({
+          where: { id: requestId },
+          data: { status: 'CONFIGURED', handledAt: new Date() },
+        }).catch(() => { /* request may not exist */ });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Admin runs a test send for a user to verify the config they just set.
+  async testUserEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, emailFromAddress: true },
+      });
+      const to = (req.body?.to as string) || user?.emailFromAddress || user?.email;
+      if (!to) return next(createError('No destination for the test.', 400));
+      try {
+        const r = await emailService.testSendForUser(userId, to);
+        await prisma.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
+        res.json({ success: true, messageId: r.messageId, sentTo: to });
+      } catch (err) {
+        if (err instanceof EmailNotConfiguredError) return next(createError(err.message, 400));
+        return next(createError(`Test send failed: ${err instanceof Error ? err.message : String(err)}`, 502));
+      }
     } catch (err) {
       next(err);
     }

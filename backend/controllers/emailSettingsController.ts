@@ -61,8 +61,18 @@ export const emailSettingsController = {
         resendApiKey?: string;
       };
 
-      if (provider !== 'GMAIL' && provider !== 'RESEND') {
-        return next(createError('provider must be GMAIL or RESEND.', 400));
+      // Resend is admin-configured only — users can't self-set a Resend key.
+      // They submit a request (see submitResendRequest) and an admin sets it up.
+      if (provider === 'RESEND') {
+        return next(
+          createError(
+            'Resend is configured by an admin. Submit a Resend setup request instead.',
+            400
+          )
+        );
+      }
+      if (provider !== 'GMAIL') {
+        return next(createError('provider must be GMAIL.', 400));
       }
       if (!fromAddress || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fromAddress.trim())) {
         return next(createError('A valid fromAddress email is required.', 400));
@@ -164,6 +174,55 @@ export const emailSettingsController = {
         },
       });
       res.json({ success: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ── Resend setup requests (user submits, admin fulfils) ────────────────
+  async submitResendRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { contactName, whatsapp, emailAccount, domain } = req.body as {
+        contactName?: string;
+        whatsapp?: string;
+        emailAccount?: string;
+        domain?: string;
+      };
+      if (!contactName?.trim() || !whatsapp?.trim() || !emailAccount?.trim() || !domain?.trim()) {
+        return next(createError('contactName, whatsapp, emailAccount and domain are all required.', 400));
+      }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailAccount.trim())) {
+        return next(createError('emailAccount must be a valid email.', 400));
+      }
+      // One open request per user — replace any existing PENDING one.
+      await prisma.emailRequest.deleteMany({
+        where: { userId: req.user!.id, status: 'PENDING' },
+      });
+      const reqRow = await prisma.emailRequest.create({
+        data: {
+          userId: req.user!.id,
+          contactName: contactName.trim(),
+          whatsapp: whatsapp.trim(),
+          emailAccount: emailAccount.trim(),
+          domain: domain.trim(),
+        },
+      });
+      res.status(201).json({ success: true, request: { id: reqRow.id, status: reqRow.status } });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Returns the user's latest Resend request (if any) so the UI can show
+  // "pending" / "configured" state.
+  async myResendRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const r = await prisma.emailRequest.findFirst({
+        where: { userId: req.user!.id },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, status: true, emailAccount: true, domain: true, createdAt: true, handledAt: true, adminNote: true },
+      });
+      res.json({ success: true, request: r });
     } catch (err) {
       next(err);
     }

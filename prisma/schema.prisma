@@ -44,6 +44,7 @@ model User {
   updatedAt          DateTime     @updatedAt
   campaigns          Campaign[]
   usage              UsageDaily[]
+  emailRequests      EmailRequest[]
 
   @@index([email])
 }
@@ -56,6 +57,32 @@ enum UserRole {
 enum EmailProvider {
   GMAIL
   RESEND
+}
+
+enum EmailRequestStatus {
+  PENDING
+  CONFIGURED
+  REJECTED
+}
+
+// A user's request for the admin to set up Resend sending on their behalf.
+// Users can't self-configure Resend (needs a company API key) — they submit
+// this form and an admin configures their email from the admin console.
+model EmailRequest {
+  id           String             @id @default(uuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactName  String
+  whatsapp     String
+  emailAccount String             // the address they want to send from
+  domain       String             // their email domain (for Resend verification)
+  status       EmailRequestStatus @default(PENDING)
+  adminNote    String?            @db.Text
+  createdAt    DateTime           @default(now())
+  handledAt    DateTime?
+
+  @@index([status])
+  @@index([userId])
 }
 
 // Singleton key/value table for global settings. Admin-editable.
