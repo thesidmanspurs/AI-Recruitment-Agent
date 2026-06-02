@@ -125,12 +125,16 @@ export const candidateRepository = {
     return prisma.candidate.update({ where: { id }, data });
   },
 
+  // apolloId is no longer globally unique (same person can appear in multiple
+  // campaigns), so use findFirst / updateMany.
   findByApolloId(apolloId: string) {
-    return prisma.candidate.findUnique({ where: { apolloId } });
+    return prisma.candidate.findFirst({ where: { apolloId } });
   },
 
   updateByApolloId(apolloId: string, data: UpdateCandidateInput) {
-    return prisma.candidate.update({ where: { apolloId }, data });
+    // Update every candidate row that carries this Apollo id (e.g. the same
+    // person sourced into several campaigns all get the revealed phone).
+    return prisma.candidate.updateMany({ where: { apolloId }, data });
   },
 
   delete(id: string) {

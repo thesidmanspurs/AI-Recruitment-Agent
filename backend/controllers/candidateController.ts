@@ -235,11 +235,17 @@ export const candidateController = {
       for (const c of candidates) {
         const meta = searchMeta.get(c.name.toLowerCase());
         if (!meta) continue;
-        await candidateRepository.update(c.id, {
-          location: meta.location ?? null,
-          linkedinUrl: meta.linkedinUrl ?? null,
-          apolloId: meta.apolloId ?? null,
-        });
+        try {
+          await candidateRepository.update(c.id, {
+            location: meta.location ?? null,
+            linkedinUrl: meta.linkedinUrl ?? null,
+            apolloId: meta.apolloId ?? null,
+          });
+        } catch (err) {
+          // A single row's metadata attach must never fail the whole source
+          // run (e.g. a stray constraint). The candidate still exists.
+          console.warn('[source] meta attach failed for', c.id, err instanceof Error ? err.message : err);
+        }
       }
       // Re-read so the response reflects the attached fields
       const enrichedCandidates = await candidateRepository.findAllByCampaign(campaignId);

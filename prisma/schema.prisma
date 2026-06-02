@@ -175,9 +175,11 @@ model Candidate {
   linkedinUrl   String?
   emailEnriched Boolean @default(false)
   phoneEnriched Boolean @default(false)
-  // Apollo internal person id — needed to correlate async phone webhooks back
-  // to this row when Apollo POSTs the revealed phone minutes/hours later.
-  apolloId      String? @unique
+  // Apollo internal person id — used to correlate async phone webhooks and
+  // on-demand enrichment. NOT globally unique: the same Apollo person can be
+  // sourced into multiple campaigns (or re-sourced), so we index it for
+  // lookup but allow duplicates.
+  apolloId      String?
   // When Apollo last refreshed this person's record (their updated_at).
   // Used to render "Data verified MMM YYYY" and warn on stale rows.
   apolloUpdatedAt    DateTime?
@@ -208,6 +210,7 @@ model Candidate {
   @@unique([campaignId, name])
   @@index([campaignId])
   @@index([campaignId, matchScore])
+  @@index([apolloId])
   @@index([campaignId, outreachStatus])
 }
 
