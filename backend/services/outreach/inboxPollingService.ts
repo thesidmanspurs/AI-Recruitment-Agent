@@ -69,6 +69,24 @@ async function pollUser(user: {
     logger: false,
   });
 
+  // Load this user's contacted candidates ONCE into an in-memory map keyed by
+  // lowercased email. Avoids a DB query per inbox message (which exhausted the
+  // connection pool when inboxes had thousands of messages).
+  const contacted = await prisma.candidate.findMany({
+    where: {
+      outreachStatus: { in: ['OUTREACH_SENT', 'OPENED', 'NO_RESPONSE'] },
+      outreachSentAt: { not: null },
+      email: { not: null },
+      campaign: { userId: user.id },
+    },
+    select: { id: true, name: true, campaignId: true, outreachSentAt: true, email: true },
+  });
+  if (contacted.length === 0) return { scanned: 0, matched: 0 };
+  const byEmail = new Map<string, (typeof contacted)[number]>();
+  for (const c of contacted) {
+    if (c.email) byEmail.set(c.email.toLowerCase().trim(), c);
+  }
+
   let scanned = 0;
   let matched = 0;
   try {
@@ -84,17 +102,8 @@ async function pollUser(user: {
         const senderEmail = msg.envelope?.from?.[0]?.address?.toLowerCase().trim();
         if (!senderEmail) continue;
 
-        // Match only candidates on THIS user's campaigns — strict tenant
-        // isolation so one recruiter's inbox never flips another's rows.
-        const candidate = await prisma.candidate.findFirst({
-          where: {
-            email: { equals: senderEmail, mode: 'insensitive' },
-            outreachStatus: { in: ['OUTREACH_SENT', 'OPENED', 'NO_RESPONSE'] },
-            outreachSentAt: { not: null },
-            campaign: { userId: user.id },
-          },
-          select: { id: true, name: true, campaignId: true, outreachSentAt: true },
-        });
+        // In-memory match — no DB hit unless this sender is a contacted candidate.
+        const candidate = byEmail.get(senderEmail);
         if (!candidate) continue;
 
         const messageDate = msg.internalDate ?? new Date();
@@ -128,6 +137,8 @@ async function pollUser(user: {
             message: `Reply detected from ${candidate.name} (${senderEmail}).`,
           },
         });
+        // Stop re-matching this candidate within the same run.
+        byEmail.delete(senderEmail);
         matched++;
       }
     } finally {
