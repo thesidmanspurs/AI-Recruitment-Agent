@@ -134,20 +134,18 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
 
   const channelMix = useMemo(() => {
     if (candidates.length === 0) return [];
-    const counts: Record<string, number> = { LinkedIn: 0, Upwork: 0, Reddit: 0 };
+    const counts: Record<string, number> = { LinkedIn: 0 };
     for (const c of candidates) counts[c.platform] = (counts[c.platform] ?? 0) + 1;
     const total = candidates.length;
     const colors: Record<string, string> = {
       LinkedIn: 'bg-blue-500',
-      Upwork: 'bg-indigo-500',
-      Reddit: 'bg-orange-500',
     };
     const labels: Record<string, string> = {
       LinkedIn: 'LinkedIn Search',
-      Upwork: 'Upwork Pro',
-      Reddit: 'Reddit Communities',
     };
-    return (['LinkedIn', 'Upwork', 'Reddit'] as const).map(p => ({
+    // Only LinkedIn (Apollo) is an active sourcing channel. Upwork and Reddit
+    // were removed from the channel mix display.
+    return (['LinkedIn'] as const).map(p => ({
       label: labels[p],
       pct: Math.round((counts[p] / total) * 100),
       color: colors[p],
