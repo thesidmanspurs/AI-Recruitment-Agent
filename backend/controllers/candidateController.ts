@@ -242,7 +242,8 @@ export const candidateController = {
               'Apollo-verified candidate.',
             openToWork: false,
             platform: 'LinkedIn' as const,
-            matchScore: match.email ? 9.5 : (match.found ? 8.5 : 7.0),
+            // Placeholder — replaced by a real Gemini fit score below.
+            matchScore: 6,
             matchExplanation:
               titleVerifiedBy === 'gemini'
                 ? `Title corrected by Gemini grounded-search; Apollo had "${match.title ?? 'unknown'}".`
@@ -261,6 +262,38 @@ export const candidateController = {
           };
         })
         .filter((p): p is NonNullable<typeof p> => p !== null);
+
+      // ── Real Gemini fit scoring ───────────────────────────────────────
+      // Replaces the old hardcoded 9.5. Each kept candidate is scored 0-10
+      // against the campaign's title/keywords/requirements. Batched (6 at a
+      // time) to respect the rate limit. Falls back to the placeholder score
+      // if Gemini is unavailable.
+      if (geminiService.isAvailable() && rawProfiles.length > 0) {
+        const BATCH = 6;
+        for (let i = 0; i < rawProfiles.length; i += BATCH) {
+          const slice = rawProfiles.slice(i, i + BATCH);
+          await Promise.all(
+            slice.map(async p => {
+              const fit = await geminiService.scoreCandidateFit({
+                candidateName: p.name,
+                candidateTitle: p.currentTitle,
+                candidateCompany: p.company,
+                candidateBio: p.bio,
+                jobTitle: campaign.jobTitle,
+                jobKeywords: campaign.extractedKeywords,
+                jobRequirements: campaign.requirements,
+                alternateTitles: campaign.alternateTitles,
+              }).catch(() => null);
+              if (!fit) return;
+              p.matchScore = fit.score;
+              p.matchExplanation = fit.reasoning;
+              // Merge Gemini's fit strengths/gaps with the data-quality ones.
+              p.strengths = [...fit.strengths, ...p.strengths].slice(0, 6);
+              p.gaps = [...fit.gaps, ...p.gaps].slice(0, 4);
+            })
+          );
+        }
+      }
 
       if (droppedMasked > 0 || droppedUnverified > 0) {
         await campaignRepository.addLog(campaignId, {

@@ -256,6 +256,98 @@ export const geminiService = {
   },
 
   /**
+   * Score how well a candidate fits a specific job, 0–10, using Gemini.
+   * This is a REAL fit assessment (replaces the old hardcoded 9.5) — Gemini
+   * compares the candidate's title/company/background against the job title,
+   * keywords and requirements and returns a calibrated score + rationale +
+   * concrete strengths/gaps. No web grounding needed (cheap token-only call).
+   *
+   * Calibration guidance baked into the prompt:
+   *   9–10  near-perfect match on title + most key skills
+   *   7–8.9 strong, clearly relevant background, minor gaps
+   *   5–6.9 partial / adjacent fit
+   *   <5    weak or unrelated
+   */
+  async scoreCandidateFit(params: {
+    candidateName: string;
+    candidateTitle: string;
+    candidateCompany: string;
+    candidateBio?: string;
+    jobTitle: string;
+    jobKeywords: string[];
+    jobRequirements?: string[];
+    alternateTitles?: string[];
+  }): Promise<{ score: number; reasoning: string; strengths: string[]; gaps: string[] }> {
+    const client = getClient();
+    if (!client) {
+      // No Gemini → neutral mid score so the row still appears but isn't
+      // falsely inflated.
+      return { score: 6, reasoning: 'Gemini unavailable; unscored.', strengths: [], gaps: [] };
+    }
+
+    const prompt = [
+      `Score how well this candidate fits the role, from 0 to 10 (one decimal allowed).`,
+      ``,
+      `ROLE`,
+      `  Title: ${params.jobTitle}`,
+      params.alternateTitles?.length ? `  Acceptable equivalent titles: ${params.alternateTitles.join(', ')}` : '',
+      `  Key skills / keywords: ${params.jobKeywords.slice(0, 12).join(', ')}`,
+      params.jobRequirements?.length ? `  Requirements: ${params.jobRequirements.slice(0, 6).join('; ')}` : '',
+      ``,
+      `CANDIDATE`,
+      `  Current title: ${params.candidateTitle}`,
+      `  Company: ${params.candidateCompany}`,
+      params.candidateBio ? `  Background: ${params.candidateBio.slice(0, 600)}` : '',
+      ``,
+      `Calibration:`,
+      `  9.0-10  near-perfect: title matches (or an acceptable equivalent) AND most key skills evident`,
+      `  7.0-8.9 strong: clearly relevant background, a couple of gaps`,
+      `  5.0-6.9 partial: adjacent role or only some skills overlap`,
+      `  below 5 weak or unrelated`,
+      `Be honest and discriminating — do NOT default everyone to a high score. Most sourced candidates should land between 6 and 9 with real variation.`,
+    ].filter(Boolean).join('\n');
+
+    try {
+      const response = await client.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are a senior technical recruiter scoring candidate-job fit. ' +
+            'You are discriminating and calibrated — you reserve 9+ for genuinely strong matches.',
+          temperature: 0.2,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              score: { type: Type.NUMBER, description: '0-10 fit score, one decimal allowed.' },
+              reasoning: { type: Type.STRING, description: 'One sentence explaining the score.' },
+              strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: '1-4 concrete strengths vs the role.' },
+              gaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: '0-3 concrete gaps vs the role.' },
+            },
+            required: ['score', 'reasoning', 'strengths', 'gaps'],
+          },
+        },
+      });
+      const text = response.text;
+      if (!text) throw new Error('empty');
+      const parsed = JSON.parse(text.trim()) as {
+        score: number; reasoning: string; strengths: string[]; gaps: string[];
+      };
+      const score = Math.max(0, Math.min(10, Number(parsed.score) || 0));
+      return {
+        score: Math.round(score * 10) / 10,
+        reasoning: (parsed.reasoning || '').trim() || 'Scored by Gemini.',
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 4) : [],
+        gaps: Array.isArray(parsed.gaps) ? parsed.gaps.slice(0, 3) : [],
+      };
+    } catch (err) {
+      console.warn('[Gemini] scoreCandidateFit failed:', err instanceof Error ? err.message : err);
+      return { score: 6, reasoning: 'Scoring failed; defaulted.', strengths: [], gaps: [] };
+    }
+  },
+
+  /**
    * Verify a candidate's current title using Gemini + Google Search grounding.
    *
    * Apollo's snapshot can be 1-2 years stale, especially for non-US records.
