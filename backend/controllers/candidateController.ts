@@ -319,15 +319,20 @@ export const candidateController = {
       }
 
       let rescored = 0;
-      const BATCH = 6;
+      // Grounded scoring is slower (web research per candidate) so use a
+      // smaller batch to stay under Gemini's rate limit.
+      const BATCH = 4;
       for (let i = 0; i < candidates.length; i += BATCH) {
         const slice = candidates.slice(i, i + BATCH);
         await Promise.all(
           slice.map(async c => {
-            const fit = await geminiService.scoreCandidateFit({
+            // Deep score: Gemini researches the candidate's real profile on
+            // the web, then applies the scoring.md rubric.
+            const fit = await geminiService.scoreCandidateFitGrounded({
               candidateName: c.name,
               candidateTitle: c.currentTitle,
               candidateCompany: c.company,
+              linkedinUrl: c.linkedinUrl ?? undefined,
               candidateBio: c.bio,
               jobTitle: campaign.jobTitle,
               jobKeywords: campaign.extractedKeywords,
@@ -352,7 +357,7 @@ export const candidateController = {
       }
 
       await campaignRepository.addLog(campaignId, {
-        message: `Re-scored ${rescored} candidate(s) with Gemini fit scoring.`,
+        message: `Deep-scored ${rescored} candidate(s) with Gemini web research (scoring.md rubric).`,
         type: 'INFO',
       });
       const fresh = await candidateRepository.findAllByCampaign(campaignId);

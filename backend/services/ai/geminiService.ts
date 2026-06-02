@@ -256,6 +256,96 @@ export const geminiService = {
   },
 
   /**
+   * GROUNDED fit scoring — uses Gemini + Google Search to research the
+   * candidate's real public profile (LinkedIn skills/experience, company
+   * sites, GitHub) and then scores per the scoring.md rubric. Far more
+   * accurate than title-only scoring because it judges actual skills and
+   * years of experience, not just a job title.
+   *
+   * Text-mode output (grounding can't combine with responseSchema), parsed
+   * from a KEY: value envelope. ~$0.035 + a few seconds per candidate.
+   */
+  async scoreCandidateFitGrounded(params: {
+    candidateName: string;
+    candidateTitle: string;
+    candidateCompany: string;
+    linkedinUrl?: string;
+    candidateBio?: string;
+    jobTitle: string;
+    jobKeywords: string[];
+    jobRequirements?: string[];
+    alternateTitles?: string[];
+  }): Promise<{ score: number; reasoning: string; strengths: string[]; gaps: string[] }> {
+    const client = getClient();
+    if (!client) return { score: 6, reasoning: 'Gemini unavailable; unscored.', strengths: [], gaps: [] };
+
+    const prompt = [
+      `You are an expert Technical Recruiter and HR Manager. Score this candidate`,
+      `1-10 (1 = completely unsuitable, 10 = perfect match) against the job spec.`,
+      `Be highly objective and critical.`,
+      ``,
+      `STEP 1 — From the job spec, identify MUST-HAVE skills, NICE-TO-HAVE skills,`,
+      `and required years of experience.`,
+      `STEP 2 — Research this specific candidate on the public web (use the`,
+      `LinkedIn URL if given; also company sites, GitHub, conference bios) to find`,
+      `their ACTUAL skills, technologies, years of experience and achievements.`,
+      `Only trust results that clearly match this person (name + company + title).`,
+      `STEP 3 — Map what you found to the requirements. Weight must-haves and`,
+      `years-of-experience heavily. A candidate missing a must-have cannot exceed ~6.`,
+      `If you cannot find reliable info, score conservatively from the title and say so.`,
+      ``,
+      `[JOB SPECIFICATION]`,
+      `  Title: ${params.jobTitle}`,
+      params.alternateTitles?.length ? `  Acceptable equivalent titles: ${params.alternateTitles.join(', ')}` : '',
+      `  Key skills / keywords: ${params.jobKeywords.slice(0, 12).join(', ')}`,
+      params.jobRequirements?.length ? `  Requirements: ${params.jobRequirements.slice(0, 8).join('; ')}` : '',
+      ``,
+      `[CANDIDATE]`,
+      `  Name: ${params.candidateName}`,
+      `  Current title: ${params.candidateTitle}`,
+      `  Company: ${params.candidateCompany}`,
+      params.linkedinUrl ? `  LinkedIn: ${params.linkedinUrl}` : '',
+      params.candidateBio ? `  Known background: ${params.candidateBio.slice(0, 400)}` : '',
+      ``,
+      `Reply STRICTLY in this format, nothing else:`,
+      `SCORE: <number 1-10, one decimal>`,
+      `STRENGTHS: <semicolon-separated exact skills/experience that MATCH the spec>`,
+      `GAPS: <semicolon-separated required/preferred items the candidate is missing>`,
+      `REASONING: <one objective sentence justifying the score, citing what you found>`,
+    ].filter(Boolean).join('\n');
+
+    try {
+      const response = await client.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+          temperature: 0.1,
+        },
+      });
+      const text = (response.text ?? '').trim();
+      if (!text) throw new Error('empty');
+      const pick = (key: string): string => {
+        const m = text.match(new RegExp(`^${key}\\s*:\\s*(.+)$`, 'im'));
+        return m ? m[1].trim() : '';
+      };
+      const splitList = (s: string) =>
+        s.split(';').map(x => x.trim()).filter(x => x && !/^none$/i.test(x)).slice(0, 4);
+      const scoreNum = parseFloat(pick('SCORE'));
+      const score = Number.isFinite(scoreNum) ? Math.max(1, Math.min(10, scoreNum)) : 6;
+      return {
+        score: Math.round(score * 10) / 10,
+        reasoning: pick('REASONING') || 'Scored via web research.',
+        strengths: splitList(pick('STRENGTHS')),
+        gaps: splitList(pick('GAPS')),
+      };
+    } catch (err) {
+      console.warn('[Gemini] scoreCandidateFitGrounded failed:', err instanceof Error ? err.message : err);
+      return { score: 6, reasoning: 'Grounded scoring failed; defaulted.', strengths: [], gaps: [] };
+    }
+  },
+
+  /**
    * Score how well a candidate fits a specific job, 0–10, using Gemini.
    * This is a REAL fit assessment (replaces the old hardcoded 9.5) — Gemini
    * compares the candidate's title/company/background against the job title,

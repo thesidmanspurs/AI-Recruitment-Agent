@@ -527,11 +527,11 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                           }
                         }}
                         disabled={rescoring}
-                        title="Re-run Gemini fit scoring on existing candidates (no Apollo credits)"
+                        title="Deep-score with Gemini web research (scoring.md rubric, no Apollo credits). Slower but accurate."
                         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 bg-white border border-violet-200 rounded-lg hover:bg-violet-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                       >
                         {rescoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        {rescoring ? 'Re-scoring…' : 'Re-score'}
+                        {rescoring ? 'Deep scoring…' : 'Deep score'}
                       </button>
                     )}
                     <button
