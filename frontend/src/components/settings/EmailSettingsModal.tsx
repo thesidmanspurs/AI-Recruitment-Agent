@@ -149,7 +149,6 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
       setFromAddress('');
       setFromName('');
       setGmailAppPassword('');
-      setResendApiKey('');
       await refresh();
       setNotice('Configuration cleared.');
     } catch (err) {
