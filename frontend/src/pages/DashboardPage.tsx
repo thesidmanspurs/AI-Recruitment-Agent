@@ -28,6 +28,7 @@ import { OutreachActivityPanel } from '../components/dashboard/OutreachActivityP
 import { EmailSettingsModal } from '../components/settings/EmailSettingsModal';
 import { emailSettingsApi } from '../api/emailSettingsApi';
 import { paymentsApi } from '../api/paymentsApi';
+import { ThemeToggle } from '../components/shared/ThemeToggle';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -274,7 +275,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f8] text-gray-900 font-sans">
+    <div className="min-h-screen bg-[#f3f4f8] dark:bg-[#0a0c12] text-gray-900 dark:text-gray-100 font-sans transition-colors">
       {/* Top header — mirrors admin layout */}
       <WorkflowGuideModal
         open={showGuide}
@@ -305,14 +306,14 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
           void reloadCandidates();
         }}
       />
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
+      <header className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#10131c] sticky top-0 z-10 transition-colors">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
               <span className="text-sm font-extrabold text-white">A</span>
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-bold text-gray-900 leading-none truncate">
+              <h1 className="text-base font-bold text-gray-900 dark:text-white leading-none truncate">
                 ARIES
               </h1>
               <p className="text-[11px] text-gray-500 mt-0.5 truncate">
@@ -342,19 +343,20 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                   </span>
                 </div>
               )}
-              <div className="hidden sm:flex items-center gap-2.5 pr-3 border-r border-gray-200">
+              <div className="hidden sm:flex items-center gap-2.5 pr-3 border-r border-gray-200 dark:border-white/10">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-white">
                     {user.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-gray-900 truncate leading-none">
+                  <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate leading-none">
                     {user.name}
                   </p>
                   <p className="text-[10px] text-gray-500 mt-0.5 truncate">{user.email}</p>
                 </div>
               </div>
+              <ThemeToggle />
               {onOpenBilling && (
                 <button
                   onClick={onOpenBilling}
@@ -374,7 +376,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
               )}
               <button
                 onClick={() => setShowEmailSettings(true)}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
                 title="Configure the email you send outreach from"
               >
                 <Mail className="w-3.5 h-3.5" />
@@ -391,7 +393,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
               )}
               <button
                 onClick={onLogout}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Logout

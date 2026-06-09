@@ -2,106 +2,99 @@ import { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import { AppProvider } from './store/AppContext';
 import { DashboardPage } from './pages/DashboardPage';
-import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { AdminPage } from './pages/AdminPage';
 import { BillingPage } from './pages/BillingPage';
+import { LandingPage } from './pages/marketing/LandingPage';
+import { EngineFeaturesPage } from './pages/marketing/EngineFeaturesPage';
+import { PricingPage } from './pages/marketing/PricingPage';
+import { FaqPage } from './pages/marketing/FaqPage';
 import { ToastProvider } from './components/shared/Toast';
-import { useAuth, type AuthView } from './hooks/useAuth';
-
-type AuthedView = 'dashboard' | 'admin' | 'billing';
+import { useAuth } from './hooks/useAuth';
 
 /**
- * Minimal URL-state sync without pulling in react-router.
- *   /admin   → admin console
- *   /billing → credits / billing
- *   /        → user dashboard
+ * Minimal pathname router (no react-router).
  *
- * Reads window.location.pathname on mount and on popstate (back/forward),
- * pushes a new history entry when navigating programmatically. Gating is
- * still enforced by the component check below (`role === 'ADMIN'`) so a
- * non-admin who pastes /admin gets bounced.
+ * Public (no auth):
+ *   /                 → landing page w/ embedded recruiter sign-in console
+ *   /engine-features  → marketing
+ *   /pricing          → marketing (pricing + estimate calculator)
+ *   /faq              → marketing
+ *   /register         → create account
+ *
+ * Authenticated:
+ *   /        → workspace dashboard (admins are pushed to /admin)
+ *   /admin   → admin console (ADMIN only)
+ *   /billing → credits & billing
+ *
+ * Marketing sub-pages are viewable regardless of auth. The unauthenticated
+ * landing IS the login screen (console card on the right of the hero).
  */
-function pathToView(pathname: string): AuthedView {
-  if (pathname.startsWith('/admin')) return 'admin';
-  if (pathname.startsWith('/billing')) return 'billing';
-  return 'dashboard';
-}
-
-function viewToPath(view: AuthedView): string {
-  if (view === 'admin') return '/admin';
-  if (view === 'billing') return '/billing';
-  return '/';
-}
-
 function AuthGate() {
   const { user, loading, login, register, logout } = useAuth();
-  const [view, setView] = useState<AuthView>('login');
-  const [authedView, setAuthedView] = useState<AuthedView>(() =>
-    pathToView(window.location.pathname)
-  );
+  const [path, setPath] = useState<string>(() => window.location.pathname);
 
-  // Keep authedView in sync with browser back/forward
+  // Sync with browser back/forward.
   useEffect(() => {
-    function onPop() {
-      setAuthedView(pathToView(window.location.pathname));
-    }
+    const onPop = () => setPath(window.location.pathname);
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // Once the user is known, enforce the right landing URL:
-  //   - ADMIN logging in on `/` → push to `/admin`
-  //   - USER landing on `/admin` (URL paste / role demotion) → push to `/`
+  const navigate = useCallback((to: string) => {
+    if (window.location.pathname !== to) window.history.pushState({}, '', to);
+    setPath(to);
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Once the user is known, enforce sensible landing URLs:
+  //   - ADMIN on "/" → /admin
+  //   - non-admin on /admin (URL paste / demotion) → /
   useEffect(() => {
     if (!user) return;
-    const current = window.location.pathname;
-    if (user.role === 'ADMIN' && current === '/') {
+    if (user.role === 'ADMIN' && path === '/') {
       window.history.replaceState({}, '', '/admin');
-      setAuthedView('admin');
-    } else if (user.role !== 'ADMIN' && current.startsWith('/admin')) {
+      setPath('/admin');
+    } else if (user.role !== 'ADMIN' && path.startsWith('/admin')) {
       window.history.replaceState({}, '', '/');
-      setAuthedView('dashboard');
+      setPath('/');
     }
-  }, [user]);
-
-  const navigate = useCallback((next: AuthedView) => {
-    const path = viewToPath(next);
-    if (window.location.pathname !== path) {
-      window.history.pushState({}, '', path);
-    }
-    setAuthedView(next);
-  }, []);
+  }, [user, path]);
 
   const handleLogout = useCallback(() => {
     logout();
-    if (window.location.pathname !== '/') {
-      window.history.replaceState({}, '', '/');
-    }
-    setAuthedView('dashboard');
+    window.history.replaceState({}, '', '/');
+    setPath('/');
   }, [logout]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0c12] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
       </div>
     );
   }
 
+  // ── Public marketing sub-pages (regardless of auth) ──────────────────────
+  if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} />;
+  if (path === '/pricing') return <PricingPage onNavigate={navigate} />;
+  if (path === '/faq') return <FaqPage onNavigate={navigate} />;
+
+  // ── Unauthenticated ──────────────────────────────────────────────────────
   if (!user) {
-    if (view === 'register') {
-      return <RegisterPage onRegister={register} onSwitchToLogin={() => setView('login')} />;
+    if (path === '/register') {
+      return <RegisterPage onRegister={register} onSwitchToLogin={() => navigate('/')} />;
     }
-    return <LoginPage onLogin={login} onSwitchToRegister={() => setView('register')} />;
+    // "/" and any protected/unknown path → landing (with sign-in console).
+    return <LandingPage onLogin={login} onNavigate={navigate} />;
   }
 
-  if (authedView === 'admin' && user.role === 'ADMIN') {
+  // ── Authenticated ─────────────────────────────────────────────────────────
+  if (path.startsWith('/admin') && user.role === 'ADMIN') {
     return <AdminPage currentUser={user} onLogout={handleLogout} />;
   }
-
-  if (authedView === 'billing') {
-    return <BillingPage user={user} onBack={() => navigate('dashboard')} />;
+  if (path.startsWith('/billing')) {
+    return <BillingPage user={user} onBack={() => navigate('/')} />;
   }
 
   return (
@@ -109,8 +102,8 @@ function AuthGate() {
       <DashboardPage
         user={user}
         onLogout={handleLogout}
-        onOpenAdmin={user.role === 'ADMIN' ? () => navigate('admin') : undefined}
-        onOpenBilling={() => navigate('billing')}
+        onOpenAdmin={user.role === 'ADMIN' ? () => navigate('/admin') : undefined}
+        onOpenBilling={() => navigate('/billing')}
       />
     </AppProvider>
   );
