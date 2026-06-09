@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
+import type Stripe from 'stripe';
 import { env } from '../config/env.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
+import { prisma } from '../config/database.js';
+import { getStripe } from '../services/billing/stripeService.js';
+import { billingService } from '../services/billing/billingService.js';
 
 /**
  * Apollo phone-reveal webhook.
@@ -121,4 +125,70 @@ export const webhookController = {
       next(err);
     }
   },
+
+  /**
+   * Stripe webhook. Mounted with express.raw (see server.ts) so the raw bytes
+   * are available for signature verification.
+   *
+   * We ACK 200 immediately so Stripe doesn't time out, then process async.
+   * Idempotency: each event id is inserted into StripeWebhookEvent the first
+   * time we see it; a duplicate insert (P2002) means we already handled it.
+   * Credit grants are independently idempotent on the Stripe session/invoice
+   * id, so even concurrent webhook + verify-session can't double-credit.
+   */
+  async stripe(req: Request, res: Response): Promise<void> {
+    const sig = req.headers['stripe-signature'];
+    if (!env.STRIPE_WEBHOOK_SECRET) {
+      res.status(500).send('Stripe webhook secret not configured');
+      return;
+    }
+    let event: Stripe.Event;
+    try {
+      // req.body is a Buffer here (express.raw). constructEvent needs raw bytes.
+      event = getStripe().webhooks.constructEvent(
+        req.body as Buffer,
+        sig as string,
+        env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error('[Stripe webhook] signature verification failed:', err instanceof Error ? err.message : err);
+      res.status(400).send(`Webhook Error: ${err instanceof Error ? err.message : 'invalid signature'}`);
+      return;
+    }
+
+    res.json({ received: true });
+    handleStripeEvent(event).catch(err =>
+      console.error(`[Stripe webhook] handler error for ${event.type}:`, err instanceof Error ? err.message : err)
+    );
+  },
 };
+
+async function handleStripeEvent(event: Stripe.Event): Promise<void> {
+  // Idempotency gate: skip if we've already recorded this event id.
+  try {
+    await prisma.stripeWebhookEvent.create({ data: { eventId: event.id, type: event.type } });
+  } catch (err) {
+    if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') {
+      console.log(`[Stripe webhook] event ${event.id} already processed — skipping.`);
+      return;
+    }
+    throw err;
+  }
+
+  switch (event.type) {
+    case 'checkout.session.completed':
+      await billingService.handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+      break;
+    case 'invoice.paid':
+    case 'invoice.payment_succeeded':
+      await billingService.handleInvoicePaid(event.data.object as Stripe.Invoice);
+      break;
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted':
+      await billingService.handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+      break;
+    default:
+      // Unhandled event types are recorded (above) and ignored.
+      break;
+  }
+}

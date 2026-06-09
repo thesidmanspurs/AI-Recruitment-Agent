@@ -5,15 +5,17 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { AdminPage } from './pages/AdminPage';
+import { BillingPage } from './pages/BillingPage';
 import { ToastProvider } from './components/shared/Toast';
 import { useAuth, type AuthView } from './hooks/useAuth';
 
-type AuthedView = 'dashboard' | 'admin';
+type AuthedView = 'dashboard' | 'admin' | 'billing';
 
 /**
  * Minimal URL-state sync without pulling in react-router.
- *   /admin  → admin console
- *   /       → user dashboard
+ *   /admin   → admin console
+ *   /billing → credits / billing
+ *   /        → user dashboard
  *
  * Reads window.location.pathname on mount and on popstate (back/forward),
  * pushes a new history entry when navigating programmatically. Gating is
@@ -21,11 +23,15 @@ type AuthedView = 'dashboard' | 'admin';
  * non-admin who pastes /admin gets bounced.
  */
 function pathToView(pathname: string): AuthedView {
-  return pathname.startsWith('/admin') ? 'admin' : 'dashboard';
+  if (pathname.startsWith('/admin')) return 'admin';
+  if (pathname.startsWith('/billing')) return 'billing';
+  return 'dashboard';
 }
 
 function viewToPath(view: AuthedView): string {
-  return view === 'admin' ? '/admin' : '/';
+  if (view === 'admin') return '/admin';
+  if (view === 'billing') return '/billing';
+  return '/';
 }
 
 function AuthGate() {
@@ -94,12 +100,17 @@ function AuthGate() {
     return <AdminPage currentUser={user} onLogout={handleLogout} />;
   }
 
+  if (authedView === 'billing') {
+    return <BillingPage user={user} onBack={() => navigate('dashboard')} />;
+  }
+
   return (
     <AppProvider>
       <DashboardPage
         user={user}
         onLogout={handleLogout}
         onOpenAdmin={user.role === 'ADMIN' ? () => navigate('admin') : undefined}
+        onOpenBilling={() => navigate('billing')}
       />
     </AppProvider>
   );

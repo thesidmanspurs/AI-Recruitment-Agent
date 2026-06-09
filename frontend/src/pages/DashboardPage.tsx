@@ -15,6 +15,7 @@ import {
   Bell,
   Globe,
   Mail,
+  Coins,
 } from 'lucide-react';
 import { CandidateTable } from '../components/dashboard/CandidateTable';
 import { OnboardingPlaybook } from '../components/dashboard/OnboardingPlaybook';
@@ -26,6 +27,7 @@ import { OutreachEditorModal } from '../components/dashboard/OutreachEditorModal
 import { OutreachActivityPanel } from '../components/dashboard/OutreachActivityPanel';
 import { EmailSettingsModal } from '../components/settings/EmailSettingsModal';
 import { emailSettingsApi } from '../api/emailSettingsApi';
+import { paymentsApi } from '../api/paymentsApi';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -43,9 +45,10 @@ interface DashboardPageProps {
   user?: AuthUser | null;
   onLogout?: () => void;
   onOpenAdmin?: () => void;
+  onOpenBilling?: () => void;
 }
 
-export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProps = {}) {
+export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: DashboardPageProps = {}) {
   const {
     campaigns,
     activeCampaign,
@@ -101,6 +104,26 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
     if (user) refreshEmailStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Credit balance for the header chip. Re-fetched on mount (so it refreshes
+  // after returning from the Billing page) and after any reveal action.
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const refreshCredits = () => {
+    paymentsApi
+      .balance()
+      .then(res => setCreditBalance(res.balance))
+      .catch(() => {});
+  };
+  useEffect(() => {
+    if (user) refreshCredits();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+  // Reveals spend credits — refresh the chip when candidate data changes
+  // (covers source, enrich-selected, and add-from-LinkedIn).
+  useEffect(() => {
+    if (user) refreshCredits();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidates]);
   const [minScore, setMinScore] = useState<number>(9.0);
   const [outreachEditorId, setOutreachEditorId] = useState<string | null>(null);
   const toast = useToast();
@@ -332,6 +355,23 @@ export function DashboardPage({ user, onLogout, onOpenAdmin }: DashboardPageProp
                   <p className="text-[10px] text-gray-500 mt-0.5 truncate">{user.email}</p>
                 </div>
               </div>
+              {onOpenBilling && (
+                <button
+                  onClick={onOpenBilling}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border transition-colors ${
+                    creditBalance !== null && creditBalance <= 0
+                      ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+                      : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+                  }`}
+                  title="Credits are spent on Apollo email/phone reveals. Click to buy more."
+                >
+                  <Coins className="w-3.5 h-3.5" />
+                  <span className="tabular-nums font-bold">
+                    {creditBalance === null ? '—' : creditBalance.toLocaleString()}
+                  </span>
+                  <span className="hidden lg:inline text-[11px] font-normal opacity-80">credits</span>
+                </button>
+              )}
               <button
                 onClick={() => setShowEmailSettings(true)}
                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"

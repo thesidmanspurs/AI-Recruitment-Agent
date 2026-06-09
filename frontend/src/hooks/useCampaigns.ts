@@ -217,7 +217,8 @@ export function useCampaigns() {
       // Refresh full candidate list so the new rows appear immediately.
       const full = await campaignApi.listCandidates(activeId);
       setCandidates(full.data);
-      setUsage(res.usage);
+      // Credits (not the daily limit) are now spent on LinkedIn-URL reveals;
+      // the header credit chip refreshes off candidate changes in DashboardPage.
       await refreshCampaigns();
       return { addedCount: res.addedCount, skipped: res.skipped };
     },

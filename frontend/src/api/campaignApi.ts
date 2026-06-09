@@ -190,6 +190,8 @@ export const campaignApi = {
       success: boolean;
       enriched: number;
       creditsExhausted: boolean;
+      outOfCredits: boolean;
+      creditsRemaining: number;
       skipped: Array<{ id: string; reason: string }>;
       candidates: CandidateDto[];
     }>(`/campaigns/${campaignId}/candidates/enrich-selected`, { candidateIds });
@@ -215,13 +217,8 @@ export const campaignApi = {
       addedCount: number;
       skipped: Array<{ url: string; reason: string }>;
       skippedCount: number;
-      usage: {
-        date: string;
-        used: number;
-        limit: number;
-        remaining: number;
-        exceeded: boolean;
-      };
+      outOfCredits: boolean;
+      creditsRemaining: number;
     }>(`/campaigns/${campaignId}/candidates/from-linkedin`, { linkedinUrls });
   },
 

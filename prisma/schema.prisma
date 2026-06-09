@@ -24,6 +24,19 @@ model User {
   blockedReason      String?
   dailyLimitOverride Int?         // null = inherit the global daily_free_limit setting
   lastLoginAt        DateTime?
+
+  // ── Billing / credits ─────────────────────────────────────────────────
+  // Spendable credit balance. Consumed (1 per reveal) when the user unlocks
+  // a candidate's email/phone via Apollo. Topped up by Stripe purchases.
+  creditBalance        Int       @default(0)
+  // Stripe customer id (created lazily on first checkout). Reused so a user
+  // has one customer record across purchases + the subscription portal.
+  stripeCustomerId     String?   @unique
+  // Start Tier subscription tracking. Null when the user has no active sub.
+  stripeSubscriptionId String?
+  subscriptionStatus   String?   // Stripe status: active | past_due | canceled | …
+  subscriptionPlan     String?   // package id, e.g. "start-tier"
+  subscriptionCurrentPeriodEnd DateTime?
   // Recruiter's email signature. Appended to every outreach body so Gemini
   // never has to invent a closing block. Editable from the outreach modal.
   outreachSignature  String?      @db.Text
@@ -45,8 +58,64 @@ model User {
   campaigns          Campaign[]
   usage              UsageDaily[]
   emailRequests      EmailRequest[]
+  creditTransactions CreditTransaction[]
 
   @@index([email])
+}
+
+// ─── Billing ──────────────────────────────────────────────────────────────────
+
+enum CreditTransactionType {
+  SUBSCRIPTION_GRANT // monthly Start Tier invoice paid → +2000
+  TOPUP_PURCHASE     // one-time Top-Up Pack → +1000
+  SPEND              // Apollo reveal → negative credits
+  ADMIN_GRANT        // manual adjustment by an admin
+  REFUND             // credits returned (e.g. failed reveal after debit)
+}
+
+enum CreditTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// Unified ledger: every credit movement (purchase, grant, spend) is one row.
+// Doubles as the user's payment history and the spend audit trail. `credits`
+// is signed: positive for grants/purchases, negative for spends.
+model CreditTransaction {
+  id       String                  @id @default(uuid())
+  userId   String
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type     CreditTransactionType
+  status   CreditTransactionStatus @default(COMPLETED)
+  credits  Int // signed delta applied to the balance
+  // Money fields populated for purchases/grants (0 for spends).
+  amountCents Int    @default(0)
+  currency    String @default("usd")
+  // Human-readable reason / context (e.g. "Apollo reveal: 3 candidate(s)").
+  reason      String?
+  // Balance immediately after this transaction (snapshot for the history UI).
+  balanceAfter Int?
+  packageId    String? // credit package id when applicable
+
+  // Stripe correlation ids. Each is unique where present so a replayed webhook
+  // (or the verify-session fallback) can never double-credit the same payment.
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String?
+  stripeInvoiceId       String? @unique
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+}
+
+// Idempotency guard for Stripe webhooks: insert the event id the first time we
+// see it; a conflict means we already processed it and can skip.
+model StripeWebhookEvent {
+  eventId   String   @id // Stripe event.id (evt_…)
+  type      String
+  createdAt DateTime @default(now())
 }
 
 enum UserRole {

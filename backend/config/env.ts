@@ -72,6 +72,25 @@ export const env = {
   // Tracking
   ALERT_THRESHOLD_HOURS: parseInt(process.env.ALERT_THRESHOLD_HOURS || '48', 10),
 
+  // ── Billing / Stripe ────────────────────────────────────────────────────
+  // Credits are spent ONLY on Apollo contact reveals (email/phone). Bought
+  // via Stripe Checkout. Use sk_test_* / whsec_* for the sandbox.
+  //   STRIPE_SECRET_KEY      — server-side secret (sk_test_… in sandbox)
+  //   STRIPE_WEBHOOK_SECRET  — signing secret for /api/webhooks/stripe
+  //   STRIPE_PUBLISHABLE_KEY — exposed to the client (pk_test_…); optional,
+  //                            only needed if we ever mount Stripe.js. We
+  //                            currently redirect to the hosted Checkout URL.
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+  STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY || '',
+  // Public origin used to build Checkout success/cancel redirect URLs. Falls
+  // back to APP_BASE_URL (already used for Apollo webhooks), then localhost.
+  APP_URL: process.env.APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000',
+
   // CORS
   CORS_ORIGIN: parseList(process.env.CORS_ORIGIN),
 };
+
+export function isStripeConfigured(): boolean {
+  return !!env.STRIPE_SECRET_KEY;
+}

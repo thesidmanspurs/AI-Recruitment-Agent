@@ -16,6 +16,8 @@ import webhookRoutes from './routes/webhookRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import emailSettingsRoutes from './routes/emailSettingsRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import { webhookController } from './controllers/webhookController.js';
 import { trackingService } from './services/tracking/trackingService.js';
 import { inboxPollingService } from './services/outreach/inboxPollingService.js';
 
@@ -35,6 +37,11 @@ process.on('uncaughtException', err => {
 });
 
 const app = express();
+
+// Stripe webhook MUST receive the raw request body for signature verification,
+// so it's mounted with express.raw BEFORE the global express.json() parser.
+// It's public (no JWT) and verifies the Stripe signature itself.
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), webhookController.stripe);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -60,6 +67,7 @@ app.use('/api/upload', authenticate, uploadRoutes);
 app.use('/api/locations', authenticate, locationRoutes);
 app.use('/api/email-settings', authenticate, emailSettingsRoutes);
 app.use('/api/usage', authenticate, usageRoutes);
+app.use('/api/payments', authenticate, paymentRoutes);
 app.use('/api/admin', authenticate, requireAdmin, adminRoutes);
 
 // ── Global error handler ──────────────────────────────────────────────────────

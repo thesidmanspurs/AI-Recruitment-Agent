@@ -7,6 +7,7 @@ import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
 import { screenProfiles } from '../services/screening/screeningService.js';
 import { usageService } from '../services/usage/usageService.js';
+import { creditService } from '../services/credits/creditService.js';
 import { createError } from '../middleware/errorHandler.js';
 
 export const candidateController = {
@@ -392,18 +393,25 @@ export const candidateController = {
       if (!apolloService.isAvailable()) {
         return next(createError('Apollo is not configured on the server.', 503));
       }
-      await usageService.assertWithinLimit(userId);
+      // Revealing a contact costs 1 credit each. Require at least one before
+      // we start; this throws 402 with a "buy credits" message when empty.
+      await creditService.assertHasCredits(userId, 1);
 
       const all = await candidateRepository.findAllByCampaign(campaignId);
       const selected = all.filter(c => candidateIds.includes(c.id));
 
       let enriched = 0;
-      let creditsExhausted = false;
+      let creditsExhausted = false;   // Apollo's own lead credits ran out
+      let outOfCredits = false;       // the user's purchased credits ran out
       const skipped: Array<{ id: string; reason: string }> = [];
+      // Track spendable credits locally so we never reveal more than the user
+      // can pay for (1 credit per reveal).
+      let creditsLeft = await creditService.getBalance(userId);
 
       for (const c of selected) {
         if (c.emailEnriched) { skipped.push({ id: c.id, reason: 'Already enriched.' }); continue; }
         if (!c.apolloId) { skipped.push({ id: c.id, reason: 'No Apollo id — cannot enrich.' }); continue; }
+        if (creditsLeft <= 0) { outOfCredits = true; break; }
         try {
           const m = await apolloService.enrichById(c.apolloId);
           if (!m.found) { skipped.push({ id: c.id, reason: 'Apollo could not resolve.' }); continue; }
@@ -419,6 +427,10 @@ export const candidateController = {
             emailEnriched: !!m.email,
             outreachStatus: 'ENRICHED',
           });
+          // Charge AFTER a confirmed reveal so the user only pays for contacts
+          // they actually got. Guarded by creditsLeft above.
+          await creditService.spend(userId, 1, `Apollo contact reveal: ${m.name ?? c.name}`);
+          creditsLeft--;
           enriched++;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -430,11 +442,12 @@ export const candidateController = {
         }
       }
 
-      if (enriched > 0) await usageService.record(userId);
+      const creditsRemaining = await creditService.getBalance(userId);
       const fresh = await candidateRepository.findAllByCampaign(campaignId);
       await campaignRepository.addLog(campaignId, {
-        message: `Enriched ${enriched} selected candidate(s) via Apollo Match.` +
-          (creditsExhausted ? ' Stopped early — Apollo credits exhausted.' : ''),
+        message: `Enriched ${enriched} selected candidate(s) via Apollo Match (${enriched} credit(s) spent).` +
+          (creditsExhausted ? ' Stopped early — Apollo credits exhausted.' : '') +
+          (outOfCredits ? ' Stopped early — out of purchased credits.' : ''),
         type: 'ENRICH',
       });
 
@@ -444,7 +457,7 @@ export const candidateController = {
           402
         ));
       }
-      res.json({ success: true, enriched, creditsExhausted, skipped, candidates: fresh });
+      res.json({ success: true, enriched, creditsExhausted, outOfCredits, creditsRemaining, skipped, candidates: fresh });
     } catch (err) {
       next(err);
     }
@@ -476,9 +489,10 @@ export const candidateController = {
       const campaign = await campaignRepository.findById(campaignId, userId);
       if (!campaign) return next(createError('Campaign not found.', 404));
 
-      // Charge one credit per URL up front against the daily usage cap.
-      // (Apollo credits are separate, but our internal cap is per-action.)
-      await usageService.assertWithinLimit(userId);
+      // Each LinkedIn URL we resolve reveals a real contact via Apollo, which
+      // costs 1 credit per added candidate. Require at least one to start.
+      await creditService.assertHasCredits(userId, 1);
+      let creditsLeft = await creditService.getBalance(userId);
 
       if (!apolloService.isAvailable()) {
         return next(createError('Apollo is not configured on the server.', 503));
@@ -495,10 +509,16 @@ export const candidateController = {
 
       const added: Awaited<ReturnType<typeof candidateRepository.findById>>[] = [];
       const skipped: Array<{ url: string; reason: string }> = [];
+      let outOfCredits = false;
 
       for (const url of urls) {
         if (existingByLinkedIn.has(url.toLowerCase())) {
           skipped.push({ url, reason: 'Already on this campaign.' });
+          continue;
+        }
+        if (creditsLeft <= 0) {
+          outOfCredits = true;
+          skipped.push({ url, reason: 'Out of credits — buy more to reveal this contact.' });
           continue;
         }
         let result;
@@ -552,6 +572,9 @@ export const candidateController = {
           outreachStatus: 'ENRICHED',
         });
         added.push(enriched);
+        // Charge 1 credit for this revealed contact.
+        await creditService.spend(userId, 1, `LinkedIn URL reveal: ${result.name}`);
+        creditsLeft--;
 
         await campaignRepository.addLog(campaignId, {
           message: `Added ${result.name} via LinkedIn URL${result.email ? ` (${result.email})` : ''}`,
@@ -561,10 +584,7 @@ export const candidateController = {
         });
       }
 
-      // One usage credit per submission (not per URL — the recruiter ran
-      // "lookup these N people" as a single intent).
-      await usageService.record(userId);
-      const usage = await usageService.snapshot(userId);
+      const creditsRemaining = await creditService.getBalance(userId);
 
       // Advance campaign status to RUNNING if anyone was added
       if (added.length > 0 && campaign.status === 'DRAFT') {
@@ -577,7 +597,8 @@ export const candidateController = {
         addedCount: added.length,
         skipped,
         skippedCount: skipped.length,
-        usage,
+        outOfCredits,
+        creditsRemaining,
       });
     } catch (err) {
       next(err);
