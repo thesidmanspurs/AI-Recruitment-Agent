@@ -30,6 +30,11 @@ export const authService = {
     const user = await prisma.user.findUnique({ where: { email: data.email } });
     if (!user) throw createError('Invalid email or password.', 401);
 
+    // OAuth-only accounts have no local password — guide them to Google.
+    if (!user.passwordHash) {
+      throw createError('This account uses Google sign-in. Click "Continue with Google".', 401);
+    }
+
     const valid = await bcrypt.compare(data.password, user.passwordHash);
     if (!valid) throw createError('Invalid email or password.', 401);
 
@@ -52,6 +57,59 @@ export const authService = {
       token,
       user: { id: updated.id, email: updated.email, name: updated.name, role: updated.role },
     };
+  },
+
+  /**
+   * Sign in (or up) with a verified Google profile. Resolution order:
+   *   1. Match by googleId    → returning Google user.
+   *   2. Match by email       → existing (likely password) account: LINK the
+   *                             googleId onto it so future logins are instant.
+   *   3. Otherwise            → create a brand-new account (no passwordHash).
+   *
+   * Trusting the email for linking is safe because we only accept Google
+   * profiles whose email is verified (checked in the controller).
+   */
+  async googleSignIn(profile: {
+    googleId: string;
+    email: string;
+    name?: string;
+    avatarUrl?: string;
+  }): Promise<AuthResponse> {
+    const email = profile.email.trim().toLowerCase();
+    const shouldBeAdmin = env.ADMIN_EMAILS.includes(email);
+
+    let user =
+      (await prisma.user.findUnique({ where: { googleId: profile.googleId } })) ??
+      (await prisma.user.findUnique({ where: { email } }));
+
+    if (user) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: profile.googleId,
+          lastLoginAt: new Date(),
+          // Backfill avatar/name only when we don't already have them.
+          avatarUrl: user.avatarUrl ?? profile.avatarUrl ?? null,
+          name: user.name || profile.name || email,
+          ...(shouldBeAdmin && user.role !== 'ADMIN' ? { role: 'ADMIN' as const } : {}),
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: profile.name?.trim() || email.split('@')[0],
+          passwordHash: null, // OAuth-only account
+          googleId: profile.googleId,
+          avatarUrl: profile.avatarUrl ?? null,
+          role: shouldBeAdmin ? 'ADMIN' : 'USER',
+          lastLoginAt: new Date(),
+        },
+      });
+    }
+
+    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
   },
 
   async getProfile(userId: string) {

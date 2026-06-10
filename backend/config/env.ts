@@ -87,10 +87,24 @@ export const env = {
   // back to APP_BASE_URL (already used for Apollo webhooks), then localhost.
   APP_URL: process.env.APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000',
 
+  // ── Google OAuth (Sign in with Google) ──────────────────────────────────
+  // From Google Cloud Console → APIs & Services → Credentials (OAuth client).
+  // GOOGLE_REDIRECT_URI MUST exactly match an Authorized redirect URI on the
+  // OAuth client; defaults to APP_URL + /api/callback (the configured one).
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  GOOGLE_REDIRECT_URI:
+    process.env.GOOGLE_REDIRECT_URI ||
+    `${(process.env.APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/callback`,
+
   // CORS
   CORS_ORIGIN: parseList(process.env.CORS_ORIGIN),
 };
 
 export function isStripeConfigured(): boolean {
   return !!env.STRIPE_SECRET_KEY;
+}
+
+export function isGoogleConfigured(): boolean {
+  return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 }

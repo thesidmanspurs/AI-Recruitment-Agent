@@ -17,13 +17,22 @@ model User {
   id                 String       @id @default(uuid())
   email              String       @unique
   name               String
-  passwordHash       String
+  // Nullable: accounts created via Google OAuth have no local password.
+  // Password login is rejected for such accounts (see authService.login).
+  passwordHash       String?
   role               UserRole     @default(USER)
   isBlocked          Boolean      @default(false)
   blockedAt          DateTime?
   blockedReason      String?
   dailyLimitOverride Int?         // null = inherit the global daily_free_limit setting
   lastLoginAt        DateTime?
+
+  // ── Google OAuth ──────────────────────────────────────────────────────
+  // Google account subject id ("sub"), set when a user signs in with Google.
+  // Unique so one Google account maps to exactly one user. A pre-existing
+  // password account is linked by matching the verified Google email.
+  googleId           String?      @unique
+  avatarUrl          String?      // Google profile picture (optional)
 
   // ── Billing / credits ─────────────────────────────────────────────────
   // Spendable credit balance. Consumed (1 per reveal) when the user unlocks

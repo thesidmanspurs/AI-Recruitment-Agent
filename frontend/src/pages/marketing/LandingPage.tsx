@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import {
   Globe, SlidersHorizontal, Mail, Loader2, ArrowRight, Lock, ShieldCheck, Sparkles,
 } from 'lucide-react';
@@ -35,7 +35,22 @@ export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+
+  // Surface an error bounced back from the Google OAuth callback (?auth_error),
+  // then strip it from the URL so a refresh doesn't re-show it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('auth_error');
+    if (authError) {
+      setError(authError);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  function signInWithGoogle() {
+    const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
+    window.location.href = `${apiBase}/api/auth/google`;
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -99,7 +114,7 @@ export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
 
             <button
               type="button"
-              onClick={() => setNotice('Google Workspace SSO is coming soon — sign in with your business email below.')}
+              onClick={signInWithGoogle}
               className="w-full flex items-center justify-center gap-2.5 bg-white text-gray-800 font-semibold text-sm rounded-xl py-3 hover:bg-gray-100 transition-colors"
             >
               <GoogleMark /> Continue with Google workspace
@@ -113,9 +128,6 @@ export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
 
             {error && (
               <div className="mb-3 text-[12px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</div>
-            )}
-            {notice && (
-              <div className="mb-3 text-[12px] text-indigo-200 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">{notice}</div>
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

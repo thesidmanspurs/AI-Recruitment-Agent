@@ -18,6 +18,7 @@ import locationRoutes from './routes/locationRoutes.js';
 import emailSettingsRoutes from './routes/emailSettingsRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { webhookController } from './controllers/webhookController.js';
+import { googleAuthController } from './controllers/googleAuthController.js';
 import { trackingService } from './services/tracking/trackingService.js';
 import { inboxPollingService } from './services/outreach/inboxPollingService.js';
 
@@ -56,6 +57,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 app.use('/api/auth', authRoutes);
+
+// Google OAuth callback. Public + top-level path to match the OAuth client's
+// Authorized redirect URI (/api/callback). Must be before the JWT middleware.
+app.get('/api/callback', googleAuthController.callback);
 
 // Webhooks are public (no JWT). Each route validates its own shared-secret
 // token. Must be mounted BEFORE the authenticate middleware.
