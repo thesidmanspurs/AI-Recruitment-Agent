@@ -4,6 +4,8 @@ import { MarketingLayout, Pill, SectionHeading } from '../../components/marketin
 
 interface PageProps {
   onNavigate: (to: string) => void;
+  /** Start the purchase flow for a package (auth → Stripe checkout). */
+  onSelectPlan: (packageId: string) => void;
 }
 
 // Kept in sync with backend/config/creditPackages.ts.
@@ -41,7 +43,7 @@ const PLANS = [
   },
 ];
 
-export function PricingPage({ onNavigate }: PageProps) {
+export function PricingPage({ onNavigate, onSelectPlan }: PageProps) {
   const [reveals, setReveals] = useState(2500);
 
   const estimate = useMemo(() => {
@@ -101,7 +103,7 @@ export function PricingPage({ onNavigate }: PageProps) {
                 ))}
               </ul>
               <button
-                onClick={() => onNavigate('/')}
+                onClick={() => onSelectPlan(plan.id)}
                 className={`mt-auto w-full rounded-xl py-3 text-sm font-semibold transition-colors ${
                   plan.highlight
                     ? 'bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white shadow-lg shadow-indigo-900/30'
