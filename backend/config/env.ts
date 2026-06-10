@@ -91,8 +91,11 @@ export const env = {
   // From Google Cloud Console → APIs & Services → Credentials (OAuth client).
   // GOOGLE_REDIRECT_URI MUST exactly match an Authorized redirect URI on the
   // OAuth client; defaults to APP_URL + /api/callback (the configured one).
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  // .trim() guards against a stray BOM / trailing newline sneaking into the
+  // secret value (e.g. from how it was written to Secret Manager) — such
+  // invisible chars make Google reject the client with "invalid_client".
+  GOOGLE_CLIENT_ID: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+  GOOGLE_CLIENT_SECRET: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
   GOOGLE_REDIRECT_URI:
     process.env.GOOGLE_REDIRECT_URI ||
     `${(process.env.APP_URL || process.env.APP_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/callback`,
