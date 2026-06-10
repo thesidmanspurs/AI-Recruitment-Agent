@@ -78,7 +78,7 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
           isFiltered
             ? 'bg-gray-900 text-white border-gray-900 hover:bg-gray-800'
-            : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
+            : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50 dark:bg-[#10131c] dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/5'
         }`}
         title="Filter the candidate table by minimum AI fit score"
       >
@@ -91,29 +91,29 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
         <div
           ref={panelRef}
           style={{ position: 'fixed', top: pos.top, left: pos.left, width: 280 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-xl z-50 flex flex-col"
+          className="bg-white border border-gray-200 rounded-xl shadow-xl z-50 flex flex-col dark:bg-[#10131c] dark:border-white/10"
         >
           <div className="flex items-center justify-between px-4 pt-3.5 pb-1.5">
-            <h4 className="text-xs font-bold text-gray-900">Minimum AI score</h4>
+            <h4 className="text-xs font-bold text-gray-900 dark:text-white">Minimum AI score</h4>
             <button
               onClick={() => setOpen(false)}
               aria-label="Close"
-              className="w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+              className="w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-200 dark:hover:bg-white/5"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <p className="text-[11px] text-gray-500 px-4">
+          <p className="text-[11px] text-gray-500 px-4 dark:text-gray-400">
             Hide candidates scoring below this. Server still saves them; this is a view-only filter.
           </p>
 
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-mono text-gray-500">{MIN.toFixed(1)}</span>
+              <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">{MIN.toFixed(1)}</span>
               <span className="text-2xl font-extrabold text-indigo-600 tabular-nums">
                 {clamped.toFixed(1)}
               </span>
-              <span className="text-[11px] font-mono text-gray-500">{MAX.toFixed(1)}</span>
+              <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">{MAX.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -135,9 +135,9 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
                   const v = parseFloat(e.target.value);
                   if (Number.isFinite(v)) onChange(Math.min(MAX, Math.max(MIN, v)));
                 }}
-                className="w-20 bg-white border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 tabular-nums"
+                className="w-20 bg-white border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 tabular-nums dark:bg-[#0a0c12] dark:border-white/10 dark:text-gray-100"
               />
-              <span className="text-[11px] text-gray-500">/ 10.0</span>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">/ 10.0</span>
             </div>
           </div>
 
@@ -149,8 +149,8 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
                 onClick={() => onChange(p)}
                 className={`text-[11px] font-semibold px-2 py-1 rounded-md border transition-colors ${
                   clamped === p
-                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-[#10131c] dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5'
                 }`}
               >
                 ≥ {p.toFixed(1)}
@@ -158,11 +158,11 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
             ))}
           </div>
 
-          <div className="flex items-center justify-between px-3 py-2.5 border-t border-gray-100">
+          <div className="flex items-center justify-between px-3 py-2.5 border-t border-gray-100 dark:border-white/10">
             <button
               type="button"
               onClick={() => onChange(defaultValue)}
-              className="text-[11px] font-semibold text-gray-600 hover:text-gray-900"
+              className="text-[11px] font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             >
               Reset to default ({defaultValue.toFixed(1)})
             </button>

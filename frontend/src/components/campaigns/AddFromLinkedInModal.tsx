@@ -86,7 +86,7 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
             <button
               onClick={close}
               disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#10131c] border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
             >
               Cancel
             </button>
@@ -114,15 +114,15 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
       {result ? (
         // ─── Result view ───────────────────────────────────────────────────
         <div className="flex flex-col gap-4">
-          <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+          <div className="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 rounded-lg px-4 py-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-            <div className="text-sm text-emerald-800">
+            <div className="text-sm text-emerald-800 dark:text-emerald-300">
               <p className="font-semibold">
                 Added {result.addedCount}{' '}
                 {result.addedCount === 1 ? 'candidate' : 'candidates'}.
               </p>
               {result.skipped.length > 0 && (
-                <p className="text-xs mt-1 text-emerald-700">
+                <p className="text-xs mt-1 text-emerald-700 dark:text-emerald-400">
                   {result.skipped.length} URL{result.skipped.length === 1 ? '' : 's'} skipped (see
                   below).
                 </p>
@@ -132,19 +132,19 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
 
           {result.skipped.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2">
+              <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">
                 Skipped
               </p>
               <ul className="flex flex-col gap-1.5 max-h-64 overflow-y-auto">
                 {result.skipped.map((s, i) => (
                   <li
                     key={i}
-                    className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+                    className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-400/20 rounded-md px-3 py-2"
                   >
-                    <p className="text-[11px] font-mono text-amber-800 truncate" title={s.url}>
+                    <p className="text-[11px] font-mono text-amber-800 dark:text-amber-300 truncate" title={s.url}>
                       {s.url}
                     </p>
-                    <p className="text-[11px] text-amber-700 mt-0.5">{s.reason}</p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">{s.reason}</p>
                   </li>
                 ))}
               </ul>
@@ -155,14 +155,14 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
         // ─── Input view ────────────────────────────────────────────────────
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {error && (
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <div className="flex items-start gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 rounded-lg px-4 py-3">
               <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+            <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
               LinkedIn profile URLs
             </label>
             <textarea
@@ -170,9 +170,9 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
               onChange={e => setText(e.target.value)}
               placeholder={`https://www.linkedin.com/in/satyanadella/\nhttps://www.linkedin.com/in/sundarpichai/\nhttps://www.linkedin.com/in/...`}
               rows={10}
-              className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y dark:placeholder:text-gray-600"
             />
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
               One URL per line (or comma-separated).{' '}
               <span className="font-semibold">{valid.length} valid</span>
               {invalid > 0 && (
@@ -181,7 +181,7 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
             </p>
           </div>
 
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-xs text-indigo-800 leading-relaxed">
+          <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 rounded-lg p-4 text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">
             <p className="font-semibold mb-1">How this works</p>
             <p>
               Apollo's basic-tier <code className="font-mono">people/match</code> endpoint returns

@@ -188,7 +188,7 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${
           applied.length > 0
             ? 'bg-gray-900 text-white border-gray-900 hover:bg-gray-800'
-            : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
+            : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50 dark:bg-[#10131c] dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/5'
         }`}
       >
         <MapPin className="w-3.5 h-3.5" />
@@ -200,17 +200,17 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
         <div
           ref={panelRef}
           style={{ position: 'fixed', top: panelPos.top, left: panelPos.left, width: 340 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-xl z-50 flex flex-col"
+          className="bg-white border border-gray-200 rounded-xl shadow-xl z-50 flex flex-col dark:bg-[#10131c] dark:border-white/10"
         >
           {/* Add input */}
-          <div className="p-3 border-b border-gray-100">
+          <div className="p-3 border-b border-gray-100 dark:border-white/10">
             <div className="relative">
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={handleInputKey}
                 placeholder="Add a location"
-                className="w-full bg-white border border-gray-300 rounded-full pl-3.5 pr-9 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white border border-gray-300 rounded-full pl-3.5 pr-9 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 dark:bg-[#0a0c12] dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-600"
               />
               {searching ? (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 animate-spin" />
@@ -219,7 +219,7 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
                   type="button"
                   onClick={() => setQuery('')}
                   aria-label="Clear input"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center dark:text-gray-500 dark:hover:text-gray-200 dark:hover:bg-white/5"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -231,7 +231,7 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
                 <button
                   type="button"
                   onClick={addCustom}
-                  className="mt-2 text-[11.5px] font-medium text-indigo-700 hover:text-indigo-800"
+                  className="mt-2 text-[11.5px] font-medium text-indigo-700 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   + Add "{query.trim()}"
                 </button>
@@ -241,7 +241,7 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
           {/* Suggestion checklist */}
           <div className="px-2 py-1.5 max-h-[260px] overflow-y-auto">
             {visibleList.length === 0 ? (
-              <p className="text-xs text-gray-400 px-3 py-4 text-center">
+              <p className="text-xs text-gray-400 px-3 py-4 text-center dark:text-gray-500">
                 {searching
                   ? 'Searching…'
                   : `No matches. Press Enter to add "${query.trim()}".`}
@@ -254,18 +254,18 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
                     key={loc}
                     type="button"
                     onClick={() => toggle(loc)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors text-left dark:hover:bg-white/5"
                   >
                     <span
                       className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
                         checked
                           ? 'bg-gray-900 border-gray-900 text-white'
-                          : 'bg-white border-gray-300'
+                          : 'bg-white border-gray-300 dark:bg-[#0a0c12] dark:border-white/10'
                       }`}
                     >
                       {checked && <Check className="w-3 h-3" />}
                     </span>
-                    <span className="text-sm text-gray-800 truncate">{loc}</span>
+                    <span className="text-sm text-gray-800 truncate dark:text-gray-200">{loc}</span>
                   </button>
                 );
               })
@@ -273,12 +273,12 @@ export function LocationFilter({ applied, onApply }: LocationFilterProps) {
           </div>
 
           {/* Footer actions */}
-          <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-t border-gray-100">
+          <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-t border-gray-100 dark:border-white/10">
             <button
               type="button"
               onClick={reset}
               disabled={draft.length === 0 && applied.length === 0}
-              className="px-3.5 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-3.5 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-[#10131c] dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/5"
             >
               Reset
             </button>

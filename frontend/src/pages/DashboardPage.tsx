@@ -328,14 +328,14 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                 <div
                   className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md border text-[11px] font-medium ${
                     usage.exceeded
-                      ? 'bg-red-50 border-red-200 text-red-700'
+                      ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-500/10 dark:border-red-400/20 dark:text-red-300'
                       : usage.remaining <= Math.max(1, Math.floor(usage.limit * 0.1))
-                        ? 'bg-amber-50 border-amber-200 text-amber-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                        ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-400/20 dark:text-amber-300'
+                        : 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-white/5 dark:border-white/10 dark:text-gray-200'
                   }`}
                   title="Daily AI usage — resets at 00:00 UTC"
                 >
-                  <span className="uppercase tracking-wider text-[9px] font-bold text-gray-500">
+                  <span className="uppercase tracking-wider text-[9px] font-bold text-gray-500 dark:text-gray-400">
                     Today
                   </span>
                   <span className="font-bold tabular-nums">
@@ -362,8 +362,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                   onClick={onOpenBilling}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border transition-colors ${
                     creditBalance !== null && creditBalance <= 0
-                      ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
-                      : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+                      ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 dark:bg-red-500/10 dark:border-red-400/20 dark:text-red-300 dark:hover:bg-red-500/20'
+                      : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 dark:bg-amber-500/10 dark:border-amber-400/20 dark:text-amber-300 dark:hover:bg-amber-500/20'
                   }`}
                   title="Credits are spent on Apollo email/phone reveals. Click to buy more."
                 >
@@ -385,7 +385,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
               {user.role === 'ADMIN' && onOpenAdmin && (
                 <button
                   onClick={onOpenAdmin}
-                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300 dark:hover:bg-indigo-500/20 transition-colors"
                 >
                   <Shield className="w-3.5 h-3.5" />
                   Admin
@@ -415,7 +415,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
         <aside className="lg:w-64 shrink-0">
           <div className="lg:sticky lg:top-24 flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
-              <p className="text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
+              <p className="text-[10px] font-semibold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
                 Campaigns
               </p>
               <button
@@ -430,7 +430,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
             {loading ? (
               <CenterLoader />
             ) : campaigns.length === 0 ? (
-              <p className="text-xs text-gray-500 px-3 py-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 px-3 py-2">
                 No campaigns yet — create your first.
               </p>
             ) : (
@@ -446,15 +446,15 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                       className={[
                         'flex items-center gap-2.5 w-full px-3 py-2 text-left rounded-md border transition-colors',
                         active
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                          : 'border-transparent text-gray-700 hover:bg-gray-50 hover:text-gray-900',
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300'
+                          : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white',
                       ].join(' ')}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[c.status]}`} />
                       <span className="text-xs font-semibold truncate flex-1">{c.name}</span>
                       <span
                         className={`text-[9px] font-bold uppercase tracking-wider ${
-                          active ? 'text-indigo-500' : 'text-gray-400'
+                          active ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'
                         }`}
                       >
                         {c.status}
@@ -477,10 +477,10 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
             <>
               {/* Email-not-configured banner — outreach is blocked until set up */}
               {emailCanSend === false && (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50">
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-400/20">
                   <div className="flex items-center gap-2 min-w-0">
                     <Mail className="w-4 h-4 text-amber-600 shrink-0" />
-                    <p className="text-sm text-amber-800 truncate">
+                    <p className="text-sm text-amber-800 dark:text-amber-300 truncate">
                       Outreach is blocked until you set up and verify your own sending email.
                     </p>
                   </div>
@@ -511,17 +511,17 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="min-w-0">
-                    <h2 className="text-2xl font-bold text-gray-900 leading-tight truncate">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight truncate">
                       {activeCampaign.jobTitle}
                     </h2>
-                    <p className="text-sm text-gray-500 mt-1 truncate">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
                       {activeCampaign.location ?? '—'}
-                      <span className="mx-2 text-gray-300">•</span>
+                      <span className="mx-2 text-gray-300 dark:text-white/20">•</span>
                       {activeCampaign.jobType ?? '—'}
-                      <span className="mx-2 text-gray-300">•</span>
+                      <span className="mx-2 text-gray-300 dark:text-white/20">•</span>
                       {activeCampaign.department ?? '—'}
-                      <span className="mx-2 text-gray-300">•</span>
-                      <span className="uppercase tracking-wider text-[11px] font-semibold text-gray-400">
+                      <span className="mx-2 text-gray-300 dark:text-white/20">•</span>
+                      <span className="uppercase tracking-wider text-[11px] font-semibold text-gray-400 dark:text-gray-500">
                         {activeCampaign.status}
                       </span>
                     </p>
@@ -544,7 +544,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                     <button
                       onClick={handleSource}
                       disabled={sourcing}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 bg-white dark:bg-[#0a0c12] border border-blue-200 dark:border-blue-400/20 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                     >
                       {sourcing ? (
                         <>
@@ -570,7 +570,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                         }}
                         disabled={rescoring}
                         title="Deep-score with Gemini web research (scoring.md rubric, no Apollo credits). Slower but accurate."
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 bg-white border border-violet-200 rounded-lg hover:bg-violet-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 dark:text-violet-300 bg-white dark:bg-[#0a0c12] border border-violet-200 dark:border-violet-400/20 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                       >
                         {rescoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                         {rescoring ? 'Deep scoring…' : 'Deep score'}
@@ -578,14 +578,14 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                     )}
                     <button
                       onClick={() => setShowEdit(true)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                     >
                       <FileEdit className="w-4 h-4" />
                       Edit Spec
                     </button>
                     <button
                       onClick={() => setShowDelete(true)}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-[#0a0c12] border border-red-200 dark:border-red-400/20 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                       title="Delete this campaign"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -933,18 +933,18 @@ function SectionCard({
 }) {
   return (
     <section
-      className={`bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col ${className ?? ''}`}
+      className={`bg-white dark:bg-[#10131c] border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden flex flex-col ${className ?? ''}`}
     >
       {renderHeader && title && (
-        <header className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2.5">
+        <header className="px-5 py-3.5 border-b border-gray-100 dark:border-white/10 flex items-center gap-2.5">
           {icon && (
-            <div className="w-7 h-7 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-md bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center">
               {icon}
             </div>
           )}
           <div>
-            <h3 className="text-xs font-semibold text-gray-900 leading-none">{title}</h3>
-            {subtitle && <p className="text-[10px] text-gray-500 mt-1">{subtitle}</p>}
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-white leading-none">{title}</h3>
+            {subtitle && <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
           </div>
         </header>
       )}
@@ -955,9 +955,9 @@ function SectionCard({
 
 function BigStat({ value, tone }: { value: number; tone: 'gray' | 'green' | 'blue' }) {
   const tones: Record<string, string> = {
-    gray: 'text-gray-900',
-    green: 'text-emerald-600',
-    blue: 'text-blue-600',
+    gray: 'text-gray-900 dark:text-white',
+    green: 'text-emerald-600 dark:text-emerald-400',
+    blue: 'text-blue-600 dark:text-blue-400',
   };
   return (
     <p className={`text-3xl font-bold tabular-nums ${tones[tone]}`}>{value.toLocaleString()}</p>
@@ -974,14 +974,14 @@ function ScreeningStat({
   tone?: 'gray' | 'green' | 'amber';
 }) {
   const tones: Record<string, string> = {
-    gray: 'text-gray-900',
-    green: 'text-emerald-600',
-    amber: 'text-amber-600',
+    gray: 'text-gray-900 dark:text-white',
+    green: 'text-emerald-600 dark:text-emerald-400',
+    amber: 'text-amber-600 dark:text-amber-400',
   };
   return (
     <div className="flex items-baseline gap-1.5">
       <span className={`text-lg font-bold tabular-nums ${tones[tone]}`}>{value}</span>
-      <span className="text-[11px] text-gray-500">{label}</span>
+      <span className="text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
     </div>
   );
 }
@@ -997,16 +997,16 @@ function SpecField({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
+      <p className="text-[10px] font-semibold tracking-widest text-gray-400 dark:text-gray-500 uppercase mb-2">
         {label}
       </p>
       {items.length === 0 ? (
-        <p className="text-xs text-gray-400">—</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">—</p>
       ) : compact ? (
         <ul className="flex flex-col gap-1.5">
           {items.map(item => (
-            <li key={item} className="text-xs text-gray-700 flex gap-2">
-              <span className="text-indigo-500 shrink-0">•</span>
+            <li key={item} className="text-xs text-gray-700 dark:text-gray-200 flex gap-2">
+              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">•</span>
               <span>{item}</span>
             </li>
           ))}
@@ -1016,7 +1016,7 @@ function SpecField({
           {items.map(item => (
             <span
               key={item}
-              className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100"
+              className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-400/20"
             >
               {item}
             </span>
@@ -1039,11 +1039,11 @@ function EmptyDashboard({ onNew }: { onNew: () => void }) {
   return (
     <SectionCard renderHeader={false}>
       <div className="flex flex-col items-center justify-center py-20 max-w-md mx-auto text-center">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
           <Sparkles className="w-6 h-6 text-indigo-600" />
         </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-1.5">No campaigns yet</h2>
-        <p className="text-sm text-gray-500 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5">No campaigns yet</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           Paste a job description and Gemini will extract the title, keywords, and requirements.
           Then run sourcing to populate the candidate batch.
         </p>
@@ -1063,11 +1063,11 @@ function EmptySourcing({ onSource, sourcing }: { onSource: () => void; sourcing:
   return (
     <SectionCard renderHeader={false}>
       <div className="py-12 flex flex-col items-center text-center px-6">
-        <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
           <Inbox className="w-5 h-5 text-indigo-600" />
         </div>
-        <h3 className="text-base font-bold text-gray-900 mb-1">No candidates sourced yet</h3>
-        <p className="text-sm text-gray-500 mb-5 max-w-sm">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">No candidates sourced yet</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 max-w-sm">
           Phase 2: ask Gemini to generate a longlist matching this job spec. Approved candidates
           (score ≥ 9.5) advance to Apollo enrichment.
         </p>

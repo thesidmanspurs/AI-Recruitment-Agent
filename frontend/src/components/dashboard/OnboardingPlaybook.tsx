@@ -151,11 +151,11 @@ export function OnboardingPlaybook({
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-2.5 bg-[#fafaf8] border border-teal-200/60 rounded-xl hover:border-teal-300 transition-colors"
+        className="w-full flex items-center justify-between gap-3 px-4 py-2.5 bg-[#fafaf8] dark:bg-[#10131c] border border-teal-200/60 dark:border-white/10 rounded-xl hover:border-teal-300 dark:hover:border-white/20 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
           <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
-          <span className="text-xs font-semibold text-gray-800 truncate">
+          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
             Sourcing playbook · {completed}/{total} complete
           </span>
           <div className="hidden sm:flex items-center gap-1 ml-2">
@@ -167,30 +167,30 @@ export function OnboardingPlaybook({
                     ? 'bg-teal-500'
                     : s.status === 'in_progress'
                       ? 'bg-amber-400'
-                      : 'bg-gray-300'
+                      : 'bg-gray-300 dark:bg-gray-600'
                 }`}
               />
             ))}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] font-mono text-gray-500">{percent}%</span>
-          <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+          <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">{percent}%</span>
+          <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
         </div>
       </button>
     );
   }
 
   return (
-    <section className="bg-[#fafaf8] border border-teal-200/60 rounded-2xl overflow-hidden">
-      <header className="px-5 py-3.5 border-b border-teal-100 flex items-center justify-between gap-3">
+    <section className="bg-[#fafaf8] dark:bg-[#10131c] border border-teal-200/60 dark:border-white/10 rounded-2xl overflow-hidden">
+      <header className="px-5 py-3.5 border-b border-teal-100 dark:border-white/10 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center shrink-0">
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-900 leading-tight">Sourcing Playbook</h3>
-            <p className="text-[11px] text-gray-500 mt-0.5">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Sourcing Playbook</h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
               {completed === total
                 ? 'All steps complete — pipeline running.'
                 : `Step ${Math.max(1, completed + 1)} of ${total} · ${percent}% complete`}
@@ -199,7 +199,7 @@ export function OnboardingPlaybook({
         </div>
         <button
           onClick={() => setCollapsed(true)}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
           Collapse
           <ChevronUp className="w-3 h-3" />
@@ -208,7 +208,7 @@ export function OnboardingPlaybook({
 
       {/* Progress bar */}
       <div className="px-5 pt-3">
-        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500 ease-out"
             style={{ width: `${percent}%` }}
@@ -225,10 +225,10 @@ export function OnboardingPlaybook({
               key={step.key}
               className={`relative flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
                 step.status === 'complete'
-                  ? 'border-teal-300 bg-teal-50/50'
+                  ? 'border-teal-300 dark:border-teal-400/20 bg-teal-50/50 dark:bg-teal-500/10'
                   : step.status === 'in_progress'
-                    ? 'border-amber-200 bg-amber-50/40'
-                    : 'border-gray-200 bg-white'
+                    ? 'border-amber-200 dark:border-amber-400/20 bg-amber-50/40 dark:bg-amber-500/10'
+                    : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#10131c]'
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -238,41 +238,41 @@ export function OnboardingPlaybook({
                       step.status === 'complete'
                         ? 'bg-teal-500 text-white'
                         : step.status === 'in_progress'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-gray-100 text-gray-500'
+                          ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                          : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     <step.Icon className="w-3.5 h-3.5" />
                   </span>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 dark:text-gray-500">
                     Step {idx + 1}
                   </span>
                 </div>
                 {step.status === 'complete' ? (
                   <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
                 ) : step.status === 'in_progress' ? (
-                  <span className="text-[9px] font-semibold uppercase text-amber-700 tracking-wider px-1.5 py-0.5 bg-amber-100 rounded">
+                  <span className="text-[9px] font-semibold uppercase text-amber-700 dark:text-amber-300 tracking-wider px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 rounded">
                     In progress
                   </span>
                 ) : (
-                  <Circle className="w-4 h-4 text-gray-300 shrink-0" />
+                  <Circle className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
                 )}
               </div>
 
-              <h4 className="font-semibold text-sm text-gray-900 leading-tight">{step.title}</h4>
-              <p className="text-[11px] text-gray-600 leading-relaxed flex-1">{step.description}</p>
+              <h4 className="font-semibold text-sm text-gray-900 dark:text-white leading-tight">{step.title}</h4>
+              <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed flex-1">{step.description}</p>
 
               {(step.metric || step.action) && (
-                <div className="flex items-center justify-between gap-2 pt-1 mt-auto border-t border-gray-100">
+                <div className="flex items-center justify-between gap-2 pt-1 mt-auto border-t border-gray-100 dark:border-white/10">
                   {step.metric ? (
-                    <span className="text-[11px] font-semibold text-teal-700">{step.metric}</span>
+                    <span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300">{step.metric}</span>
                   ) : (
                     <span />
                   )}
                   {step.action && (
                     <button
                       onClick={step.action.onClick}
-                      className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
+                      className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                     >
                       {step.action.label} →
                     </button>
@@ -284,7 +284,7 @@ export function OnboardingPlaybook({
               <span
                 aria-hidden
                 className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-r-full ${
-                  order === 2 ? 'bg-teal-500' : order === 1 ? 'bg-amber-400' : 'bg-gray-200'
+                  order === 2 ? 'bg-teal-500' : order === 1 ? 'bg-amber-400' : 'bg-gray-200 dark:bg-white/10'
                 }`}
               />
             </article>

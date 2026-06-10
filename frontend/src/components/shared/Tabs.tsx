@@ -34,7 +34,7 @@ export function Tabs<TKey extends string>({
       className={
         isVertical
           ? 'flex flex-col gap-1'
-          : `flex items-center gap-1 ${isDark ? 'border-b border-white/5' : 'border-b border-gray-200'}`
+          : `flex items-center gap-1 ${isDark ? 'border-b border-white/5' : 'border-b border-gray-200 dark:border-white/10'}`
       }
     >
       {tabs.map(t => {
@@ -43,18 +43,18 @@ export function Tabs<TKey extends string>({
         const verticalCls = isActive
           ? isDark
             ? 'bg-indigo-600/20 border-indigo-500/40 text-white'
-            : 'bg-indigo-50 border-indigo-200 text-indigo-700'
+            : 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300'
           : isDark
             ? 'border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200'
-            : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+            : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200';
 
         const horizontalCls = isActive
           ? isDark
             ? 'text-white border-indigo-400'
-            : 'text-indigo-700 border-indigo-500'
+            : 'text-indigo-700 border-indigo-500 dark:text-indigo-300 dark:border-indigo-400'
           : isDark
             ? 'text-gray-500 border-transparent hover:text-gray-300'
-            : 'text-gray-500 border-transparent hover:text-gray-700';
+            : 'text-gray-500 border-transparent hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200';
 
         return (
           <button
@@ -76,10 +76,10 @@ export function Tabs<TKey extends string>({
                   isActive
                     ? isDark
                       ? 'bg-indigo-500/30 text-indigo-200'
-                      : 'bg-indigo-100 text-indigo-700'
+                      : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'
                     : isDark
                       ? 'bg-white/5 text-gray-400'
-                      : 'bg-gray-200 text-gray-600'
+                      : 'bg-gray-200 text-gray-600 dark:bg-white/5 dark:text-gray-400'
                 }`}
               >
                 {t.badge}

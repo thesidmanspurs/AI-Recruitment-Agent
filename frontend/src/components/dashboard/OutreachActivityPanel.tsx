@@ -48,20 +48,20 @@ function formatRelative(iso: string | null): string {
 function channelChip(channel: CandidateDto['outreachChannel']) {
   if (channel === 'EMAIL') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-400/20">
         <Mail className="w-2.5 h-2.5" /> Email
       </span>
     );
   }
   if (channel === 'LINKEDIN_DM') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-400/20">
         <MessageSquare className="w-2.5 h-2.5" /> LinkedIn
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded">
+    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded dark:bg-white/5 dark:text-gray-200 dark:border-white/10">
       <MessageSquare className="w-2.5 h-2.5" /> {channel ?? '—'}
     </span>
   );
@@ -71,27 +71,27 @@ function statusChip(c: CandidateDto) {
   const s = c.outreachStatus;
   if (s === 'REPLIED') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-full dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-400/20">
         <CheckCircle2 className="w-3 h-3" /> Replied
       </span>
     );
   }
   if (s === 'OPENED') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-400/20">
         Opened
       </span>
     );
   }
   if (s === 'NO_RESPONSE' || (c.daysSinceOutreach >= 2 && s === 'OUTREACH_SENT')) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-400/20">
         <AlertTriangle className="w-3 h-3" /> Awaiting
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-full">
+    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-full dark:bg-white/5 dark:text-gray-200 dark:border-white/10">
       <Clock className="w-3 h-3" /> Sent
     </span>
   );
@@ -134,15 +134,15 @@ export function OutreachActivityPanel({
   if (contacted.length === 0) return null;
 
   return (
-    <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-      <header className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+    <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden dark:bg-[#10131c] dark:border-white/10">
+      <header className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap dark:border-white/10">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
             <Send className="w-3.5 h-3.5 text-white" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-900 leading-tight">Outreach activity</h3>
-            <p className="text-[11px] text-gray-500 mt-0.5">
+            <h3 className="text-sm font-bold text-gray-900 leading-tight dark:text-white">Outreach activity</h3>
+            <p className="text-[11px] text-gray-500 mt-0.5 dark:text-gray-400">
               {counts.all} sent · {counts.replied} replied · {counts.awaiting} awaiting
             </p>
           </div>
@@ -155,7 +155,7 @@ export function OutreachActivityPanel({
               className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-colors capitalize ${
                 tab === t
                   ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 dark:bg-[#10131c] dark:text-gray-200 dark:border-white/10 dark:hover:bg-white/5'
               }`}
             >
               {t} · {counts[t]}
@@ -163,7 +163,7 @@ export function OutreachActivityPanel({
           ))}
           <button
             onClick={() => setCollapsed(c => !c)}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:text-gray-700 ml-1"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:text-gray-700 ml-1 dark:text-gray-400 dark:hover:text-gray-200"
           >
             {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
           </button>
@@ -171,9 +171,9 @@ export function OutreachActivityPanel({
       </header>
 
       {!collapsed && (
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-gray-100 dark:divide-white/10">
           {filtered.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">
+            <div className="px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
               Nothing in this view.
             </div>
           ) : (
@@ -184,25 +184,25 @@ export function OutreachActivityPanel({
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm text-gray-900 truncate">{c.name}</span>
+                        <span className="font-semibold text-sm text-gray-900 truncate dark:text-white">{c.name}</span>
                         {statusChip(c)}
                         {channelChip(c.outreachChannel)}
                       </div>
-                      <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                      <div className="text-[11px] text-gray-500 mt-0.5 truncate dark:text-gray-400">
                         {c.currentTitle} · {c.company}
                         {c.email ? <> · <span className="font-mono">{c.email}</span></> : null}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-[11px] text-gray-500">Sent</div>
-                      <div className="text-xs font-semibold text-gray-700 tabular-nums">
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">Sent</div>
+                      <div className="text-xs font-semibold text-gray-700 tabular-nums dark:text-gray-200">
                         {formatRelative(c.outreachSentAt)}
                       </div>
                     </div>
                     {c.outreachStatus === 'REPLIED' && (
-                      <div className="text-right shrink-0 border-l border-gray-100 pl-3 ml-2">
-                        <div className="text-[11px] text-emerald-700">Replied</div>
-                        <div className="text-xs font-semibold text-emerald-800 tabular-nums">
+                      <div className="text-right shrink-0 border-l border-gray-100 pl-3 ml-2 dark:border-white/10">
+                        <div className="text-[11px] text-emerald-700 dark:text-emerald-400">Replied</div>
+                        <div className="text-xs font-semibold text-emerald-800 tabular-nums dark:text-emerald-300">
                           {formatRelative(c.repliedAt)}
                         </div>
                       </div>
@@ -211,7 +211,7 @@ export function OutreachActivityPanel({
                       <button
                         onClick={() => onMarkReplied(c.id)}
                         disabled={markingId === c.id}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 disabled:opacity-60 px-2.5 py-1.5 rounded-md transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 disabled:opacity-60 px-2.5 py-1.5 rounded-md transition-colors dark:bg-[#10131c] dark:text-emerald-400 dark:border-emerald-400/20 dark:hover:bg-emerald-500/10"
                       >
                         {markingId === c.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -227,12 +227,12 @@ export function OutreachActivityPanel({
                     <div>
                       <button
                         onClick={() => setExpandedReply(isExpanded ? null : c.id)}
-                        className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-800"
+                        className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
                       >
                         {isExpanded ? 'Hide reply preview' : 'Show reply preview'}
                       </button>
                       {isExpanded && (
-                        <p className="mt-2 text-[12.5px] text-gray-700 leading-relaxed bg-emerald-50/40 border-l-2 border-emerald-300 pl-3 py-2 rounded-r whitespace-pre-wrap">
+                        <p className="mt-2 text-[12.5px] text-gray-700 leading-relaxed bg-emerald-50/40 border-l-2 border-emerald-300 pl-3 py-2 rounded-r whitespace-pre-wrap dark:text-gray-200 dark:bg-emerald-500/5 dark:border-emerald-400/30">
                           {c.replyPreview}
                         </p>
                       )}

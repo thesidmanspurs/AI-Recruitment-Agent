@@ -89,23 +89,23 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-[#10131c] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <header className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+        <header className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">New campaign</h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">New campaign</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Gemini will extract title, keywords, and requirements
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-8 h-8 rounded-md flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -113,14 +113,14 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
           {error && (
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <div className="flex items-start gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 rounded-lg px-4 py-3">
               <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
               Campaign name *
             </label>
             <input
@@ -128,19 +128,19 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. SAP Architect Q3"
-              className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
                 Location
               </label>
               <select
                 value={location}
                 onChange={e => setLocation(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
               >
                 <option>On-site</option>
                 <option>Hybrid</option>
@@ -148,13 +148,13 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
                 Job type
               </label>
               <select
                 value={jobType}
                 onChange={e => setJobType(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
               >
                 <option>Full-time</option>
                 <option>Contract</option>
@@ -163,7 +163,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
                 Department
               </label>
               <input
@@ -171,19 +171,19 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
                 value={department}
                 onChange={e => setDepartment(e.target.value)}
                 placeholder="Engineering"
-                className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5 flex-1">
             <div className="flex items-center justify-between gap-3">
-              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
                 Job description *
               </label>
               <div className="flex items-center gap-2">
                 {uploadedFileName && (
-                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 max-w-[180px] truncate">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 max-w-[180px] truncate">
                     <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     <span className="truncate">{uploadedFileName}</span>
                   </span>
@@ -199,7 +199,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || submitting}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                   {uploading ? 'Reading…' : 'Upload PDF / DOCX'}
@@ -211,20 +211,20 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               onChange={e => setJobText(e.target.value)}
               placeholder={PLACEHOLDER}
               rows={10}
-              className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 resize-y leading-relaxed font-mono"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 resize-y leading-relaxed font-mono"
             />
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
               {jobText.length.toLocaleString()} characters · the more detail, the better the extraction
             </p>
           </div>
         </form>
 
-        <footer className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
+        <footer className="px-6 py-4 border-t border-gray-100 dark:border-white/10 flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#10131c] border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-60 transition-colors"
           >
             Cancel
           </button>
