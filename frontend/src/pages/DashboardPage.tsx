@@ -29,6 +29,7 @@ import { EmailSettingsModal } from '../components/settings/EmailSettingsModal';
 import { emailSettingsApi } from '../api/emailSettingsApi';
 import { paymentsApi } from '../api/paymentsApi';
 import { ThemeToggle } from '../components/shared/ThemeToggle';
+import { WorkspaceSidebar } from '../components/layout/WorkspaceSidebar';
 import { SmartAlerts } from '../components/dashboard/SmartAlerts';
 import { ChannelMix } from '../components/dashboard/ChannelMix';
 import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal';
@@ -273,7 +274,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f8] dark:bg-[#0a0c12] text-gray-900 dark:text-gray-100 font-sans transition-colors">
+    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#0a0c12] text-gray-900 dark:text-gray-100 font-sans">
       {/* Top header — mirrors admin layout */}
       <WorkflowGuideModal
         open={showGuide}
@@ -304,18 +305,37 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
           void reloadCandidates();
         }}
       />
+
+      {/* Persistent dark workspace sidebar (campaigns + status + credits) */}
+      <WorkspaceSidebar
+        campaigns={campaigns}
+        activeId={activeId}
+        onSelect={setActiveId}
+        onNew={() => setShowCreate(true)}
+        creditBalance={creditBalance}
+        onOpenBilling={onOpenBilling}
+        activeCampaignName={activeCampaign?.name}
+        candidateCount={candidates.length}
+      />
+
+      {/* Main workspace column */}
+      <div className="flex-1 flex flex-col min-w-0 max-h-screen overflow-y-auto">
       <header className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#10131c] sticky top-0 z-10 transition-colors">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
+        <div className="px-6 sm:px-8 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-              <span className="text-sm font-extrabold text-white">A</span>
-            </div>
             <div className="min-w-0">
-              <h1 className="text-base font-bold text-gray-900 dark:text-white leading-none truncate">
-                ARIES
-              </h1>
-              <p className="text-[11px] text-gray-500 mt-0.5 truncate">
-                AI Recruitment &amp; Intelligent Engagement Service
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none truncate">
+                  {activeCampaign?.jobTitle ?? 'Workspace'}
+                </h1>
+                <span className="hidden sm:inline text-[10px] bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 font-mono font-bold px-2 py-0.5 rounded leading-none uppercase">
+                  Campaign Profile
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 truncate">
+                {activeCampaign
+                  ? [activeCampaign.location, activeCampaign.jobType, activeCampaign.department].filter(Boolean).join(' • ') || 'AI Recruitment & Intelligent Engagement'
+                  : 'AI Recruitment & Intelligent Engagement Service'}
               </p>
             </div>
           </div>
@@ -402,69 +422,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
 
         {/* Workflow stepper strip — visible whenever a user is signed in */}
         {user && (
-          <div className="max-w-[1400px] mx-auto px-6 pb-3 -mt-1 flex items-center justify-center sm:justify-start overflow-x-auto">
+          <div className="px-6 sm:px-8 pb-3 -mt-1 flex items-center justify-center sm:justify-start overflow-x-auto">
             <HeaderStepper steps={headerSteps} onHelp={() => setShowGuide(true)} />
           </div>
         )}
       </header>
 
-      <div className="max-w-[1400px] mx-auto px-6 py-8 flex flex-col lg:flex-row gap-6">
-        {/* Left vertical nav — campaigns as tabs */}
-        <aside className="lg:w-64 shrink-0">
-          <div className="lg:sticky lg:top-24 flex flex-col gap-3">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[10px] font-semibold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
-                Campaigns
-              </p>
-              <button
-                onClick={() => setShowCreate(true)}
-                className="flex items-center gap-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-              >
-                <Plus className="w-3 h-3" />
-                New
-              </button>
-            </div>
-
-            {loading ? (
-              <CenterLoader />
-            ) : campaigns.length === 0 ? (
-              <p className="text-xs text-gray-500 dark:text-gray-400 px-3 py-2">
-                No campaigns yet — create your first.
-              </p>
-            ) : (
-              <nav className="flex flex-col gap-1" role="tablist" aria-orientation="vertical">
-                {campaigns.map(c => {
-                  const active = c.id === activeId;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setActiveId(c.id)}
-                      role="tab"
-                      aria-selected={active}
-                      className={[
-                        'flex items-center gap-2.5 w-full px-3 py-2 text-left rounded-md border transition-colors',
-                        active
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300'
-                          : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white',
-                      ].join(' ')}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[c.status]}`} />
-                      <span className="text-xs font-semibold truncate flex-1">{c.name}</span>
-                      <span
-                        className={`text-[9px] font-bold uppercase tracking-wider ${
-                          active ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'
-                        }`}
-                      >
-                        {c.status}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            )}
-          </div>
-        </aside>
-
+      <div className="px-6 sm:px-8 py-8">
         {/* Main content */}
         <main className="flex-1 min-w-0 flex flex-col gap-6">
           {loading ? (
@@ -778,6 +742,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
           ) : null}
         </main>
       </div>
+      </div>
 
       {showCreate && (
         <CreateCampaignModal onClose={() => setShowCreate(false)} onCreate={createCampaign} />
@@ -884,13 +849,6 @@ function csvEscape(s: string): string {
   }
   return s;
 }
-
-const STATUS_DOT: Record<CampaignDto['status'], string> = {
-  RUNNING: 'bg-emerald-500',
-  PAUSED: 'bg-amber-500',
-  DRAFT: 'bg-gray-400',
-  COMPLETED: 'bg-blue-500',
-};
 
 // ─── Section card (shared with admin) ─────────────────────────────────────────
 
