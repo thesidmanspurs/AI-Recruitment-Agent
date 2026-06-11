@@ -5,6 +5,7 @@ import { emailService, EmailNotConfiguredError } from '../services/outreach/emai
 import { formatGeminiError } from '../services/ai/geminiErrors.js';
 import { trackingService } from '../services/tracking/trackingService.js';
 import { usageService } from '../services/usage/usageService.js';
+import { creditService } from '../services/credits/creditService.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
 import { prisma } from '../config/database.js';
@@ -26,7 +27,8 @@ export const outreachController = {
   async enrichCandidate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { campaignId, candidateId } = req.params;
-      const campaign = await campaignRepository.findById(campaignId, req.user!.id);
+      const userId = req.user!.id;
+      const campaign = await campaignRepository.findById(campaignId, userId);
       if (!campaign) return next(createError('Campaign not found.', 404));
 
       const candidate = await candidateRepository.findById(candidateId, campaignId);
@@ -36,10 +38,11 @@ export const outreachController = {
       // we would otherwise spend a credit to fetch, return the cached row
       // without calling Apollo. The user can force-refresh by sending
       // `?force=1` on the URL (used by the "Re-enrich" button only when the
-      // recruiter explicitly opts in).
+      // recruiter explicitly opts in). No credit is spent on the cached path.
       const force = req.query.force === '1' || req.query.force === 'true';
       const hasUsableData = !!candidate.email; // email is the field that costs a credit
       if (hasUsableData && !force) {
+        const creditsRemaining = await creditService.getBalance(userId);
         res.json({
           success: true,
           candidate,
@@ -51,6 +54,7 @@ export const outreachController = {
           },
           isSimulated: false,
           fromCache: true, // tells the UI not to deduct from credit balance
+          creditsRemaining,
         });
         return;
       }
@@ -58,6 +62,13 @@ export const outreachController = {
       let result;
       let isSimulated = false;
       let simulationReason: string | undefined;
+
+      // Revealing a real contact via Apollo costs 1 credit. Require one up
+      // front so we never reveal with an empty balance. (When Apollo isn't
+      // configured we only return simulated/mock data, which is free.)
+      if (apolloService.isAvailable()) {
+        await creditService.assertHasCredits(userId, 1);
+      }
 
       if (apolloService.isAvailable()) {
         try {
@@ -100,11 +111,19 @@ export const outreachController = {
         outreachStatus: 'ENRICHED',
       });
 
+      // Charge 1 credit only for a real (non-simulated) reveal that actually
+      // produced contact data. Empty results and mock/simulated data are free.
+      let creditsRemaining = await creditService.getBalance(userId);
+      const revealedReal = !isSimulated && result.found && (!!result.email || !!result.phone);
+      if (revealedReal) {
+        creditsRemaining = await creditService.spend(userId, 1, `Apollo contact reveal: ${candidate.name}`);
+      }
+
       await campaignRepository.addLog(campaignId, {
         message: result.found
           ? `Enriched ${candidate.name}${result.email ? ` (${result.email})` : ''}${
               isSimulated ? ' (simulation)' : ''
-            }`
+            }${revealedReal ? ' — 1 credit' : ''}`
           : `No contact info found for ${candidate.name}${isSimulated ? ' (simulation)' : ''}`,
         candidateId: candidate.id,
         candidateName: candidate.name,
@@ -118,6 +137,7 @@ export const outreachController = {
         isSimulated,
         simulationReason,
         fromCache: false,
+        creditsRemaining,
       });
     } catch (err) {
       next(err);
