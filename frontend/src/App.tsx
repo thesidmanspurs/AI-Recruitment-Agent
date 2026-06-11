@@ -162,7 +162,7 @@ function AuthGate() {
 
   // ── Unauthenticated landing (has its own sign-in console) ─────────────────
   if (!user) {
-    return <LandingPage onLogin={login} onNavigate={navigate} />;
+    return <LandingPage onLogin={login} onNavigate={navigate} onSelectPlan={handleSelectPlan} />;
   }
 
   // ── Authenticated ─────────────────────────────────────────────────────────
