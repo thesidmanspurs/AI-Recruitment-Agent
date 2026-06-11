@@ -10,6 +10,8 @@ interface LandingPageProps {
   onNavigate: (to: string) => void;
   /** Start the purchase flow for a package (auth → Stripe checkout). */
   onSelectPlan?: (packageId: string) => void;
+  /** Section id to scroll to on mount (when reached via /pricing, /faq, …). */
+  scrollTo?: string;
 }
 
 const NAV = [
@@ -45,7 +47,7 @@ const FAQS = [
   { q: 'Is my data secure?', a: 'Credentials are AES-256-GCM encrypted at rest and never returned to the browser. Payments are processed by Stripe — we never store card data. The platform is SOC2-aligned.' },
 ];
 
-export function LandingPage({ onLogin, onNavigate, onSelectPlan }: LandingPageProps) {
+export function LandingPage({ onLogin, onNavigate, onSelectPlan, scrollTo: scrollToSection }: LandingPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -60,7 +62,12 @@ export function LandingPage({ onLogin, onNavigate, onSelectPlan }: LandingPagePr
       setError(authError);
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+    // When reached via a section route (/pricing, /faq, …), jump to it.
+    if (scrollToSection) {
+      const t = setTimeout(() => document.getElementById(scrollToSection)?.scrollIntoView({ block: 'start' }), 50);
+      return () => clearTimeout(t);
+    }
+  }, [scrollToSection]);
 
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
