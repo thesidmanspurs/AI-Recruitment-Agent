@@ -6,6 +6,9 @@ import { AuthPage } from './pages/AuthPage';
 import { AdminPage } from './pages/AdminPage';
 import { BillingPage } from './pages/BillingPage';
 import { LandingPage } from './pages/marketing/LandingPage';
+import { EngineFeaturesPage } from './pages/marketing/EngineFeaturesPage';
+import { PricingPage } from './pages/marketing/PricingPage';
+import { FaqPage } from './pages/marketing/FaqPage';
 import { ToastProvider } from './components/shared/Toast';
 import { useAuth } from './hooks/useAuth';
 import { paymentsApi } from './api/paymentsApi';
@@ -137,23 +140,10 @@ function AuthGate() {
     );
   }
 
-  // ── Public marketing section routes → the unified single-page homepage,
-  //    scrolled to the matching section (regardless of auth). ────────────────
-  const marketingSection: Record<string, string> = {
-    '/engine-features': 'features',
-    '/pricing': 'pricing',
-    '/faq': 'faq',
-  };
-  if (path in marketingSection) {
-    return (
-      <LandingPage
-        onLogin={login}
-        onNavigate={navigate}
-        onSelectPlan={handleSelectPlan}
-        scrollTo={marketingSection[path]}
-      />
-    );
-  }
+  // ── Public marketing tabs — separate routed pages (regardless of auth) ────
+  if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} />;
+  if (path === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} />;
+  if (path === '/faq') return <FaqPage onNavigate={navigate} />;
 
   // ── Auth screens — shown when logged out; logged-in users are redirected by
   //    the effect above (or resumed into checkout). ──────────────────────────
@@ -172,7 +162,7 @@ function AuthGate() {
 
   // ── Unauthenticated landing (has its own sign-in console) ─────────────────
   if (!user) {
-    return <LandingPage onLogin={login} onNavigate={navigate} onSelectPlan={handleSelectPlan} />;
+    return <LandingPage onLogin={login} onNavigate={navigate} />;
   }
 
   // ── Authenticated ─────────────────────────────────────────────────────────
