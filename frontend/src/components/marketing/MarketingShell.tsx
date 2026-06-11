@@ -24,7 +24,7 @@ interface MarketingShellProps {
  */
 export function MarketingShell({ current, onNavigate, children }: MarketingShellProps) {
   return (
-    <div className="min-h-screen w-full bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative">
+    <div className="min-h-screen flex flex-col w-full bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative">
       {/* Decorative glow — fixed + clipped so it never adds a scroll axis. */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[60%] bg-indigo-900/10 rounded-full blur-[140px]" />
@@ -74,9 +74,9 @@ export function MarketingShell({ current, onNavigate, children }: MarketingShell
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 relative z-10">{children}</main>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 relative z-10">{children}</main>
 
-      <footer className="border-t border-slate-900 bg-slate-950/80 px-6 py-10 text-slate-500 text-xs mt-16 relative z-10 select-none">
+      <footer className="border-t border-slate-900 bg-slate-950/80 px-6 py-10 text-slate-500 text-xs relative z-10 select-none">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Flame className="w-4 h-4 text-indigo-500" />
