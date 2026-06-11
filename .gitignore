@@ -8,3 +8,5 @@ coverage/
 !.env.example
 client_secret.json
 stripe.md
+# Local design reference, not part of the app
+AI-Recruitment-Agent/
