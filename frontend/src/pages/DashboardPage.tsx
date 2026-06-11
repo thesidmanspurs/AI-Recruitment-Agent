@@ -69,8 +69,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
     awaitingPhoneIds,
     sendOutreach,
     reloadCandidates,
-    rescoreCandidates,
-    rescoring,
     enrichSelected,
     enrichingSelected,
     markReplied,
@@ -558,24 +556,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
                         </>
                       )}
                     </button>
-                    {candidates.length > 0 && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            const n = await rescoreCandidates();
-                            toast.push({ title: `Re-scored ${n} candidate${n === 1 ? '' : 's'}`, tone: 'success' });
-                          } catch (err) {
-                            toast.push({ title: 'Re-score failed', body: err instanceof Error ? err.message : String(err), tone: 'error' });
-                          }
-                        }}
-                        disabled={rescoring}
-                        title="Deep-score with Gemini web research (scoring.md rubric, no Apollo credits). Slower but accurate."
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-violet-700 dark:text-violet-300 bg-white dark:bg-[#0a0c12] border border-violet-200 dark:border-violet-400/20 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {rescoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        {rescoring ? 'Deep scoring…' : 'Deep score'}
-                      </button>
-                    )}
                     <button
                       onClick={() => setShowEdit(true)}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
