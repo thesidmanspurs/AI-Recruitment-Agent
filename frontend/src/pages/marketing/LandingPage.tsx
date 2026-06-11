@@ -104,10 +104,13 @@ export function LandingPage({ onLogin, onNavigate, onSelectPlan, scrollTo: scrol
   }, [reveals]);
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
-      {/* Cosmic backdrops */}
-      <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[60%] bg-indigo-900/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-[40%] right-[-10%] w-[60%] h-[70%] bg-violet-900/10 rounded-full blur-[160px] pointer-events-none" />
+    <div className="min-h-screen w-full bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative">
+      {/* Cosmic backdrops — fixed + clipped to the viewport and pushed behind
+          content, so they never introduce a second scroll axis/scrollbar. */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[60%] bg-indigo-900/10 rounded-full blur-[140px]" />
+        <div className="absolute top-[40%] right-[-10%] w-[60%] h-[70%] bg-violet-900/10 rounded-full blur-[160px]" />
+      </div>
 
       {/* NAV */}
       <header className="sticky top-0 z-50 bg-[#0B0F19]/85 backdrop-blur-md border-b border-slate-900 px-6 py-4">
