@@ -48,9 +48,10 @@ interface DashboardPageProps {
   onLogout?: () => void;
   onOpenAdmin?: () => void;
   onOpenBilling?: () => void;
+  onOpenHome?: () => void;
 }
 
-export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: DashboardPageProps = {}) {
+export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpenHome }: DashboardPageProps = {}) {
   const {
     campaigns,
     activeCampaign,
@@ -314,6 +315,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling }: Da
         onNew={() => setShowCreate(true)}
         creditBalance={creditBalance}
         onOpenBilling={onOpenBilling}
+        onHome={onOpenHome}
         activeCampaignName={activeCampaign?.name}
         candidateCount={candidates.length}
       />

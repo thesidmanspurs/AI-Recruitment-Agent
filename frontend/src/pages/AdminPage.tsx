@@ -103,7 +103,7 @@ export function AdminPage({ currentUser, onLogout }: AdminPageProps) {
       {/* Header */}
       <header className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#10131c] sticky top-0 z-10 transition-colors">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <button onClick={() => setTab('overview')} title="Go to admin home" className="flex items-center gap-2.5 min-w-0 text-left">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
@@ -115,7 +115,7 @@ export function AdminPage({ currentUser, onLogout }: AdminPageProps) {
                 Welcome, {currentUser.name}
               </p>
             </div>
-          </div>
+          </button>
 
           <div className="flex items-center gap-3 shrink-0">
             <ThemeToggle />

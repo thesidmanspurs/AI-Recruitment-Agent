@@ -14,6 +14,7 @@ interface WorkspaceSidebarProps {
   onNew: () => void;
   creditBalance: number | null;
   onOpenBilling?: () => void;
+  onHome?: () => void;
   activeCampaignName?: string;
   candidateCount: number;
 }
@@ -39,6 +40,7 @@ export function WorkspaceSidebar({
   onNew,
   creditBalance,
   onOpenBilling,
+  onHome,
   activeCampaignName,
   candidateCount,
 }: WorkspaceSidebarProps) {
@@ -54,8 +56,13 @@ export function WorkspaceSidebar({
 
   return (
     <aside className="hidden lg:flex w-[280px] shrink-0 bg-[#111625] text-slate-300 flex-col border-r border-[#1E293B]/60 sticky top-0 h-screen z-20">
-      {/* Logo */}
-      <div className="p-5 flex items-center gap-3 border-b border-[#1E293B]/80 bg-[#0B0F19]">
+      {/* Logo → home */}
+      <button
+        type="button"
+        onClick={onHome}
+        title="Go to homepage"
+        className="p-5 flex items-center gap-3 border-b border-[#1E293B]/80 bg-[#0B0F19] w-full text-left hover:bg-[#0e1320] transition-colors"
+      >
         <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center">
           <Layers className="w-4 h-4" />
         </div>
@@ -65,7 +72,7 @@ export function WorkspaceSidebar({
             Sourcing Specialist
           </p>
         </div>
-      </div>
+      </button>
 
       <div className="p-4 flex-1 space-y-5 overflow-y-auto">
         {/* Campaigns */}

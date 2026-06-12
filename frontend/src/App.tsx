@@ -180,6 +180,7 @@ function AuthGate() {
         onLogout={handleLogout}
         onOpenAdmin={user.role === 'ADMIN' ? () => navigate('/admin') : undefined}
         onOpenBilling={() => navigate('/billing')}
+        onOpenHome={() => navigate('/')}
       />
     </AppProvider>
   );
