@@ -4,6 +4,8 @@ import { MarketingShell, MarketingHeading } from '../../components/marketing/Mar
 
 interface PageProps {
   onNavigate: (to: string) => void;
+  authed?: boolean;
+  onOpenWorkspace?: () => void;
 }
 
 const FAQS = [
@@ -17,10 +19,10 @@ const FAQS = [
   { q: 'Can my whole agency use it?', a: 'Yes. Each recruiter gets isolated campaigns, their own sending identity, and an individual credit balance. It’s built for multi-seat agency use.' },
 ];
 
-export function FaqPage({ onNavigate }: PageProps) {
+export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <MarketingShell current="faq" onNavigate={onNavigate}>
+    <MarketingShell current="faq" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
       <MarketingHeading
         eyebrow="Platform FAQs"
         title="Frequently Asked Questions"

@@ -150,11 +150,15 @@ function AuthGate() {
   }
 
   // ── Public marketing homepage + tabs — ALWAYS, regardless of auth. "/" is
-  //    the homepage (Overview); the workspace logo returns here. ─────────────
-  if (path === '/') return <LandingPage onLogin={handleLogin} onNavigate={navigate} />;
-  if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} />;
-  if (path === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} />;
-  if (path === '/faq') return <FaqPage onNavigate={navigate} />;
+  //    the homepage (Overview); the workspace logo returns here. When signed
+  //    in, the shell/console show "Open workspace" (session preserved — no
+  //    re-login). ─────────────────────────────────────────────────────────
+  const goWorkspace = () => navigate(user?.role === 'ADMIN' ? '/admin' : '/home');
+  const mkt = { authed: !!user, onOpenWorkspace: goWorkspace };
+  if (path === '/') return <LandingPage onLogin={handleLogin} onNavigate={navigate} {...mkt} />;
+  if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} {...mkt} />;
+  if (path === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} {...mkt} />;
+  if (path === '/faq') return <FaqPage onNavigate={navigate} {...mkt} />;
 
   // ── Auth screens — shown when logged out. ─────────────────────────────────
   if (!user && (path === '/login' || path === '/register')) {

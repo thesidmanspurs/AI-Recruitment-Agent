@@ -6,9 +6,11 @@ interface PageProps {
   onNavigate: (to: string) => void;
   /** Start the purchase flow for a package (auth → Stripe checkout). */
   onSelectPlan: (packageId: string) => void;
+  authed?: boolean;
+  onOpenWorkspace?: () => void;
 }
 
-export function PricingPage({ onNavigate, onSelectPlan }: PageProps) {
+export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace }: PageProps) {
   const [reveals, setReveals] = useState(2500);
 
   // Real credit model: 1 credit = 1 Apollo contact reveal.
@@ -20,7 +22,7 @@ export function PricingPage({ onNavigate, onSelectPlan }: PageProps) {
   }, [reveals]);
 
   return (
-    <MarketingShell current="pricing" onNavigate={onNavigate}>
+    <MarketingShell current="pricing" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
       <MarketingHeading
         eyebrow="Pricing Calculator"
         title="Pay for contacts, not seats of bloat"

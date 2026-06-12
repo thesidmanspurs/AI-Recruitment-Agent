@@ -8,6 +8,9 @@ import { MarketingShell, GoogleMark } from '../../components/marketing/Marketing
 interface LandingPageProps {
   onLogin: (email: string, password: string) => Promise<void>;
   onNavigate: (to: string) => void;
+  /** Already signed in — show "Open workspace" instead of the login console. */
+  authed?: boolean;
+  onOpenWorkspace?: () => void;
 }
 
 const HIGHLIGHTS = [
@@ -17,7 +20,7 @@ const HIGHLIGHTS = [
 ];
 
 /** Overview tab ("/") — hero + sign-in console + a short feature teaser. */
-export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
+export function LandingPage({ onLogin, onNavigate, authed, onOpenWorkspace }: LandingPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -51,7 +54,7 @@ export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
   }
 
   return (
-    <MarketingShell current="home" onNavigate={onNavigate}>
+    <MarketingShell current="home" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
       {/* HERO */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-4">
         <div className="lg:col-span-7 space-y-6">
@@ -81,8 +84,23 @@ export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
           </div>
         </div>
 
-        {/* Sign-in console */}
+        {/* Sign-in console — or, if already signed in, an "open workspace" card */}
         <div className="lg:col-span-5 flex justify-center">
+          {authed ? (
+            <div className="w-full max-w-md bg-slate-950/80 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative ring-1 ring-white/5 text-center">
+              <div className="absolute top-0 right-6 -translate-y-1/2 bg-emerald-500 text-slate-950 font-mono text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+                Session Active
+              </div>
+              <h3 className="text-lg font-black text-white">You're signed in</h3>
+              <p className="text-[12px] text-slate-400 mt-1.5 mb-6 leading-relaxed">
+                Your session is active — jump straight back into your recruiter workspace.
+              </p>
+              <button onClick={onOpenWorkspace}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs py-3 rounded-xl transition active:scale-[0.98]">
+                Open workspace <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
           <div className="w-full max-w-md bg-slate-950/80 border border-slate-800/80 rounded-3xl p-8 shadow-2xl relative ring-1 ring-white/5">
             <div className="absolute top-0 right-6 -translate-y-1/2 bg-emerald-500 text-slate-950 font-mono text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
               Gate Lock Active
@@ -131,6 +149,7 @@ export function LandingPage({ onLogin, onNavigate }: LandingPageProps) {
                 className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold shrink-0">Register →</button>
             </div>
           </div>
+          )}
         </div>
       </section>
 

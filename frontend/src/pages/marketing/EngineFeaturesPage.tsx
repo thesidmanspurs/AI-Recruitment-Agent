@@ -5,6 +5,8 @@ import { MarketingShell, MarketingHeading } from '../../components/marketing/Mar
 
 interface PageProps {
   onNavigate: (to: string) => void;
+  authed?: boolean;
+  onOpenWorkspace?: () => void;
 }
 
 const SECTIONS = [
@@ -18,9 +20,9 @@ const SECTIONS = [
   { icon: ShieldCheck, title: 'SOC2-aligned & encrypted', body: 'Credentials are AES-256-GCM encrypted at rest and never returned to the client. Payments run through Stripe; we never touch card data.' },
 ];
 
-export function EngineFeaturesPage({ onNavigate }: PageProps) {
+export function EngineFeaturesPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
   return (
-    <MarketingShell current="features" onNavigate={onNavigate}>
+    <MarketingShell current="features" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
       <MarketingHeading
         eyebrow="Engine Features"
         title="Everything the match engine does for you"

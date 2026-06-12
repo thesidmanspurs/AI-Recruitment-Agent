@@ -14,6 +14,10 @@ interface MarketingShellProps {
   current: MarketingTab;
   onNavigate: (to: string) => void;
   children: ReactNode;
+  /** When the visitor is already signed in, show "Open workspace" instead of
+   *  the sign-in CTA (their session/token is preserved — no re-login). */
+  authed?: boolean;
+  onOpenWorkspace?: () => void;
 }
 
 /**
@@ -22,7 +26,7 @@ interface MarketingShellProps {
  * routes (separate pages) and highlight the active tab; "Recruiter Sign In"
  * goes to the Overview page which holds the sign-in console.
  */
-export function MarketingShell({ current, onNavigate, children }: MarketingShellProps) {
+export function MarketingShell({ current, onNavigate, children, authed, onOpenWorkspace }: MarketingShellProps) {
   return (
     <div className="min-h-screen flex flex-col w-full bg-[#0B0F19] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative">
       {/* Decorative glow — fixed + clipped so it never adds a scroll axis. */}
@@ -62,14 +66,23 @@ export function MarketingShell({ current, onNavigate, children }: MarketingShell
           </nav>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => onNavigate('/')}
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold border border-slate-800 hover:border-slate-700 transition">
-              Recruiter Sign In
-            </button>
-            <button onClick={() => onNavigate('/pricing')}
-              className="hidden sm:block px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/10 active:scale-[0.98]">
-              Estimate Costings
-            </button>
+            {authed ? (
+              <button onClick={onOpenWorkspace}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/10 active:scale-[0.98]">
+                Open workspace →
+              </button>
+            ) : (
+              <>
+                <button onClick={() => onNavigate('/')}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold border border-slate-800 hover:border-slate-700 transition">
+                  Recruiter Sign In
+                </button>
+                <button onClick={() => onNavigate('/pricing')}
+                  className="hidden sm:block px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/10 active:scale-[0.98]">
+                  Estimate Costings
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
