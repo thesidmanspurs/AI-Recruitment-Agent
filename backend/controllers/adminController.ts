@@ -35,6 +35,30 @@ export const adminController = {
     }
   },
 
+  async getBilling(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await adminService.billingOverview();
+      res.json({ success: true, ...data });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async grantCredits(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const { credits, note } = req.body as { credits?: number | string; note?: string };
+      const amount = parseInt(String(credits), 10);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return next(createError('credits must be a positive integer.', 400));
+      }
+      const balance = await adminService.grantCredits(userId, amount, note);
+      res.json({ success: true, balance });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getHotCampaigns(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const page = await adminService.getHotCampaigns(parsePageParams(req.query as Record<string, string>));

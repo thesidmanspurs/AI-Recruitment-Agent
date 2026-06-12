@@ -210,7 +210,47 @@ export const adminApi = {
   testUserEmail(userId: string, to?: string): Promise<{ success: boolean; sentTo: string }> {
     return apiClient.post(`/admin/users/${userId}/email-test`, to ? { to } : {});
   },
+
+  getBilling(): Promise<{ success: boolean } & AdminBilling> {
+    return apiClient.get('/admin/billing');
+  },
+
+  grantCredits(userId: string, credits: number, note?: string): Promise<{ success: boolean; balance: number }> {
+    return apiClient.post(`/admin/users/${userId}/grant-credits`, { credits, note });
+  },
 };
+
+export interface AdminSubscriber {
+  id: string;
+  email: string;
+  name: string;
+  creditBalance: number;
+  subscriptionStatus: string | null;
+  subscriptionPlan: string | null;
+  subscriptionCurrentPeriodEnd: string | null;
+}
+
+export interface AdminBillingTxn {
+  id: string;
+  type: 'TOPUP_PURCHASE' | 'SUBSCRIPTION_GRANT' | 'ADMIN_GRANT' | 'REFUND' | 'SPEND';
+  credits: number;
+  amountCents: number;
+  currency: string;
+  reason: string | null;
+  createdAt: string;
+  user: { email: string; name: string } | null;
+}
+
+export interface AdminBilling {
+  summary: {
+    activeSubscriptions: number;
+    lifetimeRevenueCents: number;
+    paidTransactions: number;
+    creditsOutstanding: number;
+  };
+  subscribers: AdminSubscriber[];
+  recentTransactions: AdminBillingTxn[];
+}
 
 export interface EmailRequestRow {
   id: string;

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../config/database.js';
 import { createError } from '../../middleware/errorHandler.js';
+import { creditService } from '../credits/creditService.js';
 import { paginate, type PageParams, type Paginated } from './paginate.js';
 
 const SALT_ROUNDS = 12;
@@ -459,5 +460,67 @@ export const adminService = {
         blockedReason: true,
       },
     });
+  },
+
+  // ── Billing / subscriptions ──────────────────────────────────────────────
+  /**
+   * Platform-wide billing overview: active subscriptions, lifetime revenue
+   * (sum of real money on purchase + subscription-invoice transactions),
+   * outstanding credit liability, the subscriber/customer list, and the most
+   * recent purchase transactions.
+   */
+  async billingOverview() {
+    const [activeSubscriptions, revenueAgg, balanceAgg, subscribers, recent] = await Promise.all([
+      prisma.user.count({ where: { subscriptionStatus: { in: ['active', 'trialing'] } } }),
+      prisma.creditTransaction.aggregate({
+        where: { type: { in: ['TOPUP_PURCHASE', 'SUBSCRIPTION_GRANT'] }, status: 'COMPLETED' },
+        _sum: { amountCents: true },
+        _count: true,
+      }),
+      prisma.user.aggregate({ _sum: { creditBalance: true } }),
+      prisma.user.findMany({
+        where: { OR: [{ subscriptionStatus: { not: null } }, { stripeCustomerId: { not: null } }] },
+        select: {
+          id: true, email: true, name: true, creditBalance: true,
+          subscriptionStatus: true, subscriptionPlan: true, subscriptionCurrentPeriodEnd: true,
+        },
+        orderBy: [{ subscriptionStatus: 'asc' }, { subscriptionCurrentPeriodEnd: 'desc' }],
+        take: 100,
+      }),
+      prisma.creditTransaction.findMany({
+        where: { type: { in: ['TOPUP_PURCHASE', 'SUBSCRIPTION_GRANT', 'ADMIN_GRANT', 'REFUND'] } },
+        orderBy: { createdAt: 'desc' },
+        take: 30,
+        select: {
+          id: true, type: true, credits: true, amountCents: true, currency: true,
+          reason: true, createdAt: true,
+          user: { select: { email: true, name: true } },
+        },
+      }),
+    ]);
+
+    return {
+      summary: {
+        activeSubscriptions,
+        lifetimeRevenueCents: revenueAgg._sum.amountCents ?? 0,
+        paidTransactions: revenueAgg._count,
+        creditsOutstanding: balanceAgg._sum.creditBalance ?? 0,
+      },
+      subscribers,
+      recentTransactions: recent,
+    };
+  },
+
+  /** Admin-granted credits (no charge). Records an ADMIN_GRANT ledger entry. */
+  async grantCredits(userId: string, credits: number, note?: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw createError('User not found.', 404);
+    const balance = await creditService.addCredits({
+      userId,
+      credits,
+      type: 'ADMIN_GRANT',
+      reason: note?.trim() || 'Manual credit grant by admin',
+    });
+    return balance ?? (await creditService.getBalance(userId));
   },
 };

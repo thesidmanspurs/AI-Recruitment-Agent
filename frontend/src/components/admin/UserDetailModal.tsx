@@ -170,9 +170,9 @@ export function UserDetailModal({
       >
         <div className="flex flex-col gap-6">
           {error && (
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <div className="flex items-start gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 rounded-lg px-4 py-3">
               <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
 
@@ -181,11 +181,11 @@ export function UserDetailModal({
             <RoleBadge role={user.role} />
             {user.isBlocked ? <BlockedBadge /> : <ActiveBadge />}
             {isSelf && (
-              <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-md">
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-400/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md">
                 You
               </span>
             )}
-            <span className="text-[10px] text-gray-400 ml-auto">
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 ml-auto">
               Joined {formatDate(user.createdAt)} · last login{' '}
               {user.lastLoginAt ? formatRelative(user.lastLoginAt) : 'never'}
             </span>
@@ -199,7 +199,7 @@ export function UserDetailModal({
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
                 />
               </FormField>
               <FormField label="Email">
@@ -207,7 +207,7 @@ export function UserDetailModal({
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
                 />
               </FormField>
               <FormField
@@ -220,7 +220,7 @@ export function UserDetailModal({
                   value={limitOverride}
                   onChange={e => setLimitOverride(e.target.value)}
                   placeholder="(inherit)"
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
                 />
               </FormField>
             </div>
@@ -239,14 +239,14 @@ export function UserDetailModal({
           {/* ─── Role ───────────────────────────────────────────────── */}
           <Section icon={<Shield className="w-3.5 h-3.5 text-indigo-600" />} title="Role">
             <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Currently:{' '}
-                <span className="font-semibold text-gray-900">{user.role}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{user.role}</span>
               </p>
               <button
                 onClick={handleToggleRole}
                 disabled={isSelf || busy}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {user.role === 'ADMIN' ? (
                   <>
@@ -261,7 +261,7 @@ export function UserDetailModal({
                 )}
               </button>
               {isSelf && (
-                <span className="text-[11px] text-gray-500">You cannot change your own role.</span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">You cannot change your own role.</span>
               )}
             </div>
           </Section>
@@ -279,7 +279,7 @@ export function UserDetailModal({
           >
             {user.isBlocked ? (
               <div className="flex flex-col gap-3">
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Blocked {user.blockedAt && `on ${formatDate(user.blockedAt)}`}
                   {user.blockedReason && (
                     <>
@@ -305,14 +305,14 @@ export function UserDetailModal({
                     value={blockReason}
                     onChange={e => setBlockReason(e.target.value)}
                     placeholder="e.g. ToS violation"
-                    className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                    className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
                   />
                 </FormField>
                 <div className="flex justify-end">
                   <button
                     onClick={() => setConfirm('block')}
                     disabled={isSelf || busy}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-400/20 rounded-md hover:bg-amber-100 dark:hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <Ban className="w-3.5 h-3.5" />
                     Block account
@@ -331,7 +331,7 @@ export function UserDetailModal({
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full bg-white border border-gray-300 rounded-lg px-3.5 py-2 text-sm text-gray-900 placeholder-gray-400 font-mono focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 font-mono focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
                 />
               </FormField>
               <div className="flex justify-end">
@@ -363,27 +363,27 @@ export function UserDetailModal({
                   <Meta label="Last login" value={formatRelative(behavior.user.lastLoginAt)} />
                 </div>
                 <div>
-                  <h5 className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2">
+                  <h5 className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">
                     Campaigns ({behavior.campaigns.length})
                   </h5>
                   {behavior.campaigns.length === 0 ? (
-                    <p className="text-xs text-gray-400">No campaigns yet.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">No campaigns yet.</p>
                   ) : (
                     <ul className="flex flex-col gap-1.5">
                       {behavior.campaigns.slice(0, 5).map(c => (
                         <li
                           key={c.id}
-                          className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 text-xs"
+                          className="flex items-center gap-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md px-3 py-1.5 text-xs"
                         >
                           <Briefcase className="w-3 h-3 text-indigo-500 shrink-0" />
-                          <span className="font-medium text-gray-900 truncate flex-1">
+                          <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">
                             {c.name}
                           </span>
-                          <span className="text-gray-500">{c.candidateCount} cand.</span>
+                          <span className="text-gray-500 dark:text-gray-400">{c.candidateCount} cand.</span>
                         </li>
                       ))}
                       {behavior.campaigns.length > 5 && (
-                        <li className="text-[11px] text-gray-400 pl-1">
+                        <li className="text-[11px] text-gray-400 dark:text-gray-500 pl-1">
                           +{behavior.campaigns.length - 5} more
                         </li>
                       )}
@@ -391,20 +391,20 @@ export function UserDetailModal({
                   )}
                 </div>
                 <div>
-                  <h5 className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2">
+                  <h5 className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">
                     Recent activity ({behavior.recentActivity.length})
                   </h5>
                   {behavior.recentActivity.length === 0 ? (
-                    <p className="text-xs text-gray-400">No activity logged.</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">No activity logged.</p>
                   ) : (
                     <ul className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
                       {behavior.recentActivity.slice(0, 10).map(a => (
                         <li
                           key={a.id}
-                          className="bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5"
+                          className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md px-3 py-1.5"
                         >
-                          <p className="text-xs text-gray-800">{a.message}</p>
-                          <p className="text-[10px] text-gray-500 mt-0.5">
+                          <p className="text-xs text-gray-800 dark:text-gray-200">{a.message}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                             {a.candidateName ? `${a.candidateName} · ` : ''}
                             {formatRelative(a.timestamp)}
                           </p>
@@ -419,10 +419,10 @@ export function UserDetailModal({
 
           {/* ─── Danger zone ────────────────────────────────────────── */}
           <Section icon={<Trash2 className="w-3.5 h-3.5 text-red-600" />} title="Danger zone">
-            <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <div className="flex items-center justify-between gap-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 rounded-lg px-4 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-red-700">Delete this user</p>
-                <p className="text-xs text-red-600 mt-0.5">
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">Delete this user</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
                   Removes the account plus every campaign, candidate, and activity log they own.
                   Cannot be undone.
                 </p>
@@ -487,7 +487,7 @@ function Section({
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         {icon}
-        <h4 className="text-[11px] font-semibold text-gray-900 uppercase tracking-widest">
+        <h4 className="text-[11px] font-semibold text-gray-900 dark:text-white uppercase tracking-widest">
           {title}
         </h4>
       </div>
@@ -507,20 +507,20 @@ function FormField({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-semibold text-gray-600 uppercase tracking-wider">
+      <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
         {label}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-gray-500">{hint}</p>}
+      {hint && <p className="text-[11px] text-gray-500 dark:text-gray-400">{hint}</p>}
     </div>
   );
 }
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className="text-xs text-gray-700 mt-0.5">{value}</p>
+    <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md px-3 py-2">
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
+      <p className="text-xs text-gray-700 dark:text-gray-300 mt-0.5">{value}</p>
     </div>
   );
 }
@@ -528,14 +528,14 @@ function Meta({ label, value }: { label: string; value: string }) {
 function RoleBadge({ role }: { role: UserRole }) {
   if (role === 'ADMIN') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-0.5 rounded-md">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md">
         <Shield className="w-3 h-3" />
         Admin
       </span>
     );
   }
   return (
-    <span className="text-[10px] font-bold uppercase tracking-wide bg-gray-100 border border-gray-200 text-gray-600 px-2 py-0.5 rounded-md">
+    <span className="text-[10px] font-bold uppercase tracking-wide bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md">
       User
     </span>
   );
@@ -543,7 +543,7 @@ function RoleBadge({ role }: { role: UserRole }) {
 
 function BlockedBadge() {
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded-md">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/20 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-md">
       <Ban className="w-3 h-3" />
       Blocked
     </span>
@@ -552,7 +552,7 @@ function BlockedBadge() {
 
 function ActiveBadge() {
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-md">
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md">
       <CheckCircle2 className="w-3 h-3" />
       Active
     </span>
