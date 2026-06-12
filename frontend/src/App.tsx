@@ -107,22 +107,31 @@ function AuthGate() {
     }
   }, [user, startCheckout]);
 
-  // Enforce sensible URLs once the user is known.
+  // After a fresh password login/register, move into the app (workspace at
+  // /home; admins get bounced to /admin by the effect below). When a purchase
+  // is pending we leave navigation to the resume effect (→ Stripe).
+  const handleLogin = useCallback(async (email: string, password: string) => {
+    await login(email, password);
+    if (!readPendingCheckout()) navigate('/home');
+  }, [login, navigate]);
+  const handleRegister = useCallback(async (name: string, email: string, password: string) => {
+    await register(name, email, password);
+    if (!readPendingCheckout()) navigate('/home');
+  }, [register, navigate]);
+
+  // Enforce sensible URLs once the user is known. NOTE: "/" is the PUBLIC
+  // homepage (4 marketing tabs) for everyone — authed users are NOT bounced
+  // off it (that's how the workspace logo returns home). The authed workspace
+  // lives at /home; the admin console at /admin.
   useEffect(() => {
     if (!user) return;
-    // Don't bounce while a pending checkout is about to redirect off-site
-    // (the resume effect runs first, sets this ref, and navigates to Stripe).
     if (resumed.current || readPendingCheckout()) return;
-    if (path === '/login' || path === '/register') {
-      const to = user.role === 'ADMIN' ? '/admin' : '/';
-      window.history.replaceState({}, '', to);
-      setPath(to);
-    } else if (user.role === 'ADMIN' && path === '/') {
+    if (user.role === 'ADMIN' && (path === '/home' || path === '/login' || path === '/register')) {
       window.history.replaceState({}, '', '/admin');
       setPath('/admin');
-    } else if (user.role !== 'ADMIN' && path.startsWith('/admin')) {
-      window.history.replaceState({}, '', '/');
-      setPath('/');
+    } else if (user.role !== 'ADMIN' && (path === '/login' || path === '/register' || path.startsWith('/admin'))) {
+      window.history.replaceState({}, '', '/home');
+      setPath('/home');
     }
   }, [user, path]);
 
@@ -140,39 +149,41 @@ function AuthGate() {
     );
   }
 
-  // ── Public marketing tabs — separate routed pages (regardless of auth) ────
+  // ── Public marketing homepage + tabs — ALWAYS, regardless of auth. "/" is
+  //    the homepage (Overview); the workspace logo returns here. ─────────────
+  if (path === '/') return <LandingPage onLogin={handleLogin} onNavigate={navigate} />;
   if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} />;
   if (path === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} />;
   if (path === '/faq') return <FaqPage onNavigate={navigate} />;
 
-  // ── Auth screens — shown when logged out; logged-in users are redirected by
-  //    the effect above (or resumed into checkout). ──────────────────────────
+  // ── Auth screens — shown when logged out. ─────────────────────────────────
   if (!user && (path === '/login' || path === '/register')) {
     const pendingPkg = readPendingCheckout();
     return (
       <AuthPage
         mode={path === '/register' ? 'register' : 'login'}
-        onLogin={login}
-        onRegister={register}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
         onNavigate={navigate}
         pendingLabel={pendingPkg ? PACKAGE_LABELS[pendingPkg] ?? 'purchase' : null}
       />
     );
   }
 
-  // ── Unauthenticated landing (has its own sign-in console) ─────────────────
+  // ── Not authenticated on an app route → homepage. ─────────────────────────
   if (!user) {
-    return <LandingPage onLogin={login} onNavigate={navigate} />;
+    return <LandingPage onLogin={handleLogin} onNavigate={navigate} />;
   }
 
-  // ── Authenticated ─────────────────────────────────────────────────────────
+  // ── Authenticated app ─────────────────────────────────────────────────────
   if (path.startsWith('/admin') && user.role === 'ADMIN') {
-    return <AdminPage currentUser={user} onLogout={handleLogout} />;
+    return <AdminPage currentUser={user} onLogout={handleLogout} onHome={() => navigate('/')} />;
   }
   if (path.startsWith('/billing')) {
-    return <BillingPage user={user} onBack={() => navigate('/')} />;
+    return <BillingPage user={user} onBack={() => navigate('/home')} />;
   }
 
+  // /home (and any other authenticated path) → the workspace.
   return (
     <AppProvider>
       <DashboardPage

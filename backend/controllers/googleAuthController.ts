@@ -119,7 +119,9 @@ export const googleAuthController = {
 
       setAuthCookie(res, result.token);
       // Top-level navigation back into the SPA; the Lax auth cookie rides along.
-      res.redirect(`${appHome()}/`);
+      // Land in the workspace (/home); "/" is the public homepage. A pending
+      // checkout is resumed client-side regardless of the landing path.
+      res.redirect(`${appHome()}/home`);
     } catch (err) {
       console.error('[Google OAuth] callback error:', err instanceof Error ? err.message : err);
       fail('Could not complete Google sign-in.');
