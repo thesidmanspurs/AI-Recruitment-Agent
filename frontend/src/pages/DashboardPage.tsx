@@ -156,7 +156,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
   const stats = useMemo(() => {
     const enriched = candidates.filter(c => c.emailEnriched || c.phoneEnriched).length;
-    const outreachSent = candidates.filter(c => c.outreachStatus !== 'SOURCED').length;
+    // "Outreach Sent" = candidates we've actually contacted. Must match the
+    // Outreach Activity panel's definition exactly (outreachSentAt set + a
+    // post-send status) — NOT "any non-SOURCED candidate", which wrongly
+    // counted every ENRICHED candidate as sent.
+    const outreachSent = candidates.filter(
+      c => !!c.outreachSentAt && ['OUTREACH_SENT', 'OPENED', 'REPLIED', 'NO_RESPONSE'].includes(c.outreachStatus)
+    ).length;
     return { identified: candidates.length, enriched, outreachSent };
   }, [candidates]);
 
