@@ -84,7 +84,7 @@ export interface FunnelStage {
 }
 
 export interface PlatformBreakdownEntry {
-  platform: 'LinkedIn' | 'Upwork' | 'Reddit';
+  platform: 'LinkedIn' | 'Upwork' | 'Reddit' | 'GitHub';
   count: number;
 }
 

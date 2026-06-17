@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { apolloSourcingService } from '../services/apollo/apolloSourcingService.js';
 import { apolloService, ApolloError } from '../services/apollo/apolloService.js';
 import { redditService } from '../services/reddit/redditService.js';
+import { githubService } from '../services/github/githubService.js';
 import { geminiService } from '../services/ai/geminiService.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
@@ -190,7 +191,39 @@ export const candidateController = {
         }
       }
 
-      const combinedProfiles = [...rawProfiles, ...redditProfiles];
+      // GitHub sourcing — finds public developer profiles. Same fail-soft
+      // contract as Reddit: errors are logged and never block the run. Public
+      // email + location are captured to attach after persistence (free
+      // contact — no Apollo credit involved).
+      let githubProfiles: typeof rawProfiles = [];
+      const githubMeta = new Map<string, { email?: string; location?: string }>();
+      if (githubService.isAvailable()) {
+        try {
+          const gh = await githubService.sourceCandidates({
+            jobTitle: campaign.jobTitle,
+            extractedKeywords: campaign.extractedKeywords,
+            location: locations[0],
+            limit: Math.max(5, Math.floor(pageSize / 2)),
+          });
+          githubProfiles = gh as typeof rawProfiles;
+          for (const g of gh) {
+            const extra = g as { email?: string; location?: string };
+            githubMeta.set(g.name.toLowerCase(), { email: extra.email, location: extra.location });
+          }
+          await campaignRepository.addLog(campaignId, {
+            message: `GitHub sourcing: ${githubProfiles.length} developer profile(s) discovered.`,
+            type: 'INFO',
+          });
+        } catch (err) {
+          console.warn('[GitHub] sourcing failed:', err instanceof Error ? err.message : err);
+          await campaignRepository.addLog(campaignId, {
+            message: `GitHub sourcing skipped: ${err instanceof Error ? err.message : 'unknown error'}`,
+            type: 'WARNING',
+          });
+        }
+      }
+
+      const combinedProfiles = [...rawProfiles, ...redditProfiles, ...githubProfiles];
 
       if (combinedProfiles.length === 0) {
         if (apolloCreditsExhausted) {
@@ -205,7 +238,7 @@ export const candidateController = {
         }
         return next(
           createError(
-            'No candidates resolved from either Apollo or Reddit. ' +
+            'No candidates resolved from Apollo, Reddit, or GitHub. ' +
               'Often a transient upstream issue — try again in a moment.',
             502
           )
@@ -248,6 +281,25 @@ export const candidateController = {
           console.warn('[source] meta attach failed for', c.id, err instanceof Error ? err.message : err);
         }
       }
+
+      // Attach GitHub public contact data. When a developer exposed a public
+      // email, it's a FREE contact (no Apollo credit) — mark the row enriched
+      // so it's immediately contactable by email.
+      for (const c of candidates) {
+        const meta = githubMeta.get(c.name.toLowerCase());
+        if (!meta) continue;
+        try {
+          await candidateRepository.update(c.id, {
+            location: meta.location ?? c.location ?? null,
+            ...(meta.email
+              ? { email: meta.email, emailEnriched: true, outreachStatus: 'ENRICHED' as const }
+              : {}),
+          });
+        } catch (err) {
+          console.warn('[source] github meta attach failed for', c.id, err instanceof Error ? err.message : err);
+        }
+      }
+
       // Re-read so the response reflects the attached fields
       const enrichedCandidates = await candidateRepository.findAllByCampaign(campaignId);
 
@@ -277,10 +329,15 @@ export const candidateController = {
         screening: { ...screening.summary, skippedExisting },
         isSimulated: false,
         simulationReason: undefined,
-        source: searchHits.length > 0 ? 'apollo+reddit' : 'reddit',
+        source: [
+          searchHits.length > 0 ? 'apollo' : null,
+          redditProfiles.length > 0 ? 'reddit' : null,
+          githubProfiles.length > 0 ? 'github' : null,
+        ].filter(Boolean).join('+') || 'none',
         sources: {
           apollo: { count: searchMeta.size, error: apolloErrorMsg },
           reddit: { count: redditProfiles.length },
+          github: { count: githubProfiles.length },
         },
         usage,
         pagination: searchResult ? {

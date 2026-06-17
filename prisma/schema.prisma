@@ -296,6 +296,7 @@ enum Platform {
   LinkedIn
   Upwork
   Reddit
+  GitHub
 }
 
 enum OutreachStatus {

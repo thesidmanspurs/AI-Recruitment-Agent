@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 
 export type CampaignStatus = 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
-export type Platform = 'LinkedIn' | 'Upwork' | 'Reddit';
+export type Platform = 'LinkedIn' | 'Upwork' | 'Reddit' | 'GitHub';
 export type OutreachStatus =
   | 'SOURCED'
   | 'ENRICHED'

@@ -161,6 +161,7 @@ function PlatformBadge({ platform }: { platform: Candidate['platform'] }) {
     LinkedIn: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-400/20',
     Upwork: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-200 dark:border-emerald-400/20',
     Reddit: 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-300 border-orange-200 dark:border-orange-400/20',
+    GitHub: 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-white/20',
   };
   return (
     <span className={`text-[10px] font-medium border rounded px-1.5 py-0.5 ${styles[platform] ?? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400'}`}>

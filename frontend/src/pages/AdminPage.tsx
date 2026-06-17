@@ -1020,6 +1020,7 @@ function PlatformList({ platforms }: { platforms: PlatformBreakdownEntry[] }) {
     LinkedIn: 'bg-blue-500',
     Upwork: 'bg-emerald-500',
     Reddit: 'bg-orange-500',
+    GitHub: 'bg-slate-500',
   };
   return (
     <div className="flex flex-col gap-3">

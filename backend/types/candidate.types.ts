@@ -1,4 +1,4 @@
-export type Platform = 'LinkedIn' | 'Upwork' | 'Reddit';
+export type Platform = 'LinkedIn' | 'Upwork' | 'Reddit' | 'GitHub';
 
 export type OutreachStatus =
   | 'Sourced'

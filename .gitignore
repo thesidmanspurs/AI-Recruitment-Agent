@@ -10,3 +10,6 @@ client_secret.json
 stripe.md
 # Local design reference, not part of the app
 AI-Recruitment-Agent/
+
+# Local GitHub PAT, not part of the app
+token.md

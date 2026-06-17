@@ -60,6 +60,11 @@ export const env = {
   REDDIT_CLIENT_SECRET: process.env.REDDIT_CLIENT_SECRET || '',
   REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT || 'aries-sourcing/0.1',
 
+  // GitHub sourcing — finds developers from public GitHub profiles via the
+  // Search API. A no-scope Personal Access Token is optional but lifts the
+  // rate limit (10 → 30 search req/min). .trim() guards stray whitespace/BOM.
+  GITHUB_TOKEN: (process.env.GITHUB_TOKEN || '').trim(),
+
   // Email Outreach is now PER-USER (no shared mailbox). Each recruiter
   // configures their own Gmail App Password or Resend key, encrypted at
   // rest with ENCRYPTION_KEY. The legacy shared SMTP_* vars are gone.
