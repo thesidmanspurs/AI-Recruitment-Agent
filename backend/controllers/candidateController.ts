@@ -205,11 +205,28 @@ export const candidateController = {
             location: locations[0],
             limit: Math.max(5, Math.floor(pageSize / 2)),
           });
-          githubProfiles = gh as typeof rawProfiles;
           for (const g of gh) {
             const extra = g as { email?: string; location?: string };
             githubMeta.set(g.name.toLowerCase(), { email: extra.email, location: extra.location });
           }
+          // IMPORTANT: strip GitHub-only extras (email/location/githubUrl) to a
+          // clean RawCandidateProfile before persistence — createMany passes
+          // objects straight to Prisma, which rejects unknown columns like
+          // githubUrl and would fail the whole source batch. Contact data is
+          // attached afterwards from githubMeta.
+          githubProfiles = gh.map(g => ({
+            name: g.name,
+            currentTitle: g.currentTitle,
+            company: g.company,
+            bio: g.bio,
+            openToWork: g.openToWork,
+            platform: g.platform,
+            matchScore: g.matchScore,
+            matchExplanation: g.matchExplanation,
+            skills: g.skills,
+            strengths: g.strengths,
+            gaps: g.gaps,
+          })) as typeof rawProfiles;
           await campaignRepository.addLog(campaignId, {
             message: `GitHub sourcing: ${githubProfiles.length} developer profile(s) discovered.`,
             type: 'INFO',
