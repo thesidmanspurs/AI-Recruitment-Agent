@@ -62,20 +62,56 @@ function headers(): Record<string, string> {
   return h;
 }
 
-/** GitHub user search qualifiers: title words + keywords, plus location. */
-function buildQuery(jobTitle: string, keywords: string[], location?: string): string {
-  // Free-text terms match name/bio/login; `language:` narrows by primary repo
-  // language. Use the two strongest keywords as language filters.
-  const terms = [jobTitle, ...keywords.slice(0, 2)]
-    .map(t => (t ?? '').replace(/[^a-zA-Z0-9+#. ]/g, ' ').trim())
-    .filter(Boolean);
-  const langs = keywords
-    .slice(0, 2)
-    .map(k => k.trim())
-    .filter(k => /^[a-zA-Z0-9+#.]+$/.test(k)) // single-token langs only
-    .map(k => `language:${k}`);
-  const loc = location?.trim() ? ` location:"${location.trim()}"` : '';
-  return `${terms.join(' ')} ${langs.join(' ')}${loc} type:user`.trim();
+// GitHub's `language:` qualifier ONLY matches real programming languages — a
+// bogus value like `language:Selenium` returns zero results. So we only emit
+// language qualifiers for recognized languages and otherwise fall back to a
+// free-text search (which matches login / name / bio).
+const GITHUB_LANGUAGES = new Set([
+  'javascript', 'typescript', 'python', 'java', 'go', 'rust', 'ruby', 'php', 'c', 'c++', 'c#',
+  'kotlin', 'swift', 'scala', 'elixir', 'dart', 'r', 'perl', 'haskell', 'clojure', 'shell',
+  'powershell', 'html', 'css', 'sql', 'solidity', 'lua', 'matlab', 'groovy', 'cobol',
+  'objective-c', 'julia', 'erlang', 'ocaml', 'assembly', 'dockerfile', 'zig', 'vue', 'svelte',
+]);
+// Common skill/keyword → canonical GitHub language.
+const LANGUAGE_ALIASES: Record<string, string> = {
+  golang: 'go', node: 'javascript', 'node.js': 'javascript', nodejs: 'javascript',
+  react: 'javascript', reactjs: 'javascript', 'react.js': 'javascript', angular: 'typescript',
+  csharp: 'c#', 'c sharp': 'c#', dotnet: 'c#', '.net': 'c#', cpp: 'c++', 'golang ': 'go',
+  ts: 'typescript', js: 'javascript', py: 'python',
+};
+
+function toLanguage(token: string): string | null {
+  const t = token.toLowerCase().trim();
+  if (GITHUB_LANGUAGES.has(t)) return t;
+  return LANGUAGE_ALIASES[t] ?? null;
+}
+
+/** Build a GitHub user-search query. GitHub zeroes out fast when qualifiers are
+ *  AND-ed, so we keep it deliberately broad: ONE real-language qualifier when a
+ *  keyword maps to a language (returns lots of devs in that stack), otherwise a
+ *  short free-text term. No location qualifier (GitHub's is free-text and
+ *  unreliable — it would over-narrow). Gemini scoring + the score filter then
+ *  refine the broad pool. */
+function buildQuery(jobTitle: string, keywords: string[]): string {
+  let lang: string | null = null;
+  for (const k of [...jobTitle.split(/\s+/), ...keywords]) {
+    const l = toLanguage(k);
+    if (l) { lang = l; break; }
+  }
+
+  const parts: string[] = [];
+  if (lang) {
+    parts.push(/[ +#]/.test(lang) ? `language:"${lang}"` : `language:${lang}`);
+  } else {
+    // No recognizable language → a single short free-text term (login/name/bio
+    // match). More words AND together and quickly yield nothing.
+    const sanitize = (s: string) => (s ?? '').replace(/[^a-zA-Z0-9+#. ]/g, ' ').replace(/\s+/g, ' ').trim();
+    const term = (keywords.map(sanitize).find(Boolean) || sanitize(jobTitle))
+      .split(' ').slice(0, 2).join(' ');
+    if (term) parts.push(term);
+  }
+  parts.push('type:user');
+  return parts.join(' ').trim();
 }
 
 async function fetchTopLanguages(login: string): Promise<string[]> {
@@ -107,7 +143,7 @@ export const githubService = {
     limit?: number;
   }): Promise<RawCandidateProfile[]> {
     const limit = Math.max(1, Math.min(30, input.limit ?? 15));
-    const q = buildQuery(input.jobTitle, input.extractedKeywords, input.location);
+    const q = buildQuery(input.jobTitle, input.extractedKeywords);
 
     const searchUrl = `${GITHUB_API}/search/users?q=${encodeURIComponent(q)}&per_page=${limit}`;
     const searchRes = await fetch(searchUrl, { headers: headers() }).catch(err => {
