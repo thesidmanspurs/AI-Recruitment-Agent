@@ -231,9 +231,42 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   async function handleSource() {
     if (!activeId) return;
     try {
-      await sourceCandidates(activeId, {
+      const r = await sourceCandidates(activeId, {
         locations: sourceLocations.length > 0 ? sourceLocations : undefined,
       });
+      const s = r?.sources;
+      if (s) {
+        // Per-channel transparency: show exactly how many came from each source
+        // so an empty channel (e.g. LinkedIn) is visible, not a mystery.
+        toast.push({
+          title: `Sourced ${r.total} candidate${r.total === 1 ? '' : 's'}`,
+          body: `LinkedIn ${s.apollo.count} · GitHub ${s.github.count} · Reddit ${s.reddit.count}`,
+          tone: 'success',
+        });
+        if (s.apollo.error) {
+          toast.push({
+            title: 'LinkedIn (Apollo) returned nothing',
+            body: s.apollo.error,
+            tone: 'warning',
+            duration: 10_000,
+          });
+        } else if (s.apollo.count === 0) {
+          toast.push({
+            title: 'No LinkedIn matches this run',
+            body: 'Apollo found no new profiles for these titles/keywords. Try broader alternate titles, or "Re-source" to fetch the next page.',
+            tone: 'warning',
+            duration: 9_000,
+          });
+        }
+        if (s.github.count > 0) {
+          toast.push({
+            title: 'Heads-up on GitHub candidates',
+            body: 'GitHub profiles often have no public email or phone — those candidates may need outreach via their GitHub profile rather than email.',
+            tone: 'info',
+            duration: 10_000,
+          });
+        }
+      }
     } catch {
       // surfaced via hook state
     }

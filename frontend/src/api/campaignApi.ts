@@ -165,6 +165,12 @@ export const campaignApi = {
         remaining: number;
         exceeded: boolean;
       };
+      source?: string;
+      sources?: {
+        apollo: { count: number; error?: string | null };
+        reddit: { count: number };
+        github: { count: number };
+      };
       pagination: {
         page: number;
         pageSize: number;

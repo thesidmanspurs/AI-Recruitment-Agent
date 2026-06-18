@@ -177,7 +177,14 @@ export function useCampaigns() {
     async (
       campaignId: string,
       opts: { page?: number; pageSize?: number; locations?: string[] } = {}
-    ): Promise<void> => {
+    ): Promise<{
+      total: number;
+      sources?: {
+        apollo: { count: number; error?: string | null };
+        reddit: { count: number };
+        github: { count: number };
+      };
+    }> => {
       setSourcing(true);
       setError(null);
       try {
@@ -191,6 +198,7 @@ export function useCampaigns() {
         setCandidates(full.data);
         if (res.usage) setUsage(res.usage);
         await refreshCampaigns();
+        return { total: res.screening?.total ?? 0, sources: res.sources };
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Sourcing failed.');
         throw err;
