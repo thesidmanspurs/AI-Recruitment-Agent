@@ -227,6 +227,38 @@ export const candidateController = {
             strengths: g.strengths,
             gaps: g.gaps,
           })) as typeof rawProfiles;
+
+          // Re-score GitHub candidates with the SAME Gemini fit scoring used
+          // for Apollo/LinkedIn, so scores are comparable across channels. The
+          // GitHub heuristic alone over-rated generic devs (e.g. a "Data
+          // Analyst" outranking an exact-match QA engineer); Gemini judges
+          // actual fit against the job spec.
+          if (geminiService.isAvailable() && githubProfiles.length > 0) {
+            const BATCH = 6;
+            for (let i = 0; i < githubProfiles.length; i += BATCH) {
+              const slice = githubProfiles.slice(i, i + BATCH);
+              await Promise.all(
+                slice.map(async p => {
+                  const fit = await geminiService.scoreCandidateFit({
+                    candidateName: p.name,
+                    candidateTitle: p.currentTitle,
+                    candidateCompany: p.company,
+                    candidateBio: p.bio,
+                    jobTitle: campaign.jobTitle,
+                    jobKeywords: campaign.extractedKeywords,
+                    jobRequirements: campaign.requirements,
+                    alternateTitles: campaign.alternateTitles,
+                  }).catch(() => null);
+                  if (!fit) return;
+                  p.matchScore = fit.score;
+                  p.matchExplanation = `${fit.reasoning} (Sourced from GitHub.)`;
+                  p.strengths = fit.strengths.slice(0, 6);
+                  p.gaps = fit.gaps.slice(0, 4);
+                })
+              );
+            }
+          }
+
           await campaignRepository.addLog(campaignId, {
             message: `GitHub sourcing: ${githubProfiles.length} developer profile(s) discovered.`,
             type: 'INFO',
