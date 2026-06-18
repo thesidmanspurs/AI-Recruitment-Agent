@@ -92,6 +92,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   const [showEmailSettings, setShowEmailSettings] = useState(false);
   const [emailCanSend, setEmailCanSend] = useState<boolean | null>(null); // null = unknown/loading
   const [sourceLocations, setSourceLocations] = useState<string[]>([]);
+  // Which channels to source from: both (default), LinkedIn only, or GitHub only.
+  const [sourceMode, setSourceMode] = useState<'both' | 'linkedin' | 'github'>('both');
 
   // Load the user's email-send capability so we can gate the outreach editor
   // before they waste time drafting. Re-checked when the settings modal closes.
@@ -233,24 +235,29 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
     try {
       const r = await sourceCandidates(activeId, {
         locations: sourceLocations.length > 0 ? sourceLocations : undefined,
+        sources: sourceMode === 'both' ? ['linkedin', 'github'] : [sourceMode],
       });
       const s = r?.sources;
       if (s) {
-        // Per-channel transparency: show exactly how many came from each source
-        // so an empty channel (e.g. LinkedIn) is visible, not a mystery.
+        const linkedInOn = sourceMode !== 'github';
+        const githubOn = sourceMode !== 'linkedin';
+        // Per-channel transparency: show counts only for the channels that ran.
+        const parts: string[] = [];
+        if (linkedInOn) parts.push(`LinkedIn ${s.apollo.count} · Reddit ${s.reddit.count}`);
+        if (githubOn) parts.push(`GitHub ${s.github.count}`);
         toast.push({
           title: `Sourced ${r.total} candidate${r.total === 1 ? '' : 's'}`,
-          body: `LinkedIn ${s.apollo.count} · GitHub ${s.github.count} · Reddit ${s.reddit.count}`,
+          body: parts.join('  ·  '),
           tone: 'success',
         });
-        if (s.apollo.error) {
+        if (linkedInOn && s.apollo.error) {
           toast.push({
             title: 'LinkedIn (Apollo) returned nothing',
             body: s.apollo.error,
             tone: 'warning',
             duration: 10_000,
           });
-        } else if (s.apollo.count === 0) {
+        } else if (linkedInOn && s.apollo.count === 0) {
           toast.push({
             title: 'No LinkedIn matches this run',
             body: 'Apollo found no new profiles for these titles/keywords. Try broader alternate titles, or "Re-source" to fetch the next page.',
@@ -545,9 +552,34 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                         setSourceLocations(locs);
                         if (locs.length === 0) return; // reset only
                         if (!activeId) return;
-                        try { await sourceCandidates(activeId, { locations: locs }); } catch {}
+                        try {
+                          await sourceCandidates(activeId, {
+                            locations: locs,
+                            sources: sourceMode === 'both' ? ['linkedin', 'github'] : [sourceMode],
+                          });
+                        } catch {}
                       }}
                     />
+                    {/* Source channel selector */}
+                    <div
+                      className="inline-flex items-center rounded-lg border border-gray-300 dark:border-white/10 overflow-hidden text-xs font-semibold"
+                      title="Choose which channels to source from"
+                    >
+                      {(['both', 'linkedin', 'github'] as const).map(m => (
+                        <button
+                          key={m}
+                          onClick={() => setSourceMode(m)}
+                          disabled={sourcing}
+                          className={`px-2.5 py-2 transition-colors disabled:opacity-60 ${
+                            sourceMode === m
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-white dark:bg-[#0a0c12] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          {m === 'both' ? 'Both' : m === 'linkedin' ? 'LinkedIn' : 'GitHub'}
+                        </button>
+                      ))}
+                    </div>
                     <button
                       onClick={handleSource}
                       disabled={sourcing}

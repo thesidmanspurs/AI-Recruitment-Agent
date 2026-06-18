@@ -176,7 +176,7 @@ export function useCampaigns() {
   const sourceCandidates = useCallback(
     async (
       campaignId: string,
-      opts: { page?: number; pageSize?: number; locations?: string[] } = {}
+      opts: { page?: number; pageSize?: number; locations?: string[]; sources?: string[] } = {}
     ): Promise<{
       total: number;
       sources?: {

@@ -26,14 +26,26 @@ export const candidateController = {
       // the user's intent (and our platform work) is the same either way.
       await usageService.assertWithinLimit(userId);
 
-      // STRICT POLICY: real people only.
-      // Sourcing combines Apollo (LinkedIn) + Reddit (hiring subreddits).
-      // At least one source must be configured; we never invent candidates.
-      if (!apolloSourcingService.isAvailable() && !redditService.isAvailable()) {
+      // Source selection: the recruiter can choose LinkedIn, GitHub, or both.
+      // `sources` (body) is a string[] subset of ['linkedin','github']; absent
+      // = both (backward compatible). Reddit rides along with the LinkedIn
+      // selection (it's the same public-web sourcing bucket).
+      const sourcesRaw = req.body?.sources as unknown;
+      const selected = Array.isArray(sourcesRaw)
+        ? sourcesRaw.map(s => String(s).toLowerCase().trim())
+        : null;
+      const wantLinkedIn = !selected || selected.includes('linkedin');
+      const wantGitHub = !selected || selected.includes('github');
+
+      // STRICT POLICY: real people only — at least one selected source must be
+      // usable. GitHub works without config; Apollo/Reddit need credentials.
+      const anySource =
+        (wantLinkedIn && (apolloSourcingService.isAvailable() || redditService.isAvailable())) ||
+        (wantGitHub && githubService.isAvailable());
+      if (!anySource) {
         return next(
           createError(
-            'Sourcing is unavailable: neither Apollo nor Reddit is configured on the server. ' +
-              'At least one real source is required.',
+            'Sourcing is unavailable for the selected channels. Pick a channel that is configured.',
             503
           )
         );
@@ -65,28 +77,30 @@ export const candidateController = {
       // we still try Reddit. Only if BOTH come up empty do we report 404/502.
       let searchResult: Awaited<ReturnType<typeof apolloSourcingService.searchRaw>> | null = null;
       let apolloErrorMsg: string | null = null;
-      try {
-        searchResult = await apolloSourcingService.searchRaw({
-          title: campaign.jobTitle,
-          alternateTitles: campaign.alternateTitles,
-          extractedKeywords: campaign.extractedKeywords,
-          preferredPlatforms: campaign.preferredPlatforms,
-          limit: pageSize,
-          page,
-          locations: locations.length > 0 ? locations : undefined,
-        });
-      } catch (err) {
-        apolloErrorMsg =
-          err instanceof ApolloError
-            ? `Apollo Search ${err.status}: ${err.message}`
-            : err instanceof Error
-              ? err.message
-              : 'Apollo Search call failed.';
-        console.warn('[Apollo] sourcing failed:', apolloErrorMsg);
-        await campaignRepository.addLog(campaignId, {
-          message: `Apollo sourcing skipped: ${apolloErrorMsg}`,
-          type: 'WARNING',
-        });
+      if (wantLinkedIn) {
+        try {
+          searchResult = await apolloSourcingService.searchRaw({
+            title: campaign.jobTitle,
+            alternateTitles: campaign.alternateTitles,
+            extractedKeywords: campaign.extractedKeywords,
+            preferredPlatforms: campaign.preferredPlatforms,
+            limit: pageSize,
+            page,
+            locations: locations.length > 0 ? locations : undefined,
+          });
+        } catch (err) {
+          apolloErrorMsg =
+            err instanceof ApolloError
+              ? `Apollo Search ${err.status}: ${err.message}`
+              : err instanceof Error
+                ? err.message
+                : 'Apollo Search call failed.';
+          console.warn('[Apollo] sourcing failed:', apolloErrorMsg);
+          await campaignRepository.addLog(campaignId, {
+            message: `Apollo sourcing skipped: ${apolloErrorMsg}`,
+            type: 'WARNING',
+          });
+        }
       }
 
       const searchHits = searchResult?.hits ?? [];
@@ -171,7 +185,7 @@ export const candidateController = {
       // a Reddit failure block the Apollo pipeline: any error here is logged
       // and swallowed so the user still sees their LinkedIn candidates.
       let redditProfiles: typeof rawProfiles = [];
-      if (redditService.isAvailable()) {
+      if (wantLinkedIn && redditService.isAvailable()) {
         try {
           redditProfiles = await redditService.sourceCandidates({
             jobTitle: campaign.jobTitle,
@@ -197,7 +211,7 @@ export const candidateController = {
       // contact — no Apollo credit involved).
       let githubProfiles: typeof rawProfiles = [];
       const githubMeta = new Map<string, { email?: string; location?: string }>();
-      if (githubService.isAvailable()) {
+      if (wantGitHub && githubService.isAvailable()) {
         try {
           const gh = await githubService.sourceCandidates({
             jobTitle: campaign.jobTitle,

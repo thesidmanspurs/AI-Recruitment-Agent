@@ -145,7 +145,7 @@ export const campaignApi = {
   // Phase 2 / 3
   source(
     campaignId: string,
-    opts: { page?: number; pageSize?: number; locations?: string[] } = {}
+    opts: { page?: number; pageSize?: number; locations?: string[]; sources?: string[] } = {}
   ) {
     const params = new URLSearchParams();
     if (opts.page != null) params.set('page', String(opts.page));
@@ -181,6 +181,7 @@ export const campaignApi = {
       };
     }>(`/campaigns/${campaignId}/candidates/source${q}`, {
       locations: opts.locations && opts.locations.length > 0 ? opts.locations : undefined,
+      sources: opts.sources && opts.sources.length > 0 ? opts.sources : undefined,
     });
   },
 
