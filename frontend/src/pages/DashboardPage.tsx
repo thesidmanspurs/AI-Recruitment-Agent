@@ -155,7 +155,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   }, [isSimulated, simulationReason, toast]);
 
   const stats = useMemo(() => {
-    const enriched = candidates.filter(c => c.emailEnriched || c.phoneEnriched).length;
+    // "Enriched" = candidates that actually hold a revealed contact. We check
+    // the value, not just the flag: the Apollo phone webhook sets
+    // phoneEnriched=true even when it confirms "no phone on file" (phone stays
+    // null), which would otherwise over-count vs the candidates shown enriched.
+    const enriched = candidates.filter(
+      c => (c.emailEnriched && !!c.email) || (c.phoneEnriched && !!c.phone)
+    ).length;
     // "Outreach Sent" = candidates we've actually contacted. Must match the
     // Outreach Activity panel's definition exactly (outreachSentAt set + a
     // post-send status) — NOT "any non-SOURCED candidate", which wrongly
