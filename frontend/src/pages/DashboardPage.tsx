@@ -204,6 +204,16 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   // score threshold — so candidates are never hidden from the "All" tab.
   const tableCandidates = useMemo(() => candidates.map(toCandidate), [candidates]);
 
+  // The Both/LinkedIn/GitHub selector also filters which candidates are shown,
+  // so picking "GitHub" lists only GitHub people (not leftover LinkedIn rows
+  // from earlier runs). LinkedIn bucket = everything that isn't GitHub
+  // (Apollo + Reddit). "Both" shows all.
+  const displayedCandidates = useMemo(() => {
+    if (sourceMode === 'github') return tableCandidates.filter(c => c.platform === 'GitHub');
+    if (sourceMode === 'linkedin') return tableCandidates.filter(c => c.platform !== 'GitHub');
+    return tableCandidates;
+  }, [tableCandidates, sourceMode]);
+
   // ── Workflow step state — shared by header stepper, playbook panel, guide modal ──
   const stepStatuses = useMemo<Record<string, StepperStatus>>(() => {
     const analyzed = !!activeCampaign && (activeCampaign.extractedKeywords?.length ?? 0) > 0;
@@ -705,7 +715,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                 <EmptySourcing onSource={handleSource} sourcing={sourcing} />
               ) : (
                 <CandidateTable
-                  candidates={tableCandidates}
+                  candidates={displayedCandidates}
                   threshold={minScore}
                   enrichingId={enrichingId}
                   awaitingPhoneIds={awaitingPhoneIds}
