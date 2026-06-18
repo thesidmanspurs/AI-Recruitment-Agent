@@ -125,7 +125,10 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
     if (user) refreshCredits();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidates]);
-  const [minScore, setMinScore] = useState<number>(9.0);
+  // Default approve bar = the screening threshold (7.0), not 9.0 — at 9.0 the
+  // Approved Queue looked empty for normal sourced candidates (GitHub caps at
+  // 9.0; most Apollo/Reddit hits are 7–9 too).
+  const [minScore, setMinScore] = useState<number>(7.0);
   const [outreachEditorId, setOutreachEditorId] = useState<string | null>(null);
   const toast = useToast();
   const lastSimReason = useRef<string | null>(null);
@@ -174,35 +177,30 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
   const channelMix = useMemo(() => {
     if (candidates.length === 0) return [];
-    const counts: Record<string, number> = { LinkedIn: 0 };
+    const counts: Record<string, number> = {};
     for (const c of candidates) counts[c.platform] = (counts[c.platform] ?? 0) + 1;
     const total = candidates.length;
-    const colors: Record<string, string> = {
-      LinkedIn: 'bg-blue-500',
+    const meta: Record<string, { label: string; color: string }> = {
+      LinkedIn: { label: 'LinkedIn (Apollo)', color: 'bg-blue-500' },
+      GitHub: { label: 'GitHub', color: 'bg-slate-500' },
+      Reddit: { label: 'Reddit', color: 'bg-orange-500' },
+      Upwork: { label: 'Upwork', color: 'bg-emerald-500' },
     };
-    const labels: Record<string, string> = {
-      LinkedIn: 'LinkedIn Search',
-    };
-    // Only LinkedIn (Apollo) is an active sourcing channel. Upwork and Reddit
-    // were removed from the channel mix display.
-    return (['LinkedIn'] as const).map(p => ({
-      label: labels[p],
-      pct: Math.round((counts[p] / total) * 100),
-      color: colors[p],
-    }));
+    // Show every platform actually present in this campaign's pool, busiest
+    // first — not a hardcoded LinkedIn-only row.
+    return Object.keys(counts)
+      .sort((a, b) => counts[b] - counts[a])
+      .map(p => ({
+        label: meta[p]?.label ?? p,
+        pct: Math.round((counts[p] / total) * 100),
+        color: meta[p]?.color ?? 'bg-gray-400',
+      }));
   }, [candidates]);
 
-  // Full candidate set, mapped to the frontend Candidate shape. Used by the
-  // playbook + stats so the workflow progress reflects everything sourced.
+  // Full candidate set, mapped to the frontend Candidate shape. The table
+  // receives this whole set and splits it into Approved / Below / All by the
+  // score threshold — so candidates are never hidden from the "All" tab.
   const tableCandidates = useMemo(() => candidates.map(toCandidate), [candidates]);
-
-  // View-only filter for the candidate table. Lets the recruiter narrow
-  // visibility by minimum AI score without affecting playbook progress or
-  // server-side state.
-  const visibleCandidates = useMemo(() => {
-    const epsilon = 1e-6;
-    return tableCandidates.filter(c => c.matchScore >= minScore - epsilon);
-  }, [tableCandidates, minScore]);
 
   // ── Workflow step state — shared by header stepper, playbook panel, guide modal ──
   const stepStatuses = useMemo<Record<string, StepperStatus>>(() => {
@@ -642,7 +640,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                 <EmptySourcing onSource={handleSource} sourcing={sourcing} />
               ) : (
                 <CandidateTable
-                  candidates={visibleCandidates}
+                  candidates={tableCandidates}
                   threshold={minScore}
                   enrichingId={enrichingId}
                   awaitingPhoneIds={awaitingPhoneIds}
