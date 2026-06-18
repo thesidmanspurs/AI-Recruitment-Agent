@@ -381,11 +381,13 @@ export const geminiService = {
       `against the job spec and rank them 1-10 (1 = completely unsuitable,`,
       `10 = perfect match). Be highly objective and critical.`,
       ``,
-      `STEP 1 — Extract from the job spec: the non-negotiable MUST-HAVE skills, the`,
-      `NICE-TO-HAVE skills, and the required years of experience.`,
-      `STEP 2 — Map the candidate's title, company and background to those`,
-      `requirements. Weight MUST-HAVEs and years-of-experience far more heavily than`,
-      `nice-to-haves. A candidate missing a must-have cannot score above ~6.`,
+      `This is a SOURCING-stage screen against a SHORT public profile (a title +`,
+      `a one-line bio), NOT a full CV review. Judge how well the candidate's ROLE,`,
+      `SENIORITY and visible background align with the job and its acceptable`,
+      `equivalent titles. CRITICAL: skills you can't see in this short profile are`,
+      `UNKNOWN, not absent — list them as gaps to verify later. Do NOT cap or`,
+      `penalise a candidate just because a one-line bio omits a must-have; only`,
+      `penalise when the candidate's role is genuinely different or junior.`,
       ``,
       `[JOB SPECIFICATION]`,
       `  Title: ${params.jobTitle}`,
@@ -398,16 +400,16 @@ export const geminiService = {
       `  Company: ${params.candidateCompany}`,
       params.candidateBio ? `  Background: ${params.candidateBio.slice(0, 800)}` : '',
       ``,
-      `Scoring calibration (1-10, one decimal allowed):`,
-      `  9-10  perfect/near-perfect: all must-haves + meets experience + most nice-to-haves`,
-      `  7-8.9 strong: all or nearly all must-haves, minor gaps`,
-      `  5-6.9 partial: some must-haves missing or experience short`,
-      `  3-4.9 weak: adjacent field, most must-haves absent`,
-      `  1-2.9 unsuitable: unrelated`,
-      `Do NOT inflate. With limited data, judge conservatively from the title +`,
-      `background rather than assuming unstated skills. Provide:`,
-      `  - strengths: the exact skills/experience that MATCH the spec (the match)`,
-      `  - gaps: required/preferred items the candidate is missing (the weaknesses)`,
+      `Scoring calibration (1-10, one decimal allowed) — based on ROLE/TITLE fit:`,
+      `  9-10  title IS the role or an exact equivalent, clearly relevant background`,
+      `  7-8.9 strong: same role family / adjacent matching title at the right seniority`,
+      `  5-6.9 partial: related but off (wrong seniority, broader/narrower role)`,
+      `  3-4.9 weak: different discipline, only loose keyword overlap`,
+      `  1-2.9 unsuitable: unrelated role`,
+      `Reward a clear title/role match (don't punish it for a thin bio); score`,
+      `genuinely off-target roles low. Provide:`,
+      `  - strengths: the title/role/skills signals that MATCH the spec`,
+      `  - gaps: required items not yet verifiable from this profile (to confirm later)`,
       `  - reasoning: a brief objective justification for the score`,
     ].filter(Boolean).join('\n');
 
@@ -417,9 +419,10 @@ export const geminiService = {
         contents: prompt,
         config: {
           systemInstruction:
-            'You are an expert Technical Recruiter and HR Manager scoring candidate-job fit. ' +
-            'You are highly objective and critical, weight must-have skills and years of ' +
-            'experience heavily, and reserve 9+ only for genuinely strong matches.',
+            'You are an expert Technical Recruiter screening SHORT sourcing profiles for ' +
+            'role/title fit. Reward clear title/role matches; score genuinely off-target ' +
+            'roles low. Treat skills not visible in the brief profile as unknown gaps to ' +
+            'verify, not as absent — do not cap a clear title match for a thin bio. Reserve 9+ for exact-role matches.',
           temperature: 0.2,
           responseMimeType: 'application/json',
           responseSchema: {
