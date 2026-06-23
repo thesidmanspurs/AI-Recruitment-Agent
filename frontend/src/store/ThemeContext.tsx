@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 
 /**
  * Theme provider — controls the workspace light/dark theme via a `dark` class
- * on <html> (see the @custom-variant in index.css). Defaults to DARK and
+ * on <html> (see the @custom-variant in index.css). Defaults to LIGHT and
  * persists the choice in localStorage.
  *
  * The initial class is also set synchronously in main.tsx before React mounts
@@ -13,9 +13,9 @@ export type Theme = 'light' | 'dark';
 const STORAGE_KEY = 'aries-theme';
 
 export function readStoredTheme(): Theme {
-  if (typeof localStorage === 'undefined') return 'dark';
+  if (typeof localStorage === 'undefined') return 'light';
   const v = localStorage.getItem(STORAGE_KEY);
-  return v === 'light' ? 'light' : 'dark'; // default dark
+  return v === 'dark' ? 'dark' : 'light'; // default light
 }
 
 export function applyThemeClass(theme: Theme): void {
