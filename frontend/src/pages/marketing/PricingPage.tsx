@@ -38,14 +38,21 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
           cta="Start subscription" onClick={() => onSelectPlan('start-tier')}
         />
         <Plan
+<<<<<<< HEAD
           name="Top-Up Pack" price="$65" per="one-time"
           sub="1,000 additional credits · never expires"
+=======
+          emerald badge="NEVER EXPIRES"
+          name="Top-Up Pack" price="$65" per="one-time"
+          sub="1,000 additional credits · stack anytime"
+>>>>>>> 1e77f07 (UI: implement lightmode on homepage and enhance card color on homepage)
           features={['1,000 additional credits, one-time', 'Stacks on your subscription balance', '1 credit = 1 email/phone reveal', 'Buy as many packs as you need']}
           cta="Buy a top-up" onClick={() => onSelectPlan('topup-1000')}
         />
       </div>
 
       {/* Calculator */}
+<<<<<<< HEAD
       <div className="mt-10 max-w-2xl mx-auto bg-slate-950/50 border border-slate-900 rounded-3xl p-7 space-y-5">
         <div className="flex items-center gap-2">
           <Calculator className="w-4 h-4 text-indigo-400" />
@@ -69,6 +76,31 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
         </div>
         <div className="flex items-start gap-2 text-[11px] text-slate-400 bg-indigo-950/20 border border-indigo-900/30 rounded-xl p-3">
           <Info className="w-4 h-4 text-indigo-400 shrink-0" />
+=======
+      <div className="mt-10 max-w-2xl mx-auto bg-white dark:bg-slate-950/50 border border-gray-200 dark:border-slate-900 rounded-3xl p-7 space-y-5 shadow-sm dark:shadow-none">
+        <div className="flex items-center gap-2">
+          <Calculator className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+          <h3 className="text-gray-900 dark:text-white font-bold text-sm">Estimate your monthly cost</h3>
+        </div>
+        <label className="block text-xs text-gray-600 dark:text-slate-400">
+          Contact reveals per month: <span className="text-gray-900 dark:text-white font-bold font-mono">{reveals.toLocaleString()}</span>
+        </label>
+        <input type="range" min={250} max={10000} step={250} value={reveals} onChange={e => setReveals(Number(e.target.value))}
+          className="w-full h-1.5 bg-gray-200 dark:bg-slate-900 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+        <div className="flex items-center justify-between rounded-2xl bg-gray-50 dark:bg-slate-900/60 border border-gray-200 dark:border-slate-800 px-5 py-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-mono font-bold">Recommended</p>
+            <p className="text-gray-900 dark:text-white font-semibold text-sm">{estimate.plan}</p>
+            <p className="text-[11px] text-gray-500 dark:text-slate-500">{estimate.detail}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-3xl font-black text-emerald-500 dark:text-emerald-400">${estimate.monthly}</p>
+            <p className="text-[10px] text-gray-500 dark:text-slate-500">/ month</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2 text-[11px] text-gray-600 dark:text-slate-400 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/30 rounded-xl p-3">
+          <Info className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />
+>>>>>>> 1e77f07 (UI: implement lightmode on homepage and enhance card color on homepage)
           <span>Run campaigns for multiple clients under one workspace — candidate data and outreach logs stay strictly isolated per campaign.</span>
         </div>
       </div>
@@ -77,6 +109,7 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
 }
 
 function Plan({
+<<<<<<< HEAD
   name, price, per, sub, features, cta, onClick, highlight, badge,
 }: {
   name: string; price: string; per: string; sub: string; features: string[];
@@ -98,12 +131,62 @@ function Plan({
           {features.map(f => (
             <div key={f} className="flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" /> <span className="text-slate-300">{f}</span>
+=======
+  name, price, per, sub, features, cta, onClick, highlight, emerald, badge,
+}: {
+  name: string; price: string; per: string; sub: string; features: string[];
+  cta: string; onClick: () => void; highlight?: boolean; emerald?: boolean; badge?: string;
+}) {
+  const cardCls = highlight
+    ? 'bg-indigo-50 dark:bg-slate-900/60 border-2 border-indigo-500 dark:border-indigo-600'
+    : emerald
+    ? 'bg-emerald-50/60 dark:bg-emerald-950/10 border-2 border-emerald-300 dark:border-emerald-800/60 shadow-sm dark:shadow-none'
+    : 'bg-white dark:bg-slate-950/30 border border-gray-200 dark:border-slate-900 shadow-sm dark:shadow-none';
+
+  const badgeCls = highlight
+    ? 'bg-indigo-600 text-white'
+    : 'bg-emerald-500 text-white';
+
+  const priceCls = highlight
+    ? 'text-indigo-600 dark:text-indigo-400'
+    : emerald
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : 'text-gray-900 dark:text-white';
+
+  const ctaCls = highlight
+    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
+    : emerald
+    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/10'
+    : 'bg-gray-100 dark:bg-slate-900 hover:bg-gray-200 dark:hover:bg-slate-800 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-800';
+
+  return (
+    <div className={`relative p-6 rounded-3xl flex flex-col justify-between space-y-6 ${cardCls}`}>
+      {badge && (
+        <div className={`absolute top-0 right-6 -translate-y-1/2 font-mono text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${badgeCls}`}>{badge}</div>
+      )}
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{name}</h3>
+        <div className="my-4 flex items-baseline gap-1">
+          <span className={`text-3xl font-black ${priceCls}`}>{price}</span>
+          <span className="text-xs text-gray-500 dark:text-slate-400">{per}</span>
+        </div>
+        <p className="text-[11px] text-gray-500 dark:text-slate-500 mb-4 font-mono">{sub}</p>
+        <div className="space-y-2 text-xs font-medium">
+          {features.map(f => (
+            <div key={f} className="flex items-start gap-2">
+              <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${emerald ? 'text-emerald-500 dark:text-emerald-400' : 'text-emerald-500 dark:text-emerald-400'}`} />
+              <span className="text-gray-700 dark:text-slate-300">{f}</span>
+>>>>>>> 1e77f07 (UI: implement lightmode on homepage and enhance card color on homepage)
             </div>
           ))}
         </div>
       </div>
+<<<<<<< HEAD
       <button onClick={onClick}
         className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${highlight ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10' : 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-800 hover:border-slate-700'}`}>
+=======
+      <button onClick={onClick} className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${ctaCls}`}>
+>>>>>>> 1e77f07 (UI: implement lightmode on homepage and enhance card color on homepage)
         {cta}
       </button>
     </div>
