@@ -143,7 +143,7 @@ function AuthGate() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0c12] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0a0c12] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
       </div>
     );

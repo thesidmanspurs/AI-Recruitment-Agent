@@ -352,7 +352,7 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
   );
 }
 
-function Step({ n, children }: { n: number; children: React.ReactNode }) {
+function Step({ n, children }: { n: number; children: import('react').ReactNode }) {
   return (
     <li className="flex gap-2.5 mb-2">
       <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{n}</span>

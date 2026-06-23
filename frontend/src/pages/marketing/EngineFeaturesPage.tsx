@@ -12,9 +12,9 @@ interface PageProps {
 const SECTIONS = [
   { icon: Radar, title: 'Autonomous community sourcing', body: 'Aries crawls public tech communities and professional networks, resolving verified profiles via Apollo. You source from real signal — what people build — not stale resume keywords.' },
   { icon: Gauge, title: 'Calibrated AI quality gates', body: 'Every candidate is scored 0–10 against your job spec. Set a suitability threshold and a score filter to instantly separate the approved queue from below-threshold leads — raw data is always retained.' },
-  { icon: GitBranch, title: 'Grounded deep scoring', body: 'On demand, Gemini researches a candidate's real public profile and applies your rubric (must-have / nice-to-have / critical) for a defensible, evidence-backed match score.' },
-  { icon: Mail, title: 'High-response outreach drafting', body: 'Generate hyper-personalized invitations from each candidate's titles and keywords. Send from your own verified Gmail or a Resend domain — no shared mailbox.' },
-  { icon: Coins, title: 'Pay only for contact reveals', body: 'Sourcing, scoring, and drafting are free. Credits are spent only when you unlock a candidate's email or phone via Apollo — 1 credit per reveal.' },
+  { icon: GitBranch, title: 'Grounded deep scoring', body: "On demand, Gemini researches a candidate's real public profile and applies your rubric (must-have / nice-to-have / critical) for a defensible, evidence-backed match score." },
+  { icon: Mail, title: 'High-response outreach drafting', body: "Generate hyper-personalized invitations from each candidate's titles and keywords. Send from your own verified Gmail or a Resend domain — no shared mailbox." },
+  { icon: Coins, title: 'Pay only for contact reveals', body: "Sourcing, scoring, and drafting are free. Credits are spent only when you unlock a candidate's email or phone via Apollo — 1 credit per reveal." },
   { icon: Inbox, title: 'Reply tracking & alerts', body: 'An inbox poller watches for responses and surfaces replies against the right candidate, with 48-hour no-response alerts so nothing slips through.' },
   { icon: Users, title: 'Multi-seat workspace isolation', body: 'Each recruiter gets isolated campaigns, their own sending identity, and an individual credit balance — built for agencies running many seats in parallel.' },
   { icon: ShieldCheck, title: 'SOC2-aligned & encrypted', body: 'Credentials are AES-256-GCM encrypted at rest and never returned to the client. Payments run through Stripe; we never touch card data.' },

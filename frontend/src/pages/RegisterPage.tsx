@@ -53,11 +53,11 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
           <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
             <span className="text-base font-extrabold text-white">A</span>
           </div>
-          <span className="text-gray-900 font-bold text-lg">ARIES</span>
+          <span className="text-gray-900 dark:text-white font-bold text-lg">ARIES</span>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h2>
-        <p className="text-sm text-gray-500 mb-8">Get started with AI-powered recruiting</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Create your account</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-8">Get started with AI-powered recruiting</p>
 
         {error && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6">
@@ -121,11 +121,11 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-6">
           Already have an account?{' '}
           <button
             onClick={onSwitchToLogin}
-            className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+            className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium transition-colors"
           >
             Sign in
           </button>
