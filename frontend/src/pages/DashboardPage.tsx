@@ -241,16 +241,21 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
     }
   }
 
-  function handleExport() {
-    if (!activeCampaign || candidates.length === 0) {
+  function handleExport(ids?: string[]) {
+    // When ids are passed (selection export) we export only those rows;
+    // otherwise the whole campaign pool.
+    const pool = ids && ids.length
+      ? candidates.filter(c => ids.includes(c.id))
+      : candidates;
+    if (!activeCampaign || pool.length === 0) {
       toast.push({
         title: 'Nothing to export',
-        body: 'Source candidates first.',
+        body: ids && ids.length ? 'No matching candidates selected.' : 'Source candidates first.',
         tone: 'warning',
       });
       return;
     }
-    const rows = candidates.map(c => ({
+    const rows = pool.map(c => ({
       Name: c.name,
       'AI Score': c.matchScore.toFixed(1),
       Title: c.currentTitle,
@@ -269,14 +274,20 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
       'Match Explanation': c.matchExplanation,
     }));
     const headers = Object.keys(rows[0]);
-    const csv = [
+    const body = [
       headers.join(','),
       ...rows.map(r => headers.map(h => csvEscape(String((r as Record<string, string>)[h] ?? ''))).join(',')),
-    ].join('\n');
+    ].join('\r\n'); // CRLF — Excel's preferred row terminator
+    // "sep=," tells Excel to split on commas regardless of the OS locale list
+    // separator (e.g. Vietnamese Excel defaults to ";", which dumps everything
+    // into column A). The leading ﻿ BOM marks the file UTF-8 so accented
+    // characters / em-dashes render correctly instead of mojibake.
+    const csv = '\uFEFF' + 'sep=,\r\n' + body;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${activeCampaign.name.replace(/[^a-z0-9-]+/gi, '_').toLowerCase()}-candidates.csv`;
+    const suffix = ids && ids.length ? '-selected' : '';
+    a.download = `${activeCampaign.name.replace(/[^a-z0-9-]+/gi, '_').toLowerCase()}-candidates${suffix}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
     toast.push({
@@ -376,7 +387,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                 </div>
               )}
               <div className="hidden sm:flex items-center gap-2.5 pr-3 border-r border-gray-200 dark:border-white/10">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-600 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-white">
                     {user.name.charAt(0).toUpperCase()}
                   </span>
@@ -417,7 +428,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
               {user.role === 'ADMIN' && onOpenAdmin && (
                 <button
                   onClick={onOpenAdmin}
-                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300 dark:hover:bg-indigo-500/20 transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-gray-100 border border-gray-200 text-gray-700 hover:bg-gray-200 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 transition-colors"
                 >
                   <Shield className="w-3.5 h-3.5" />
                   Admin
@@ -551,7 +562,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                     </button>
                     <button
                       onClick={handleExport}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
                     >
                       <Download className="w-4 h-4" />
                       Export
@@ -647,6 +658,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   enrichingId={enrichingId}
                   awaitingPhoneIds={awaitingPhoneIds}
                   enrichingSelected={enrichingSelected}
+                  onExportSelected={(ids) => handleExport(ids)}
                   onEnrichSelected={async (ids) => {
                     try {
                       const r = await enrichSelected(ids);
@@ -958,7 +970,7 @@ function SpecField({
         <ul className="flex flex-col gap-1.5">
           {items.map(item => (
             <li key={item} className="text-xs text-gray-700 dark:text-gray-200 flex gap-2">
-              <span className="text-indigo-500 dark:text-indigo-400 shrink-0">•</span>
+              <span className="text-gray-400 dark:text-gray-500 shrink-0">•</span>
               <span>{item}</span>
             </li>
           ))}
@@ -968,7 +980,7 @@ function SpecField({
           {items.map(item => (
             <span
               key={item}
-              className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-400/20"
+              className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
             >
               {item}
             </span>
@@ -982,7 +994,7 @@ function SpecField({
 function CenterLoader() {
   return (
     <div className="flex items-center justify-center py-16">
-      <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
     </div>
   );
 }
@@ -991,8 +1003,8 @@ function EmptyDashboard({ onNew }: { onNew: () => void }) {
   return (
     <SectionCard renderHeader={false}>
       <div className="flex flex-col items-center justify-center py-20 max-w-md mx-auto text-center">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
-          <Sparkles className="w-6 h-6 text-indigo-600" />
+        <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+          <Sparkles className="w-6 h-6 text-gray-900 dark:text-gray-300" />
         </div>
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5">No campaigns yet</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
@@ -1001,7 +1013,7 @@ function EmptyDashboard({ onNew }: { onNew: () => void }) {
         </p>
         <button
           onClick={onNew}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
           Create first campaign
@@ -1015,8 +1027,8 @@ function EmptySourcing({ onSource, sourcing }: { onSource: () => void; sourcing:
   return (
     <SectionCard renderHeader={false}>
       <div className="py-12 flex flex-col items-center text-center px-6">
-        <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
-          <Inbox className="w-5 h-5 text-indigo-600" />
+        <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+          <Inbox className="w-5 h-5 text-gray-900 dark:text-gray-300" />
         </div>
         <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">No candidates sourced yet</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 max-w-sm">
@@ -1026,7 +1038,7 @@ function EmptySourcing({ onSource, sourcing }: { onSource: () => void; sourcing:
         <button
           onClick={onSource}
           disabled={sourcing}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           {sourcing ? (
             <>

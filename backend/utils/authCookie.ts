@@ -18,7 +18,7 @@ import { env } from '../config/env.js';
  *   maxAge    — matches JWT_EXPIRES_IN; we keep the cookie alive as long
  *               as the underlying JWT could plausibly still be valid
  */
-export const AUTH_COOKIE_NAME = 'aries_token';
+export const AUTH_COOKIE_NAME = 'talentscanr_token';
 
 function maxAgeMs(): number {
   // env.JWT_EXPIRES_IN is "7d" by default; map common suffixes to ms.
@@ -38,6 +38,7 @@ export function setAuthCookie(res: Response, token: string): void {
     sameSite: 'lax',
     path: '/',
     maxAge: maxAgeMs(),
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   });
 }
 
@@ -47,5 +48,6 @@ export function clearAuthCookie(res: Response): void {
     secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   });
 }

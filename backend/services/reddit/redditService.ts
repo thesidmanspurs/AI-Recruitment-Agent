@@ -27,7 +27,7 @@ import type { RawCandidateProfile } from '../../types/candidate.types.js';
  * Auth: register an OAuth "script" app at https://www.reddit.com/prefs/apps
  * — record the client_id + client_secret as REDDIT_CLIENT_ID /
  * REDDIT_CLIENT_SECRET secrets. REDDIT_USER_AGENT is required by Reddit
- * and should be a descriptive string like "aries-sourcing/0.1 by <user>".
+ * and should be a descriptive string like "talentscanr-sourcing/1.0 by <user>".
  */
 
 const REDDIT_OAUTH_BASE = 'https://oauth.reddit.com';

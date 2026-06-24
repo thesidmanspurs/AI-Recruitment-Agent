@@ -1,5 +1,6 @@
-import { Layers, Database, Plus, ShieldCheck } from 'lucide-react';
+import { Database, Plus, ShieldCheck } from 'lucide-react';
 import type { CampaignDto } from '../../api/campaignApi';
+import logoSrc from '../../public/logo.png';
 
 /**
  * Full-height dark workspace sidebar (design ref: TalentFlow cockpit).
@@ -63,13 +64,11 @@ export function WorkspaceSidebar({
         title="Go to homepage"
         className="p-5 flex items-center gap-3 border-b border-gray-200 dark:border-[#1E293B]/80 bg-white dark:bg-[#0B0F19] w-full text-left hover:bg-gray-50 dark:hover:bg-[#0e1320] transition-colors"
       >
-        <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center">
-          <Layers className="w-4 h-4" />
-        </div>
+        <img src={logoSrc} alt="TalentScanr" className="h-12 w-auto shrink-0 dark:brightness-0 dark:invert" />
         <div>
-          <h1 className="text-gray-900 dark:text-white font-extrabold text-sm tracking-wider leading-none">ARIES</h1>
+          <h1 className="text-gray-900 dark:text-white font-extrabold text-sm tracking-wider leading-none">TalentScanr</h1>
           <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono font-bold uppercase mt-1 tracking-widest">
-            Sourcing Specialist
+            AI Talent Scanner
           </p>
         </div>
       </button>
@@ -83,7 +82,7 @@ export function WorkspaceSidebar({
             </span>
             <button
               onClick={onNew}
-              className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition"
+              className="flex items-center gap-1 text-[10px] font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition"
             >
               <Plus className="w-3 h-3" /> New
             </button>
@@ -101,12 +100,12 @@ export function WorkspaceSidebar({
                     onClick={() => onSelect(c.id)}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition duration-150 ${
                       active
-                        ? 'bg-indigo-50 text-indigo-900 border-l-4 border-indigo-500 dark:bg-[#202738] dark:text-white dark:shadow-inner'
+                        ? 'bg-gray-100 text-gray-900 border-l-2 border-gray-900 dark:bg-gray-800 dark:text-white dark:border-white'
                         : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-[#1C2232]/40'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
-                      <Database className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-indigo-600 dark:text-indigo-400' : STATUS_ICON_COLOR[c.status]}`} />
+                      <Database className={`w-3.5 h-3.5 shrink-0 ${active ? 'text-gray-900 dark:text-white' : STATUS_ICON_COLOR[c.status]}`} />
                       <span className="truncate">{c.name}</span>
                     </div>
                     <span className={`text-[8.5px] font-bold px-1.5 py-0.5 rounded uppercase font-mono tracking-wider shrink-0 scale-90 ${STATUS_BADGE[c.status]}`}>
@@ -123,7 +122,7 @@ export function WorkspaceSidebar({
         <div className="bg-gray-100 dark:bg-[#0B0F19]/95 rounded-xl p-3 border border-gray-200 dark:border-slate-800 font-mono text-[10px] space-y-2">
           <div className="flex items-center justify-between text-gray-400 dark:text-[#6B7280] font-sans font-bold text-[8.5px] uppercase tracking-wider pb-1 border-b border-gray-200 dark:border-slate-800">
             <span>System Status</span>
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" />
           </div>
           <div className="space-y-1.5 pr-0.5 text-gray-600 dark:text-slate-300 leading-normal">
             {terminalLines.map((line, i) => (
@@ -140,11 +139,11 @@ export function WorkspaceSidebar({
       <div className="p-4 mt-auto border-t border-gray-200 dark:border-[#1E293B]/60 bg-gray-50 dark:bg-[#0B0F19]/40 space-y-3">
         <button
           onClick={onOpenBilling}
-          className="w-full bg-white dark:bg-[#1C2232] rounded-xl p-3.5 text-left border border-gray-200 dark:border-[#2D3748]/60 hover:border-indigo-400 dark:hover:border-indigo-500/60 transition duration-150 block shadow-sm dark:shadow-none"
+          className="w-full bg-white dark:bg-[#1C2232] rounded-xl p-3.5 text-left border border-gray-200 dark:border-[#2D3748]/60 hover:border-gray-400 dark:hover:border-gray-500 transition duration-150 block shadow-sm dark:shadow-none"
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10.5px] font-bold text-gray-700 dark:text-slate-300">Data Enrichment</span>
-            <span className="text-[9.5px] text-indigo-600 dark:text-indigo-400 font-mono font-extrabold uppercase">Buy credits</span>
+            <span className="text-[9.5px] text-gray-900 dark:text-white font-semibold">Buy credits</span>
           </div>
           <div className="flex items-baseline gap-1 mb-2">
             <span className="text-base font-extrabold text-gray-900 dark:text-white font-mono">
@@ -153,7 +152,7 @@ export function WorkspaceSidebar({
             <span className="text-[9.5px] text-gray-500 dark:text-slate-400">credits remaining</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-[#2D3748] h-1.5 rounded-full overflow-hidden">
-            <div className="bg-indigo-500 h-full rounded-full transition-all duration-300" style={{ width: `${creditPct}%` }} />
+            <div className="bg-gray-900 dark:bg-white h-full rounded-full transition-all duration-300" style={{ width: `${creditPct}%` }} />
           </div>
         </button>
 

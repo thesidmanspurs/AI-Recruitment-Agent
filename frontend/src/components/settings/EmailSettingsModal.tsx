@@ -166,7 +166,7 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
       <div className="relative w-full max-w-2xl bg-white dark:bg-[#10131c] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <header className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
               <Mail className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -209,8 +209,8 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
               )}
               {notice && (
                 <div className="flex items-start gap-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 rounded-lg px-3.5 py-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 dark:text-indigo-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-indigo-800 dark:text-indigo-300">{notice}</p>
+                  <CheckCircle2 className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{notice}</p>
                 </div>
               )}
 
@@ -236,13 +236,13 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
                       <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">From address *</label>
                       <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
                         placeholder="you@gmail.com"
-                        className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                        className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">From name</label>
                       <input value={fromName} onChange={e => setFromName(e.target.value)}
                         placeholder="Jane Smith"
-                        className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                        className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -251,7 +251,7 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
                     </label>
                     <input type="password" value={gmailAppPassword} onChange={e => setGmailAppPassword(e.target.value)}
                       placeholder="abcd efgh ijkl mnop"
-                      className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 font-mono dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                      className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 font-mono dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                   </div>
                   <div className="border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
                     <button onClick={() => setShowGuide(s => !s)}
@@ -285,22 +285,22 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Your name *</label>
                         <input value={reqName} onChange={e => setReqName(e.target.value)} placeholder="Jane Smith"
-                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">WhatsApp *</label>
                         <input value={reqWhatsapp} onChange={e => setReqWhatsapp(e.target.value)} placeholder="+44 7123 456789"
-                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Email account *</label>
                         <input value={reqEmail} onChange={e => setReqEmail(e.target.value)} placeholder="jane@company.com"
-                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Domain *</label>
                         <input value={reqDomain} onChange={e => setReqDomain(e.target.value)} placeholder="company.com"
-                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+                          className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
                       </div>
                     </div>
                   </>
@@ -323,7 +323,7 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
                 </button>
                 <button onClick={handleTest} disabled={saving || testing}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60">
                   {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   Send test email
                 </button>
@@ -339,7 +339,7 @@ export function EmailSettingsModal({ open, onClose, onChanged }: EmailSettingsMo
               </span>
               {resendRequest?.status !== 'PENDING' && resendRequest?.status !== 'CONFIGURED' && (
                 <button onClick={submitResendRequest} disabled={submittingReq}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60">
                   {submittingReq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   Submit request to admin
                 </button>
@@ -368,7 +368,7 @@ function GmailGuide() {
       <ol>
         <Step n={1}>Turn on <strong>2-Step Verification</strong> at <a className="text-indigo-600 dark:text-indigo-400 underline" href="https://myaccount.google.com/security" target="_blank" rel="noreferrer">myaccount.google.com/security</a> (required for app passwords).</Step>
         <Step n={2}>Open <a className="text-indigo-600 dark:text-indigo-400 underline" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">myaccount.google.com/apppasswords</a>.</Step>
-        <Step n={3}>Type a name like <code className="bg-gray-100 dark:bg-white/10 px-1 rounded">ARIES</code> and click <strong>Create</strong>.</Step>
+        <Step n={3}>Type a name like <code className="bg-gray-100 dark:bg-white/10 px-1 rounded">TalentScanr</code> and click <strong>Create</strong>.</Step>
         <Step n={4}>Copy the 16-character password Google shows (e.g. <code className="bg-gray-100 dark:bg-white/10 px-1 rounded">abcd efgh ijkl mnop</code>). It's only shown once.</Step>
         <Step n={5}>Paste it into the <strong>Gmail App Password</strong> field above, set <strong>From address</strong> to your Gmail, and click <strong>Save</strong>.</Step>
         <Step n={6}>Click <strong>Send test email</strong>. When it arrives, you're verified and can send outreach.</Step>

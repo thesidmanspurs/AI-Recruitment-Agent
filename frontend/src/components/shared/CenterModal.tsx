@@ -63,7 +63,7 @@ export function CenterModal({
         <header className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {icon && (
-              <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-400/20 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shrink-0">
                 {icon}
               </div>
             )}
@@ -121,7 +121,7 @@ export function ConfirmModal({
   const btn =
     tone === 'danger'
       ? 'bg-red-600 hover:bg-red-700 text-white'
-      : 'bg-indigo-600 hover:bg-indigo-700 text-white';
+      : 'bg-black dark:bg-gray-800 hover:bg-gray-800 dark:hover:bg-gray-700 text-white';
   return (
     <CenterModal
       open={open}

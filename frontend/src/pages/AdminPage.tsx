@@ -105,12 +105,12 @@ export function AdminPage({ currentUser, onLogout, onHome }: AdminPageProps) {
       <header className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#10131c] sticky top-0 z-10 transition-colors">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <button onClick={() => (onHome ? onHome() : setTab('overview'))} title="Go to homepage" className="flex items-center gap-2.5 min-w-0 text-left">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gray-900 dark:bg-gray-700 flex items-center justify-center shrink-0">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
               <h1 className="text-base font-bold text-gray-900 dark:text-white leading-none truncate">
-                ARIES - Control Panel
+                TalentScanr — Control Panel
               </h1>
               <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                 Welcome, {currentUser.name}
@@ -256,7 +256,7 @@ function OverviewTab({
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <SectionCard
-              icon={<GitBranch className="w-3.5 h-3.5 text-indigo-600" />}
+              icon={<GitBranch className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />}
               title="Pipeline funnel"
               subtitle="Candidate counts by outreach stage"
             >
@@ -383,7 +383,7 @@ function ActivityTab({ onError }: { onError: (msg: string) => void }) {
 
   return (
     <SectionCard
-      icon={<Activity className="w-3.5 h-3.5 text-indigo-600" />}
+      icon={<Activity className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />}
       title="System activity"
       subtitle="Cross-tenant event stream"
       noBodyPadding
@@ -451,14 +451,14 @@ function UsersTab({
   return (
     <>
       <SectionCard
-        icon={<Users className="w-3.5 h-3.5 text-indigo-600" />}
+        icon={<Users className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />}
         title="Users"
         subtitle={`${total} accounts · click a row to manage`}
         noBodyPadding
         headerAction={
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:bg-gray-800 transition-colors"
           >
             <UserPlus className="w-3.5 h-3.5" />
             Add user
@@ -625,7 +625,7 @@ function SettingsTab({ onError }: { onError: (msg: string) => void }) {
 
   return (
     <SectionCard
-      icon={<Sliders className="w-3.5 h-3.5 text-indigo-600" />}
+      icon={<Sliders className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />}
       title="Platform settings"
       subtitle="Global values that apply to every account"
     >
@@ -667,12 +667,12 @@ function SettingsTab({ onError }: { onError: (msg: string) => void }) {
                     onChange={e =>
                       setDraft(prev => ({ ...prev, [s.key]: e.target.value }))
                     }
-                    className="w-40 bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm font-mono text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                    className="w-40 bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm font-mono text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                   />
                   <button
                     onClick={() => save(s.key)}
                     disabled={!dirty || isSaving}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gray-900 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isSaving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -744,7 +744,7 @@ function BillingTab({ onError }: { onError: (msg: string) => void }) {
       </div>
 
       {/* Subscribers */}
-      <SectionCard icon={<CreditCard className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />} title="Subscribers & customers" subtitle="Subscription status + credit balance per account" noBodyPadding>
+      <SectionCard icon={<CreditCard className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300" />} title="Subscribers & customers" subtitle="Subscription status + credit balance per account" noBodyPadding>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -772,7 +772,7 @@ function BillingTab({ onError }: { onError: (msg: string) => void }) {
                   <td className="px-5 py-3 text-right font-semibold tabular-nums text-gray-900 dark:text-gray-100">{s.creditBalance.toLocaleString()}</td>
                   <td className="px-5 py-3 text-right">
                     <button onClick={() => grant(s)} disabled={granting === s.id}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 disabled:opacity-50">
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50">
                       <Plus className="w-3 h-3" /> Grant
                     </button>
                   </td>
@@ -784,7 +784,7 @@ function BillingTab({ onError }: { onError: (msg: string) => void }) {
       </SectionCard>
 
       {/* Recent transactions */}
-      <SectionCard icon={<Coins className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />} title="Recent transactions" subtitle="Purchases, subscription grants, admin grants & refunds" noBodyPadding>
+      <SectionCard icon={<Coins className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300" />} title="Recent transactions" subtitle="Purchases, subscription grants, admin grants & refunds" noBodyPadding>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -818,7 +818,7 @@ function BillingTab({ onError }: { onError: (msg: string) => void }) {
 
 function BillingStat({ label, value, icon: Icon, tint }: { label: string; value: string; icon: typeof Users; tint: 'indigo' | 'emerald' | 'blue' | 'amber' }) {
   const tints: Record<string, string> = {
-    indigo: 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-400/20 text-indigo-600 dark:text-indigo-400',
+    indigo: 'bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300',
     emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-400/20 text-emerald-600 dark:text-emerald-400',
     blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-400/20 text-blue-600 dark:text-blue-400',
     amber: 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-400/20 text-amber-600 dark:text-amber-400',
@@ -849,7 +849,7 @@ function SubStatusBadge({ status }: { status: string | null }) {
 function TxnTypeBadge({ type }: { type: AdminBilling['recentTransactions'][number]['type'] }) {
   const map: Record<string, { label: string; cls: string }> = {
     TOPUP_PURCHASE: { label: 'Top-up', cls: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-400/20' },
-    SUBSCRIPTION_GRANT: { label: 'Subscription', cls: 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-400/20' },
+    SUBSCRIPTION_GRANT: { label: 'Subscription', cls: 'text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20' },
     ADMIN_GRANT: { label: 'Admin grant', cls: 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-400/20' },
     REFUND: { label: 'Refund', cls: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-400/20' },
     SPEND: { label: 'Spend', cls: 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10' },
@@ -870,7 +870,7 @@ function StatCard({
   tint: 'indigo' | 'emerald' | 'blue' | 'violet' | 'amber';
 }) {
   const tints: Record<string, string> = {
-    indigo: 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-400/20 text-indigo-600 dark:text-indigo-400',
+    indigo: 'bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300',
     emerald: 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-400/20 text-emerald-600 dark:text-emerald-400',
     blue: 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-400/20 text-blue-600 dark:text-blue-400',
     violet: 'bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-400/20 text-violet-600 dark:text-violet-400',
@@ -892,7 +892,7 @@ function StatCard({
 function RoleBadge({ role }: { role: UserRole }) {
   if (role === 'ADMIN') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md">
         <Shield className="w-3 h-3" />
         Admin
       </span>
@@ -1067,7 +1067,7 @@ function ScoreHistogram({ buckets }: { buckets: ScoreBucket[] }) {
             <div className="w-full flex flex-col justify-end flex-1">
               <div
                 className={`w-full rounded-t ${
-                  isThreshold ? 'bg-emerald-500' : 'bg-indigo-400'
+                  isThreshold ? 'bg-emerald-500' : 'bg-gray-100 dark:bg-gray-800'
                 } transition-all`}
                 style={{ height: `${h}%` }}
               />
@@ -1166,7 +1166,7 @@ function ActivityDot({
     OUTREACH: 'bg-blue-500',
     REPLY: 'bg-violet-500',
     ALERT: 'bg-red-500',
-    SYSTEM: 'bg-indigo-500',
+    SYSTEM: 'bg-gray-100 dark:bg-gray-800',
   } as const;
   return <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${colors[type]}`} />;
 }
@@ -1174,7 +1174,7 @@ function ActivityDot({
 function CenterLoader() {
   return (
     <div className="flex items-center justify-center py-16">
-      <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
     </div>
   );
 }
@@ -1274,7 +1274,7 @@ function EmailRequestsTab({ onError }: { onError: (msg: string) => void }) {
               <td className="px-3 py-3 text-gray-500 dark:text-gray-400">{formatRelative(r.createdAt)}</td>
               <td className="px-5 py-3 text-right">
                 <button onClick={() => setConfiguring(r)}
-                  className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+                  className="text-xs font-semibold text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-700 dark:text-gray-300">
                   {r.status === 'CONFIGURED' ? 'Reconfigure' : 'Configure'}
                 </button>
               </td>
@@ -1349,28 +1349,28 @@ function ConfigureEmailModal({
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{request.user.email} · WhatsApp {request.whatsapp}</p>
         </div>
         {notice && (
-          <div className="flex items-start gap-2 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 rounded-lg px-3 py-2">
-            <CheckCircle2 className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-indigo-800 dark:text-indigo-300">{notice}</p>
+          <div className="flex items-start gap-2 bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20 rounded-lg px-3 py-2">
+            <CheckCircle2 className="w-4 h-4 text-gray-700 dark:text-gray-300 mt-0.5 shrink-0" />
+            <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300">{notice}</p>
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">From address *</label>
             <input value={fromAddress} onChange={e => setFromAddress(e.target.value)}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">From name</label>
             <input value={fromName} onChange={e => setFromName(e.target.value)}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Resend API key (leave blank to keep)</label>
           <input type="password" value={resendApiKey} onChange={e => setResendApiKey(e.target.value)}
             placeholder="re_xxxxxxxxxxxxxxxx"
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30" />
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10" />
           <p className="text-[11px] text-gray-500 dark:text-gray-400">The from-address domain ({request.domain}) must be verified in your Resend account.</p>
         </div>
         <div className="flex items-center justify-end gap-3 pt-1">
@@ -1380,7 +1380,7 @@ function ConfigureEmailModal({
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
           </button>
           <button onClick={handleTest} disabled={saving || testing}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60">
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60">
             {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             Save &amp; send test
           </button>

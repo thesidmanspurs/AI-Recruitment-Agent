@@ -10,7 +10,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
  */
 export type Theme = 'light' | 'dark';
 
-const STORAGE_KEY = 'aries-theme';
+const STORAGE_KEY = 'talentscanr-theme';
 
 export function readStoredTheme(): Theme {
   if (typeof localStorage === 'undefined') return 'light';

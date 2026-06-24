@@ -1,64 +1,94 @@
-import { type ReactNode } from 'react';
-import { Flame } from 'lucide-react';
-import { ThemeToggle } from '../shared/ThemeToggle';
+import { type ReactNode, useRef, useState, useEffect, useCallback } from 'react';
+import logoSrc from '../../public/logo.png';
 
 export type MarketingTab = 'home' | 'features' | 'pricing' | 'faq';
 
 const NAV: { tab: MarketingTab; label: string; to: string }[] = [
-  { tab: 'home', label: 'Overview', to: '/' },
-  { tab: 'features', label: 'Engine Features', to: '/engine-features' },
-  { tab: 'pricing', label: 'Pricing Calculator', to: '/pricing' },
-  { tab: 'faq', label: 'Platform FAQs', to: '/faq' },
+  { tab: 'home',     label: 'Overview', to: '/' },
+  { tab: 'features', label: 'Features',  to: '/engine-features' },
+  { tab: 'pricing',  label: 'Pricing',   to: '/pricing' },
+  { tab: 'faq',      label: 'FAQ',       to: '/faq' },
 ];
 
 interface MarketingShellProps {
   current: MarketingTab;
   onNavigate: (to: string) => void;
   children: ReactNode;
-  /** When the visitor is already signed in, show "Open workspace" instead of
-   *  the sign-in CTA (their session/token is preserved — no re-login). */
   authed?: boolean;
   onOpenWorkspace?: () => void;
 }
 
-/**
- * Shared dark chrome for the four public marketing tabs (Overview, Engine
- * Features, Pricing Calculator, Platform FAQs). The nav pills NAVIGATE between
- * routes (separate pages) and highlight the active tab; "Recruiter Sign In"
- * goes to the Overview page which holds the sign-in console.
- */
 export function MarketingShell({ current, onNavigate, children, authed, onOpenWorkspace }: MarketingShellProps) {
-  return (
-    <div className="min-h-screen flex flex-col w-full bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500 selection:text-white relative transition-colors">
-      {/* Decorative glow — fixed + clipped so it never adds a scroll axis. */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[-10%] left-[-15%] w-[80%] h-[60%] bg-indigo-900/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[40%] right-[-10%] w-[60%] h-[70%] bg-violet-900/10 rounded-full blur-[160px]" />
-      </div>
+  const navElRef = useRef<HTMLElement>(null);
+  const btnRefs = useRef<Partial<Record<MarketingTab, HTMLButtonElement>>>({});
+  const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
 
-      {/* NAV */}
-      <header className="sticky top-0 z-50 bg-white/90 dark:bg-[#0B0F19]/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-900 px-6 py-4 transition-colors">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <button onClick={() => onNavigate('/')} className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-tr from-indigo-600 to-violet-500 text-white rounded-xl shadow-lg shadow-indigo-500/20">
-              <Flame className="w-5 h-5" />
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg tracking-tight text-gray-900 dark:text-white uppercase">Aries</span>
-                <span className="text-[9px] bg-indigo-500/20 text-indigo-300 font-extrabold px-1.5 py-0.5 rounded border border-indigo-500/30 font-mono tracking-wider">v4.2</span>
-              </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Autonomous Outbound Recruiting Match Engine</p>
-            </div>
+  const movePill = useCallback((tab: MarketingTab) => {
+    const btn = btnRefs.current[tab];
+    const nav = navElRef.current;
+    if (!btn || !nav) return;
+    const nb = nav.getBoundingClientRect();
+    const bb = btn.getBoundingClientRect();
+    setPill({ left: bb.left - nb.left, width: bb.width, ready: true });
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => movePill(current), 60);
+    return () => clearTimeout(t);
+  }, [current, movePill]);
+
+  return (
+    <div className="min-h-screen flex flex-col w-full bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 transition-colors"
+      style={{ fontFamily: "'Inter', sans-serif" }}>
+
+      {/* NAV — iOS 26 / macOS 26 liquid glass */}
+      <header className="sticky top-0 z-50 px-6 py-0 transition-colors"
+        style={{
+          background: 'rgba(255,255,255,0.55)',
+          backdropFilter: 'blur(28px) saturate(200%) brightness(1.06)',
+          WebkitBackdropFilter: 'blur(28px) saturate(200%) brightness(1.06)',
+          borderBottom: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 1px 0 rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.05)',
+        }}>
+        <div className="max-w-6xl mx-auto flex items-center justify-between h-[74px] gap-4">
+          <button onClick={() => onNavigate('/')} className="flex items-center gap-2.5">
+            <img src={logoSrc} alt="TalentScanr" className="h-[52px] w-auto" />
           </button>
 
-          <nav className="hidden md:flex items-center gap-1 bg-gray-100 dark:bg-slate-950/60 p-1 rounded-xl border border-gray-200 dark:border-slate-800/80">
+          {/* Glass pill nav with mouse-following indicator */}
+          <nav
+            ref={navElRef}
+            onMouseLeave={() => movePill(current)}
+            className="hidden md:flex items-center p-1 rounded-2xl gap-0.5 relative"
+            style={{
+              background: 'rgba(0,0,0,0.04)',
+              border: '1px solid rgba(255,255,255,0.7)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+
+            {/* Follower pill */}
+            {pill.ready && (
+              <div
+                className="absolute top-1 bottom-1 rounded-xl pointer-events-none"
+                style={{
+                  left: pill.left,
+                  width: pill.width,
+                  background: 'rgba(255,255,255,0.52)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
+                  border: '1px solid rgba(0,0,0,0.07)',
+                  transition: 'left 0.18s cubic-bezier(0.34,1.2,0.64,1), width 0.18s cubic-bezier(0.34,1.2,0.64,1)',
+                }}
+              />
+            )}
+
             {NAV.map(n => (
               <button
                 key={n.tab}
+                ref={el => { btnRefs.current[n.tab] = el ?? undefined; }}
+                onMouseEnter={() => movePill(n.tab)}
                 onClick={() => onNavigate(n.to)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition leading-none ${
-                  current === n.tab ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5'
+                className={`relative z-10 px-5 py-2 rounded-xl text-[15px] font-medium transition-colors duration-150 ${
+                  current === n.tab ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'
                 }`}
               >
                 {n.label}
@@ -66,22 +96,35 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
+          <div className="flex items-center gap-2">
             {authed ? (
               <button onClick={onOpenWorkspace}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/10 active:scale-[0.98]">
-                Open workspace →
+                className="px-5 py-2 rounded-xl text-[15px] font-semibold text-white transition-all duration-200"
+                style={{
+                  background: 'rgba(0,0,0,0.85)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}>
+                Open workspace
               </button>
             ) : (
               <>
-                <button onClick={() => onNavigate('/')}
-                  className="px-4 py-2 bg-gray-900 dark:bg-slate-900 hover:bg-gray-800 dark:hover:bg-slate-800 text-white rounded-xl text-xs font-bold border border-gray-700 dark:border-slate-800 hover:border-gray-600 dark:hover:border-slate-700 transition">
-                  Recruiter Sign In
+                <button onClick={() => onNavigate('/login')}
+                  className="px-5 py-2 rounded-xl text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                  Sign in
                 </button>
-                <button onClick={() => onNavigate('/pricing')}
-                  className="hidden sm:block px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/10 active:scale-[0.98]">
-                  Estimate Costings
+                <button onClick={() => onNavigate('/register')}
+                  className="px-5 py-2 rounded-xl text-[15px] font-semibold text-white transition-all duration-200"
+                  style={{
+                    background: 'rgba(0,0,0,0.85)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}>
+                  Get started
                 </button>
               </>
             )}
@@ -89,20 +132,18 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 relative z-10">{children}</main>
+      <main className="flex-1 w-full relative">{children}</main>
 
-      <footer className="border-t border-gray-200 dark:border-slate-900 bg-gray-100/80 dark:bg-slate-950/80 px-6 py-10 text-slate-500 dark:text-slate-500 text-xs relative z-10 select-none transition-colors">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="bg-black border-t border-gray-800 px-6 py-8">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-indigo-500" />
-            <span className="font-bold text-gray-900 dark:text-white uppercase">Aries Recruiting</span>
-            <span>• © 2026 Aries Outbound Inc.</span>
+            <img src={logoSrc} alt="TalentScanr" className="h-6 w-auto brightness-0 invert" />
           </div>
-          <div className="flex flex-wrap gap-6 text-[11px]">
-            <button onClick={() => onNavigate('/engine-features')} className="hover:text-gray-700 dark:hover:text-slate-300">Features</button>
-            <button onClick={() => onNavigate('/pricing')} className="hover:text-gray-700 dark:hover:text-slate-300">Pricing</button>
-            <button onClick={() => onNavigate('/faq')} className="hover:text-gray-700 dark:hover:text-slate-300">FAQ</button>
-            <span className="text-emerald-400/80 font-mono">SOC2 • GDPR-aligned</span>
+          <div className="flex flex-wrap gap-6 text-[13px] text-gray-500">
+            <button onClick={() => onNavigate('/engine-features')} className="hover:text-white transition-colors">Features</button>
+            <button onClick={() => onNavigate('/pricing')} className="hover:text-white transition-colors">Pricing</button>
+            <button onClick={() => onNavigate('/faq')} className="hover:text-white transition-colors">FAQ</button>
+            <span className="text-gray-600">© 2026 TalentScanr</span>
           </div>
         </div>
       </footer>
@@ -110,7 +151,6 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
   );
 }
 
-/* Shared bits reused across the marketing tabs. */
 export function GoogleMark() {
   return (
     <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -124,10 +164,11 @@ export function GoogleMark() {
 
 export function MarketingHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
-    <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
-      <span className="text-xs text-indigo-400 font-mono tracking-widest font-extrabold uppercase bg-indigo-500/5 px-3 py-1 rounded-full border border-indigo-500/10">{eyebrow}</span>
-      <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">{title}</h2>
-      {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{subtitle}</p>}
+    <div className="max-w-2xl space-y-3 mb-12">
+      <span className="text-[11px] font-mono tracking-widest font-semibold uppercase text-gray-400 dark:text-gray-500">{eyebrow}</span>
+      <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white"
+        style={{ fontFamily: "'DM Serif Display', serif" }}>{title}</h2>
+      {subtitle && <p className="text-base text-gray-500 dark:text-gray-400 leading-relaxed">{subtitle}</p>}
     </div>
   );
 }

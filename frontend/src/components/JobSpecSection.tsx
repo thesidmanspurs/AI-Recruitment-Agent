@@ -214,7 +214,7 @@ Skills & Tech Stack:
         <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-xs">
           <div className="space-y-1">
             <h4 className="font-sans font-bold text-slate-900 text-xs flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-indigo-600" />
+              <FileText className="w-4 h-4 text-gray-700 dark:text-gray-300" />
               Ingest Job Specification
             </h4>
             <p className="text-[11px] text-slate-400 mt-0.5">
@@ -227,13 +227,13 @@ Skills & Tech Stack:
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Paste your job description document text here..."
             rows={10}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white resize-none"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:bg-white resize-none"
           />
 
           <button
             onClick={handleAnalyzeSpecs}
             disabled={inputText.trim() === '' || isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-sm"
+            className="w-full bg-gray-900 dark:bg-gray-700 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition duration-150 shadow-sm"
           >
             {isLoading ? (
               <RefreshCw className="w-4 h-4 animate-spin text-white" />
@@ -249,7 +249,7 @@ Skills & Tech Stack:
           {extractedSpec ? (
             <div className="bg-white border rounded-2xl p-5 shadow-xs space-y-4">
               <div>
-                <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 font-mono font-bold rounded uppercase">
+                <span className="text-[10px] bg-indigo-50 text-gray-700 dark:text-gray-300 px-2 py-0.5 font-mono font-bold rounded uppercase">
                   Spec Extracted at {extractedSpec.analyzedDate}
                 </span>
                 <h4 className="font-sans font-bold text-slate-900 text-sm mt-1.5">{extractedSpec.title}</h4>
@@ -282,7 +282,7 @@ Skills & Tech Stack:
                 <h5 className="text-[11px] font-mono uppercase text-slate-400 font-bold">Channel Destinations:</h5>
                 <div className="flex gap-1.5">
                   {extractedSpec.preferredPlatforms.map((pt: string) => (
-                    <span key={pt} className="text-[10px] bg-indigo-50 text-indigo-600 font-sans font-semibold px-2 py-0.5 rounded">
+                    <span key={pt} className="text-[10px] bg-indigo-50 text-gray-700 dark:text-gray-300 font-sans font-semibold px-2 py-0.5 rounded">
                       {pt}
                     </span>
                   ))}
@@ -290,8 +290,8 @@ Skills & Tech Stack:
               </div>
 
               {/* Instructions reminder */}
-              <div className="bg-indigo-50/50 border border-indigo-100/60 rounded-xl p-3 text-[10px] text-indigo-900 leading-relaxed flex items-start gap-1.5">
-                <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+              <div className="bg-indigo-50/50 border border-gray-200 dark:border-gray-700/60 rounded-xl p-3 text-[10px] text-gray-700 dark:text-gray-300 leading-relaxed flex items-start gap-1.5">
+                <Info className="w-4 h-4 text-gray-700 dark:text-gray-300 shrink-0 mt-0.5" />
                 <span>
                   The extracted alternate titles and keywords are primed parameters. Navigate to the next dashboard panel to initiate target candidate matching searches inside candidate databases.
                 </span>

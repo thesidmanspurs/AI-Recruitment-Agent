@@ -160,7 +160,7 @@ export function UserDetailModal({
         title={user.name}
         subtitle={user.email}
         icon={
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full bg-gray-900 dark:bg-gray-600 flex items-center justify-center">
             <span className="text-xs font-bold text-white">
               {user.name.charAt(0).toUpperCase()}
             </span>
@@ -192,14 +192,14 @@ export function UserDetailModal({
           </div>
 
           {/* ─── Edit profile ───────────────────────────────────────── */}
-          <Section icon={<Pencil className="w-3.5 h-3.5 text-indigo-600" />} title="Profile">
+          <Section icon={<Pencil className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />} title="Profile">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FormField label="Name">
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                 />
               </FormField>
               <FormField label="Email">
@@ -207,7 +207,7 @@ export function UserDetailModal({
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                 />
               </FormField>
               <FormField
@@ -220,7 +220,7 @@ export function UserDetailModal({
                   value={limitOverride}
                   onChange={e => setLimitOverride(e.target.value)}
                   placeholder="(inherit)"
-                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                 />
               </FormField>
             </div>
@@ -228,7 +228,7 @@ export function UserDetailModal({
               <button
                 onClick={handleSaveEdit}
                 disabled={!dirty || busy}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="w-4 h-4" />
                 Save changes
@@ -237,7 +237,7 @@ export function UserDetailModal({
           </Section>
 
           {/* ─── Role ───────────────────────────────────────────────── */}
-          <Section icon={<Shield className="w-3.5 h-3.5 text-indigo-600" />} title="Role">
+          <Section icon={<Shield className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />} title="Role">
             <div className="flex items-center gap-3 flex-wrap">
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 Currently:{' '}
@@ -305,7 +305,7 @@ export function UserDetailModal({
                     value={blockReason}
                     onChange={e => setBlockReason(e.target.value)}
                     placeholder="e.g. ToS violation"
-                    className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                    className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                   />
                 </FormField>
                 <div className="flex justify-end">
@@ -323,7 +323,7 @@ export function UserDetailModal({
           </Section>
 
           {/* ─── Reset password ─────────────────────────────────────── */}
-          <Section icon={<Lock className="w-3.5 h-3.5 text-indigo-600" />} title="Reset password">
+          <Section icon={<Lock className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />} title="Reset password">
             <div className="flex flex-col gap-3">
               <FormField label="New password" hint="At least 8 characters.">
                 <input
@@ -331,14 +331,14 @@ export function UserDetailModal({
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 font-mono focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                  className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 font-mono focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                 />
               </FormField>
               <div className="flex justify-end">
                 <button
                   onClick={handleResetPassword}
                   disabled={busy || newPassword.length < 8}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gray-900 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   Reset password
@@ -349,12 +349,12 @@ export function UserDetailModal({
 
           {/* ─── Behavior summary ───────────────────────────────────── */}
           <Section
-            icon={<Activity className="w-3.5 h-3.5 text-indigo-600" />}
+            icon={<Activity className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />}
             title="Behavior"
           >
             {loading ? (
               <div className="flex justify-center py-6">
-                <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
               </div>
             ) : behavior ? (
               <div className="flex flex-col gap-3">
@@ -375,7 +375,7 @@ export function UserDetailModal({
                           key={c.id}
                           className="flex items-center gap-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-md px-3 py-1.5 text-xs"
                         >
-                          <Briefcase className="w-3 h-3 text-indigo-500 shrink-0" />
+                          <Briefcase className="w-3 h-3 text-gray-700 dark:text-gray-300 shrink-0" />
                           <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">
                             {c.name}
                           </span>
@@ -528,7 +528,7 @@ function Meta({ label, value }: { label: string; value: string }) {
 function RoleBadge({ role }: { role: UserRole }) {
   if (role === 'ADMIN') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md">
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-md">
         <Shield className="w-3 h-3" />
         Admin
       </span>

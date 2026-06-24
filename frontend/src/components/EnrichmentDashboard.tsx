@@ -115,7 +115,7 @@ export default function EnrichmentDashboard({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1 max-w-xl">
             <h3 className="font-sans font-semibold text-slate-900 text-sm flex items-center gap-2">
-              <Database className="w-5 h-5 text-indigo-600" />
+              <Database className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               Automated Data Enrichment Panel
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
@@ -129,7 +129,7 @@ export default function EnrichmentDashboard({
               onClick={() => setEnrichmentSource('Apollo')}
               className={`text-xs px-3 py-1.5 rounded-lg font-medium transition duration-150 ${
                 enrichmentSource === 'Apollo'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                   : 'text-slate-600 hover:text-slate-800'
               }`}
             >
@@ -139,7 +139,7 @@ export default function EnrichmentDashboard({
               onClick={() => setEnrichmentSource('ZoomInfo')}
               className={`text-xs px-3 py-1.5 rounded-lg font-medium transition duration-150 ${
                 enrichmentSource === 'ZoomInfo'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                   : 'text-slate-600 hover:text-slate-800'
               }`}
             >
@@ -163,7 +163,7 @@ export default function EnrichmentDashboard({
             {waitlist.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="text-indigo-600 hover:text-indigo-500 font-sans font-semibold text-xs transition duration-150"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 font-sans font-semibold text-xs transition duration-150"
               >
                 {selectedCandidates.length === waitlist.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -188,7 +188,7 @@ export default function EnrichmentDashboard({
                     onClick={() => handleToggleSelect(candidate.id)}
                     className={`flex items-start justify-between p-3.5 border rounded-xl cursor-pointer transition duration-150 ${
                       isSelected 
-                        ? 'border-indigo-400 bg-indigo-50/20' 
+                        ? 'border-gray-200 dark:border-gray-700 bg-indigo-50/20' 
                         : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
                     }`}
                   >
@@ -198,7 +198,7 @@ export default function EnrichmentDashboard({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {}} // Swallowed: handled by outer div click
-                          className="w-4 h-4 rounded border-slate-200 text-indigo-600 focus:ring-indigo-500"
+                          className="w-4 h-4 rounded border-slate-200 text-gray-700 dark:text-gray-300 focus:ring-gray-400"
                         />
                       </div>
                       <div className="space-y-1">
@@ -227,7 +227,7 @@ export default function EnrichmentDashboard({
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                      <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-300 bg-indigo-50 px-2 py-0.5 rounded">
                         Match ⭐ {candidate.matchScore.toFixed(1)}
                       </span>
                     </div>
@@ -247,7 +247,7 @@ export default function EnrichmentDashboard({
               <button
                 onClick={handleTriggerEnrichment}
                 disabled={selectedCandidates.length === 0 || isEnriching}
-                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium px-5 py-2.5 rounded-xl transition duration-150 shadow-sm"
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-gray-900 dark:bg-gray-700 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium px-5 py-2.5 rounded-xl transition duration-150 shadow-sm"
               >
                 {isEnriching ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -262,13 +262,13 @@ export default function EnrichmentDashboard({
 
         {/* Enrichment metrics & value-proposition board */}
         <div className="md:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-sm space-y-4">
-            <h4 className="font-sans font-bold text-xs tracking-wider uppercase text-indigo-300">Data Splicing metrics</h4>
+          <div className="bg-gradient-to-br from-slate-900 to-gray-900 text-white rounded-2xl p-5 shadow-sm space-y-4">
+            <h4 className="font-sans font-bold text-xs tracking-wider uppercase text-gray-700 dark:text-gray-300">Data Splicing metrics</h4>
             
             <div className="space-y-3.5">
               <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
                 <span className="text-xs text-slate-300">Enriched Candidates:</span>
-                <span className="text-sm font-mono font-bold text-indigo-300">
+                <span className="text-sm font-mono font-bold text-gray-700 dark:text-gray-300">
                   {candidates.filter(c => c.contact.emailEnriched).length}
                 </span>
               </div>
@@ -278,7 +278,7 @@ export default function EnrichmentDashboard({
               </div>
               <div className="flex justify-between items-center pb-1">
                 <span className="text-xs text-slate-300">Integrations Active:</span>
-                <span className="text-sm font-mono font-bold text-indigo-300">2 API Keys</span>
+                <span className="text-sm font-mono font-bold text-gray-700 dark:text-gray-300">2 API Keys</span>
               </div>
             </div>
 
@@ -293,7 +293,7 @@ export default function EnrichmentDashboard({
           {/* Quick instructions checklist */}
           <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-3 shadow-xs">
             <h4 className="font-sans font-bold text-slate-800 text-xs flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-600" />
+              <Layers className="w-4 h-4 text-gray-700 dark:text-gray-300" />
               Manual Outreaches vs automation
             </h4>
             <div className="text-xs text-slate-600 space-y-3 leading-relaxed">

@@ -78,7 +78,7 @@ function statusChip(c: CandidateDto) {
   }
   if (s === 'OPENED') {
     return (
-      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-400/20">
+      <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-gray-700 dark:text-gray-300 bg-indigo-50 border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 rounded-full dark:bg-gray-100 dark:bg-gray-800/10 dark:text-gray-700 dark:text-gray-300 dark:border-gray-200 dark:border-gray-700/20">
         Opened
       </span>
     );
@@ -137,7 +137,7 @@ export function OutreachActivityPanel({
     <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden dark:bg-[#10131c] dark:border-white/10">
       <header className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap dark:border-white/10">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gray-900 dark:bg-gray-700 flex items-center justify-center shrink-0">
             <Send className="w-3.5 h-3.5 text-white" />
           </div>
           <div className="min-w-0">
@@ -227,7 +227,7 @@ export function OutreachActivityPanel({
                     <div>
                       <button
                         onClick={() => setExpandedReply(isExpanded ? null : c.id)}
-                        className="text-[11px] font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 dark:hover:text-gray-700 dark:text-gray-300"
                       >
                         {isExpanded ? 'Hide reply preview' : 'Show reply preview'}
                       </button>

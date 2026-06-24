@@ -110,7 +110,7 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">{MIN.toFixed(1)}</span>
-              <span className="text-2xl font-extrabold text-indigo-600 tabular-nums">
+              <span className="text-2xl font-extrabold text-gray-700 dark:text-gray-300 tabular-nums">
                 {clamped.toFixed(1)}
               </span>
               <span className="text-[11px] font-mono text-gray-500 dark:text-gray-400">{MAX.toFixed(1)}</span>
@@ -135,7 +135,7 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
                   const v = parseFloat(e.target.value);
                   if (Number.isFinite(v)) onChange(Math.min(MAX, Math.max(MIN, v)));
                 }}
-                className="w-20 bg-white border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 tabular-nums dark:bg-[#0a0c12] dark:border-white/10 dark:text-gray-100"
+                className="w-20 bg-white border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10 tabular-nums dark:bg-[#0a0c12] dark:border-white/10 dark:text-gray-100"
               />
               <span className="text-[11px] text-gray-500 dark:text-gray-400">/ 10.0</span>
             </div>
@@ -149,7 +149,7 @@ export function ScoreFilter({ value, onChange, defaultValue = 9.0 }: ScoreFilter
                 onClick={() => onChange(p)}
                 className={`text-[11px] font-semibold px-2 py-1 rounded-md border transition-colors ${
                   clamped === p
-                    ? 'bg-indigo-50 border-indigo-300 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-400/20 dark:text-indigo-300'
+                    ? 'bg-indigo-50 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 dark:bg-gray-100 dark:bg-gray-800/10 dark:border-gray-200 dark:border-gray-700/20 dark:text-gray-700 dark:text-gray-300'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-[#10131c] dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5'
                 }`}
               >

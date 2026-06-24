@@ -93,7 +93,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
         {/* Header */}
         <header className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -128,7 +128,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. SAP Architect Q3"
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10"
             />
           </div>
 
@@ -140,7 +140,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               <select
                 value={location}
                 onChange={e => setLocation(e.target.value)}
-                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10"
               >
                 <option>On-site</option>
                 <option>Hybrid</option>
@@ -154,7 +154,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               <select
                 value={jobType}
                 onChange={e => setJobType(e.target.value)}
-                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10"
               >
                 <option>Full-time</option>
                 <option>Contract</option>
@@ -171,7 +171,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
                 value={department}
                 onChange={e => setDepartment(e.target.value)}
                 placeholder="Engineering"
-                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10"
               />
             </div>
           </div>
@@ -199,7 +199,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || submitting}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-400/20 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
                   {uploading ? 'Reading…' : 'Upload PDF / DOCX'}
@@ -211,7 +211,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
               onChange={e => setJobText(e.target.value)}
               placeholder={PLACEHOLDER}
               rows={10}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 resize-y leading-relaxed font-mono"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-1 focus:ring-gray-900/10 resize-y leading-relaxed font-mono"
             />
             <p className="text-[11px] text-gray-500 dark:text-gray-400">
               {jobText.length.toLocaleString()} characters · the more detail, the better the extraction
@@ -232,7 +232,7 @@ export function CreateCampaignModal({ onClose, onCreate }: CreateCampaignModalPr
             type="submit"
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? (
               <>

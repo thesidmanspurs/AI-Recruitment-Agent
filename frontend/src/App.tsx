@@ -33,7 +33,7 @@ import { paymentsApi } from './api/paymentsApi';
  * checkout once they authenticate (works for password OR Google OAuth, since
  * the intent lives in localStorage and survives the OAuth redirect).
  */
-const PENDING_KEY = 'aries_pending_checkout';
+const PENDING_KEY = 'talentscanr_pending_checkout';
 const PENDING_TTL_MS = 30 * 60 * 1000; // 30 min
 const PACKAGE_LABELS: Record<string, string> = {
   'start-tier': 'Start Tier subscription',
@@ -144,7 +144,7 @@ function AuthGate() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#0a0c12] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
       </div>
     );
   }

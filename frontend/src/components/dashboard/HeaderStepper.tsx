@@ -64,7 +64,7 @@ export function HeaderStepper({ steps, onHelp }: HeaderStepperProps) {
             onClick={onHelp}
             aria-label="View full workflow guide"
             title="View full workflow guide"
-            className="ml-0.5 w-5 h-5 rounded-full bg-gray-100 dark:bg-white/5 hover:bg-indigo-100 dark:hover:bg-indigo-500/10 text-gray-500 dark:text-gray-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center justify-center transition-colors"
+            className="ml-0.5 w-5 h-5 rounded-full bg-gray-100 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5" />
           </button>

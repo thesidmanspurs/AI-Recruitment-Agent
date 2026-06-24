@@ -55,7 +55,7 @@ interface GitHubRepo {
 function headers(): Record<string, string> {
   const h: Record<string, string> = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'aries-sourcing/0.1',
+    'User-Agent': 'talentscanr-sourcing/1.0',
     'X-GitHub-Api-Version': '2022-11-28',
   };
   if (env.GITHUB_TOKEN) h.Authorization = `Bearer ${env.GITHUB_TOKEN}`;

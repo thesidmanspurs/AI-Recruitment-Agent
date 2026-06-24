@@ -14,7 +14,7 @@ export default function DeveloperBlueprints() {
       {/* Blueprint Header */}
       <div className="bg-slate-900 text-white p-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg">
+          <div className="p-2 bg-gray-100 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 rounded-lg">
             <Layers className="w-6 h-6" />
           </div>
           <div>
@@ -29,7 +29,7 @@ export default function DeveloperBlueprints() {
             onClick={() => setActiveTab('architecture')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
               activeTab === 'architecture'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700/80'
             }`}
           >
@@ -40,7 +40,7 @@ export default function DeveloperBlueprints() {
             onClick={() => setActiveTab('api')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
               activeTab === 'api'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700/80'
             }`}
           >
@@ -51,7 +51,7 @@ export default function DeveloperBlueprints() {
             onClick={() => setActiveTab('enrichment')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
               activeTab === 'enrichment'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700/80'
             }`}
           >
@@ -62,7 +62,7 @@ export default function DeveloperBlueprints() {
             onClick={() => setActiveTab('scheduler')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
               activeTab === 'scheduler'
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
                 : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700/80'
             }`}
           >
@@ -141,15 +141,15 @@ export default function DeveloperBlueprints() {
                 </h4>
                 <ul className="text-xs text-slate-600 space-y-2">
                   <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-600 font-bold">•</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-bold">•</span>
                     <strong>API Proxy proxying:</strong> Always run external API integration (ZoomInfo, Apollo, LinkedIn scraping) from your NodeJS controller backend to keep access keys hidden.
                   </li>
                   <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-600 font-bold">•</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-bold">•</span>
                     <strong>Gemini 3.5 Flash:</strong> Use responseSchema properties to force output parsing into JSON, removing fragile regex cleaning.
                   </li>
                   <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-600 font-bold">•</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-bold">•</span>
                     <strong>Sandbox rules:</strong> Cache scraper requests using Redis to bypass aggressive third-party LinkedIn visual-checking throttles.
                   </li>
                 </ul>
@@ -172,7 +172,7 @@ export default function DeveloperBlueprints() {
               <div className="border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                 <div className="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-mono font-bold rounded">POST</span>
+                    <span className="px-2 py-0.5 bg-gray-900 dark:bg-gray-700 text-white text-[10px] font-mono font-bold rounded">POST</span>
                     <span className="font-mono text-xs font-semibold text-slate-800">/api/analyze-job-spec</span>
                   </div>
                   <span className="text-xs text-slate-500">Extracts keyword criteria from raw text</span>
@@ -204,7 +204,7 @@ export default function DeveloperBlueprints() {
               <div className="border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                 <div className="bg-slate-50 border-b border-slate-100 px-4 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-mono font-bold rounded">POST</span>
+                    <span className="px-2 py-0.5 bg-gray-900 dark:bg-gray-700 text-white text-[10px] font-mono font-bold rounded">POST</span>
                     <span className="font-mono text-xs font-semibold text-slate-800">/api/generate-message</span>
                   </div>
                   <span className="text-xs text-slate-500">Crafts smart personalized DM and sequence drafts</span>
@@ -232,15 +232,15 @@ export default function DeveloperBlueprints() {
               Integrating APIs like <strong>Apollo.io</strong> or <strong>ZoomInfo</strong> resolves candidate names and companies into verified corporate email accounts.
             </p>
 
-            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
-              <h4 className="font-semibold text-indigo-900 text-xs flex items-center gap-2 mb-2">
-                <Globe className="w-4 h-4 text-indigo-600" />
+            <div className="bg-indigo-50/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <h4 className="font-semibold text-gray-700 dark:text-gray-300 text-xs flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                 Apollo Search & Match Logic Sample
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed mb-3">
                 Send a payload with the prospect&apos;s first name, last name, and current domain to extract exact corporate directory values:
               </p>
-              <pre className="text-xs font-mono bg-white p-3 border border-indigo-100 text-indigo-950 rounded overflow-x-auto leading-tight">
+              <pre className="text-xs font-mono bg-white p-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded overflow-x-auto leading-tight">
 {`import axios from 'axios';
 
 async function enrichProspect(firstName, lastName, companyName) {
@@ -315,8 +315,8 @@ cron.schedule('0 8 * * *', async () => {
               </div>
 
               <div className="space-y-3">
-                <div className="p-4 bg-indigo-50/30 border border-indigo-100 rounded-xl">
-                  <h4 className="text-xs font-semibold text-indigo-900 mb-1">Immediate Value for Recruiters</h4>
+                <div className="p-4 bg-indigo-50/30 border border-gray-200 dark:border-gray-700 rounded-xl">
+                  <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Immediate Value for Recruiters</h4>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     By proactively surfacing candidate details that have gone cold directly to the recruiter&apos;s cockpit interface (Slack, Text, inside CRM), the system ensures high engagement rates and helps recruiters take over manually with a direct phone call.
                   </p>

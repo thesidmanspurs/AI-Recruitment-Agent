@@ -47,6 +47,9 @@ export const googleAuthController = {
       sameSite: 'lax',
       path: '/',
       maxAge: 10 * 60 * 1000, // 10 min — only needs to survive the round trip
+      // Share across www↔apex so the cookie set here survives the redirect
+      // back to GOOGLE_REDIRECT_URI's host (see COOKIE_DOMAIN in env.ts).
+      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
     });
 
     const params = new URLSearchParams({

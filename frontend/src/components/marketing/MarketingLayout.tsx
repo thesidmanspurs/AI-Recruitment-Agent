@@ -32,16 +32,16 @@ export function MarketingLayout({ current, onNavigate, onSignIn, children }: Mar
       <nav className="relative z-20 border-b border-white/5">
         <div className="max-w-[1280px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <button onClick={() => onNavigate('/')} className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-900/40">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
               <Flame className="w-4.5 h-4.5 text-white" />
             </div>
             <div className="text-left leading-tight">
               <div className="flex items-center gap-2">
-                <span className="text-white font-extrabold tracking-tight text-[15px]">ARIES</span>
+                <span className="text-white font-extrabold tracking-tight text-[15px]">TalentScanr</span>
                 <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-400/20 rounded px-1.5 py-0.5">v4.2</span>
               </div>
               <p className="text-[9px] font-medium tracking-[0.12em] text-gray-500 uppercase">
-                Autonomous Outbound Recruiting Match Engine
+                AI Talent Sourcing Platform
               </p>
             </div>
           </button>
@@ -74,7 +74,7 @@ export function MarketingLayout({ current, onNavigate, onSignIn, children }: Mar
             </button>
             <button
               onClick={() => onNavigate('/pricing')}
-              className="text-[13px] font-semibold px-3.5 py-2 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors shadow-lg shadow-indigo-900/30"
+              className="text-[13px] font-semibold px-3.5 py-2 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors shadow-lg"
             >
               Estimate Costings
             </button>
@@ -86,7 +86,7 @@ export function MarketingLayout({ current, onNavigate, onSignIn, children }: Mar
 
       <footer className="relative z-10 border-t border-white/5 mt-20">
         <div className="max-w-[1280px] mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-gray-500">
-          <span>© {2026} ARIES — Autonomous Outbound Recruiting Match Engine.</span>
+          <span>© {2026} TalentScanr — AI Talent Sourcing Platform.</span>
           <div className="flex items-center gap-5">
             <button onClick={() => onNavigate('/engine-features')} className="hover:text-gray-300">Features</button>
             <button onClick={() => onNavigate('/pricing')} className="hover:text-gray-300">Pricing</button>

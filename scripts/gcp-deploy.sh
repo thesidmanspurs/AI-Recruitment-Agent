@@ -31,12 +31,16 @@ if [[ -z "$SQL_CONN" ]]; then
   fi
 fi
 
-echo "Deploying to project=$PROJECT_ID region=$REGION sql=$SQL_CONN..."
+# Tag the image with the short git SHA for traceability; fall back to "latest"
+# (the cloudbuild built-in $COMMIT_SHA is empty for manual `builds submit`).
+IMAGE_TAG="$(git rev-parse --short HEAD 2>/dev/null || echo latest)"
+
+echo "Deploying to project=$PROJECT_ID region=$REGION sql=$SQL_CONN tag=$IMAGE_TAG..."
 
 gcloud builds submit \
   --project="$PROJECT_ID" \
   --config=cloudbuild.yaml \
-  --substitutions="_REGION=${REGION},_CLOUDSQL_CONN=${SQL_CONN}" \
+  --substitutions="_REGION=${REGION},_CLOUDSQL_CONN=${SQL_CONN},_IMAGE_TAG=${IMAGE_TAG}" \
   .
 
 URL="$(gcloud run services describe ai-recruitment-agent \

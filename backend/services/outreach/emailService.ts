@@ -147,11 +147,11 @@ export const emailService = {
     }
     const params: SendEmailParams = {
       to,
-      subject: 'ARIES — test email ✓',
+      subject: 'TalentScanr — test email ✓',
       body:
-        'This is a test from ARIES confirming your outreach email is configured correctly.\n\n' +
+        'This is a test from TalentScanr confirming your outreach email is configured correctly.\n\n' +
         'If you received this, you can now send candidate outreach from your own address.\n\n' +
-        '— ARIES',
+        '— TalentScanr',
     };
     return cfg.emailProvider === 'RESEND'
       ? sendViaResend(cfg, params)
