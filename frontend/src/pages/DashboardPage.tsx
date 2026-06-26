@@ -722,6 +722,25 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
               {/* Candidate table */}
               <div id="candidates-table" />
+              {/* Filter notice — the channel toggle hides (never deletes) the
+                  other channels' candidates. Make that explicit so a filtered
+                  view is never mistaken for lost data. */}
+              {candidates.length > 0 && displayedCandidates.length < tableCandidates.length && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300 mb-3">
+                  <span>
+                    Showing <strong>{sourceMode === 'github' ? 'GitHub' : 'LinkedIn'}</strong> only —{' '}
+                    {tableCandidates.length - displayedCandidates.length} candidate
+                    {tableCandidates.length - displayedCandidates.length === 1 ? '' : 's'} from other channels
+                    {' '}hidden (not deleted).
+                  </span>
+                  <button
+                    onClick={() => setSourceMode('both')}
+                    className="shrink-0 font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200"
+                  >
+                    Show all
+                  </button>
+                </div>
+              )}
               {candidates.length === 0 ? (
                 <EmptySourcing onSource={handleSource} sourcing={sourcing} />
               ) : (
