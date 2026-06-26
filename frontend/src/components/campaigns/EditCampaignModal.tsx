@@ -120,7 +120,7 @@ export function EditCampaignModal({
           <button
             onClick={() => handleSubmit()}
             disabled={submitting}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? (
               <>
@@ -151,7 +151,7 @@ export function EditCampaignModal({
             value={name}
             onChange={e => setName(e.target.value)}
             required
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
           />
         </Field>
 
@@ -160,7 +160,7 @@ export function EditCampaignModal({
             <select
               value={['On-site', 'Hybrid', 'Fully Remote'].includes(location) ? location : 'On-site'}
               onChange={e => setLocation(e.target.value)}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
             >
               <option>On-site</option>
               <option>Hybrid</option>
@@ -171,7 +171,7 @@ export function EditCampaignModal({
             <select
               value={jobType}
               onChange={e => setJobType(e.target.value)}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
             >
               <option>Full-time</option>
               <option>Contract</option>
@@ -184,7 +184,7 @@ export function EditCampaignModal({
               type="text"
               value={department}
               onChange={e => setDepartment(e.target.value)}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
             />
           </Field>
         </div>
@@ -201,7 +201,7 @@ export function EditCampaignModal({
             value={jobText}
             onChange={e => setJobText(e.target.value)}
             rows={10}
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y"
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10 resize-y"
           />
         </Field>
 
@@ -218,7 +218,7 @@ export function EditCampaignModal({
             onChange={e => setOutreachTemplate(e.target.value)}
             placeholder={`{{jobTitle}} role at our client — quick chat?\n\nHi {{firstName}},\n\nI came across your work as {{candidateTitle}} @ {{candidateCompany}} — your background in {{topKeyword}} is exactly what we're looking for on a {{jobTitle}} role.\n\nOpen to a 15-minute chat next week?\n\nBest,\n{{recruiterName}}`}
             rows={9}
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y"
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10 resize-y"
           />
         </Field>
 

@@ -8,7 +8,7 @@ interface WorkflowGuideModalProps {
 }
 
 /**
- * Full-screen-ish modal explaining the 4-step ARIES workflow.
+ * Full-screen-ish modal explaining the 4-step TalentScanr workflow.
  * Content sourced verbatim from step-by-step.md so a non-technical
  * reviewer can edit the guidance there and see it in the UI immediately.
  */
@@ -69,7 +69,7 @@ export function WorkflowGuideModal({ open, onClose, liveStatuses }: WorkflowGuid
       <div className="relative w-full max-w-2xl bg-white dark:bg-[#10131c] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         <header className="px-6 py-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">ARIES Workflow Guide</h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">TalentScanr Workflow Guide</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               The 4-step playbook from spec ingestion to outreach delivery.
             </p>
@@ -114,8 +114,8 @@ export function WorkflowGuideModal({ open, onClose, liveStatuses }: WorkflowGuid
             );
           })}
 
-          <div className="rounded-xl bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-400/20 px-4 py-3">
-            <p className="text-[11.5px] text-indigo-900 dark:text-indigo-300 leading-relaxed">
+          <div className="rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 px-4 py-3">
+            <p className="text-[11.5px] text-gray-800 dark:text-gray-200 leading-relaxed">
               <span className="font-semibold">Tip:</span> Progress updates live across the stepper,
               the Sourcing Playbook panel, and this guide. The pipeline never invents candidates —
               every row is a real Apollo (LinkedIn) or Reddit user.

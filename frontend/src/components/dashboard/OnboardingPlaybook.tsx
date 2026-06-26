@@ -272,7 +272,7 @@ export function OnboardingPlaybook({
                   {step.action && (
                     <button
                       onClick={step.action.onClick}
-                      className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                      className="text-[11px] font-semibold text-gray-900 dark:text-white hover:underline transition-colors"
                     >
                       {step.action.label} →
                     </button>

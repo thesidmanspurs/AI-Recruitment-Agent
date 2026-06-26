@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Key } from 'react';
 
 interface BadgeProps {
   children: ReactNode;
   variant?: 'blue' | 'green' | 'yellow' | 'red' | 'gray' | 'purple';
   size?: 'sm' | 'md';
+  key?: Key;
 }
 
 const variantClasses: Record<NonNullable<BadgeProps['variant']>, string> = {

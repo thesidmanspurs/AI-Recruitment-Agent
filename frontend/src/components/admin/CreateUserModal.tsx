@@ -74,7 +74,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
       onClose={close}
       title="Create user"
       subtitle="Admin-only — credentials work immediately"
-      icon={<UserPlus className="w-4 h-4 text-indigo-600" />}
+      icon={<UserPlus className="w-4 h-4 text-gray-700 dark:text-gray-300" />}
       size="md"
       footer={
         <>
@@ -88,7 +88,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
           <button
             onClick={() => handleSubmit()}
             disabled={submitting}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             {submitting ? (
               <>
@@ -120,7 +120,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
             onChange={e => setName(e.target.value)}
             placeholder="Jane Smith"
             required
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
           />
         </FormField>
 
@@ -131,7 +131,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
             onChange={e => setEmail(e.target.value)}
             placeholder="user@company.com"
             required
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
           />
         </FormField>
 
@@ -142,7 +142,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
             onChange={e => setPassword(e.target.value)}
             placeholder="Min. 8 characters"
             required
-            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 font-mono focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+            className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 font-mono focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
           />
         </FormField>
 
@@ -151,7 +151,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
             <select
               value={role}
               onChange={e => setRole(e.target.value as UserRole)}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
             >
               <option value="USER">User</option>
               <option value="ADMIN">Admin</option>
@@ -164,7 +164,7 @@ export function CreateUserModal({ open, onClose, onCreated }: CreateUserModalPro
               value={limitOverride}
               onChange={e => setLimitOverride(e.target.value)}
               placeholder="(inherit)"
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
             />
           </FormField>
         </div>

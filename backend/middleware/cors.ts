@@ -1,34 +1,49 @@
 import cors, { type CorsOptions } from 'cors';
 import { env } from '../config/env.js';
+import type { AppError } from './errorHandler.js';
 
 /**
  * CORS policy for /api.
  *
- * The allowlist is sourced from env.CORS_ORIGIN (comma-separated). Same-origin
- * requests (no `Origin` header — e.g. server-to-server, curl) are always
- * permitted. Anything else must match the allowlist exactly; mismatches are
- * rejected by cors() with a 500 / NotAllowedByCors error which the global
- * error handler will surface to the client.
+ * Allowlist order of precedence:
+ *   1. CORS_ORIGIN env/secret  (comma-separated list — preferred)
+ *   2. APP_URL / APP_BASE_URL  (auto-derived fallback for same-origin deploys)
  *
- * We never use `*` as origin because the API uses Bearer tokens; browsers
- * forbid `*` whenever credentials/auth headers are echoed back.
+ * Same-origin requests (no `Origin` header — e.g. server-to-server, curl)
+ * are always permitted. Cross-origin mismatches return 403, not 500.
+ *
+ * fetch with credentials:'include' causes the browser to send Origin even on
+ * same-origin POST requests, so the allowlist must include the production URL.
  */
+
+// Build effective allowlist: explicit CORS_ORIGIN first, then APP_URL fallback.
+function buildAllowlist(): string[] {
+  if (env.CORS_ORIGIN.length > 0) return env.CORS_ORIGIN;
+  // Same-origin deploy: derive from APP_URL/APP_BASE_URL so the server can
+  // answer its own frontend without requiring CORS_ORIGIN to be set.
+  const appUrl = (env.APP_URL || '').replace(/\/$/, '');
+  return appUrl ? [appUrl] : [];
+}
+
 const corsOptions: CorsOptions = {
   origin(requestOrigin, callback) {
     if (!requestOrigin) return callback(null, true); // non-browser callers
-    if (env.CORS_ORIGIN.length === 0) {
-      // No allowlist configured — assume same-origin deploy and reject
-      // cross-origin requests to fail safe in production.
-      return callback(new Error(`CORS: origin "${requestOrigin}" not permitted (allowlist empty).`));
-    }
-    if (env.CORS_ORIGIN.includes(requestOrigin)) {
+
+    const allowlist = buildAllowlist();
+
+    if (allowlist.length === 0 || allowlist.includes(requestOrigin)) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS: origin "${requestOrigin}" not permitted.`));
+
+    // Return a proper 403 instead of an untyped Error that becomes 500.
+    const err: AppError = new Error(`CORS: origin "${requestOrigin}" not permitted.`);
+    err.statusCode = 403;
+    err.isOperational = true;
+    return callback(err);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // HttpOnly auth cookie must travel cross-origin in dev
+  credentials: true,
   maxAge: 600,
 };
 

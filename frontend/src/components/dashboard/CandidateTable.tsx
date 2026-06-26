@@ -15,6 +15,7 @@ import {
   MapPin,
   Linkedin,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 import type { Candidate } from '../../types';
 
@@ -196,6 +197,8 @@ interface CandidateTableProps {
   onEnrichSelected?: (candidateIds: string[]) => Promise<void> | void;
   /** True while a bulk enrich is in flight. */
   enrichingSelected?: boolean;
+  /** Export the selected candidate ids to CSV (no credits spent). */
+  onExportSelected?: (candidateIds: string[]) => void;
 }
 
 export function CandidateTable({
@@ -209,6 +212,7 @@ export function CandidateTable({
   onMarkReplied,
   onEnrichSelected,
   enrichingSelected = false,
+  onExportSelected,
 }: CandidateTableProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const toggleSelect = (id: string) =>
@@ -224,6 +228,7 @@ export function CandidateTable({
         ? awaitingPhoneIds.has(id)
         : false;
   const [tab, setTab] = useState<Tab>('approved');
+  const [enrichFilter, setEnrichFilter] = useState<'all' | 'enriched' | 'sourced'>('all');
   const [sort, setSort] = useState<SortKey>('matchScore');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -239,11 +244,29 @@ export function CandidateTable({
     };
   }, [candidates, threshold]);
 
-  const filtered = useMemo(() => {
-    if (tab === 'approved') return candidates.filter(c => c.matchScore >= threshold);
-    if (tab === 'below') return candidates.filter(c => c.matchScore < threshold);
-    return candidates;
+  // A candidate is "enriched" once Apollo has revealed a real contact field.
+  const isEnriched = (c: Candidate) => c.contact.emailEnriched || c.contact.phoneEnriched;
+
+  const enrichCounts = useMemo(() => {
+    const byTab = tab === 'approved'
+      ? candidates.filter(c => c.matchScore >= threshold)
+      : tab === 'below'
+        ? candidates.filter(c => c.matchScore < threshold)
+        : candidates;
+    const enriched = byTab.filter(isEnriched).length;
+    return { all: byTab.length, enriched, sourced: byTab.length - enriched };
   }, [candidates, tab, threshold]);
+
+  const filtered = useMemo(() => {
+    const byTab = tab === 'approved'
+      ? candidates.filter(c => c.matchScore >= threshold)
+      : tab === 'below'
+        ? candidates.filter(c => c.matchScore < threshold)
+        : candidates;
+    if (enrichFilter === 'enriched') return byTab.filter(isEnriched);
+    if (enrichFilter === 'sourced') return byTab.filter(c => !isEnriched(c));
+    return byTab;
+  }, [candidates, tab, threshold, enrichFilter]);
 
   const sorted = useMemo(() => {
     const newest = (c: Candidate) => (c.createdAt ? new Date(c.createdAt).getTime() : 0);
@@ -265,7 +288,7 @@ export function CandidateTable({
     [sorted, pageClamped]
   );
   // Reset to page 1 whenever the filter/tab/sort changes or the data shrinks.
-  useEffect(() => { setPage(1); }, [tab, sort, sortDir, threshold, candidates.length]);
+  useEffect(() => { setPage(1); }, [tab, sort, sortDir, threshold, candidates.length, enrichFilter]);
 
   function toggleSort(key: SortKey) {
     if (sort === key) setSortDir(d => (d === 'desc' ? 'asc' : 'desc'));
@@ -277,6 +300,30 @@ export function CandidateTable({
 
   function toggleExpand(id: string) {
     setExpandedId(curr => (curr === id ? null : id));
+  }
+
+  // Select-all spans the whole filtered list (every page), so an export can
+  // grab the full result set — not just the 25 rows on the current page.
+  const filteredIds = useMemo(() => sorted.map(c => c.id), [sorted]);
+  const allFilteredSelected = filteredIds.length > 0 && filteredIds.every(id => selected.has(id));
+  const someFilteredSelected = filteredIds.some(id => selected.has(id));
+  // "Get email" only applies to un-enriched LinkedIn candidates; export applies
+  // to everything selected. Narrow the enrich set so credits aren't charged for
+  // already-enriched rows the user picked for export.
+  const enrichableSelectedIds = useMemo(
+    () => [...selected].filter(id => {
+      const c = candidates.find(x => x.id === id);
+      return c && !c.contact.emailEnriched && c.platform === 'LinkedIn';
+    }),
+    [selected, candidates]
+  );
+  function toggleSelectAll() {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filteredIds.forEach(id => next.delete(id));
+      else filteredIds.forEach(id => next.add(id));
+      return next;
+    });
   }
 
   return (
@@ -298,8 +345,28 @@ export function CandidateTable({
           </TabButton>
         </div>
         <div className="flex items-center gap-3">
+          {/* Enrichment segmented filter — keeps enriched vs not-enriched separate */}
+          <div className="inline-flex items-center p-0.5 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            {([
+              { key: 'all', label: 'All', count: enrichCounts.all },
+              { key: 'enriched', label: 'Enriched', count: enrichCounts.enriched },
+              { key: 'sourced', label: 'Not enriched', count: enrichCounts.sourced },
+            ] as const).map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setEnrichFilter(opt.key)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
+                  enrichFilter === opt.key
+                    ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                {opt.label} <span className="opacity-60 tabular-nums">{opt.count}</span>
+              </button>
+            ))}
+          </div>
           <span className="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">
-            Threshold ≥ {threshold.toFixed(1)}
+            ≥ {threshold.toFixed(1)}
           </span>
           <button
             onClick={() => toggleSort('matchScore')}
@@ -311,10 +378,10 @@ export function CandidateTable({
         </div>
       </div>
 
-      {/* Bulk-enrich bar — appears when un-enriched candidates are selected */}
+      {/* Bulk action bar — appears when candidates are selected */}
       {selected.size > 0 && (
-        <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-400/20">
-          <span className="text-xs font-medium text-indigo-900 dark:text-indigo-300">
+        <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-500/20">
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
             {selected.size} selected
           </span>
           <div className="flex items-center gap-2">
@@ -324,21 +391,30 @@ export function CandidateTable({
             >
               Clear
             </button>
-            <button
-              onClick={async () => {
-                const ids = [...selected];
-                await onEnrichSelected?.(ids);
-                setSelected(new Set());
-              }}
-              disabled={enrichingSelected}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              {enrichingSelected ? (
-                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Revealing…</>
-              ) : (
-                <><Mail className="w-3.5 h-3.5" /> Get email ({selected.size} credit{selected.size === 1 ? '' : 's'})</>
-              )}
-            </button>
+            {onExportSelected && (
+              <button
+                onClick={() => onExportSelected([...selected])}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/15 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" /> Export CSV ({selected.size})
+              </button>
+            )}
+            {onEnrichSelected && enrichableSelectedIds.length > 0 && (
+              <button
+                onClick={async () => {
+                  await onEnrichSelected(enrichableSelectedIds);
+                  setSelected(new Set());
+                }}
+                disabled={enrichingSelected}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {enrichingSelected ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Revealing…</>
+                ) : (
+                  <><Mail className="w-3.5 h-3.5" /> Get email ({enrichableSelectedIds.length} credit{enrichableSelectedIds.length === 1 ? '' : 's'})</>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -366,6 +442,15 @@ export function CandidateTable({
                     <button onClick={() => toggleSort(col.key!)} className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                       {col.label}
                     </button>
+                  ) : col.label === '' ? (
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      className="w-3.5 h-3.5 rounded border-gray-300 dark:border-white/20 accent-black dark:accent-white cursor-pointer align-middle"
+                      checked={allFilteredSelected}
+                      ref={el => { if (el) el.indeterminate = someFilteredSelected && !allFilteredSelected; }}
+                      onChange={toggleSelectAll}
+                    />
                   ) : col.label}
                 </th>
               ))}
@@ -401,7 +486,9 @@ export function CandidateTable({
                   isAwaitingPhone: awaitingHas(candidate.id),
                   isSelected: selected.has(candidate.id),
                   onToggleSelect: () => toggleSelect(candidate.id),
-                  selectable: !candidate.contact.emailEnriched && candidate.platform === 'LinkedIn',
+                  // Every candidate is selectable (selection drives CSV export).
+                  // The bulk "Get email" action narrows to enrichable ones itself.
+                  selectable: true,
                 }
               );
             })}
@@ -507,8 +594,8 @@ function renderExpandableRow(
               checked={isSelected}
               onClick={e => e.stopPropagation()}
               onChange={() => onToggleSelect?.()}
-              title="Select to reveal email"
-              className="w-4 h-4 rounded border-gray-300 dark:border-white/10 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0 dark:bg-[#0a0c12]"
+              title="Select candidate"
+              className="w-4 h-4 rounded border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 focus:ring-gray-900 dark:focus:ring-white/20 cursor-pointer shrink-0 dark:bg-[#0a0c12]"
             />
           )}
           <Avatar name={candidate.name} />
@@ -541,7 +628,7 @@ function renderExpandableRow(
         <div className="flex items-baseline gap-1">
           <span
             className={`text-xl font-bold tabular-nums ${
-              below ? 'text-gray-400 dark:text-gray-500' : 'text-indigo-600 dark:text-indigo-400'
+              below ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300'
             }`}
           >
             {candidate.matchScore.toFixed(1)}
@@ -578,7 +665,7 @@ function renderExpandableRow(
           <DataFreshnessBanner candidate={candidate} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailBlock
-              icon={<Sparkles className="w-3.5 h-3.5 text-indigo-500" />}
+              icon={<Sparkles className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />}
               label="Why this score"
             >
               <p className="text-xs text-gray-700 dark:text-gray-200 leading-relaxed">
@@ -589,7 +676,7 @@ function renderExpandableRow(
                   {candidate.skills.map(s => (
                     <span
                       key={s}
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-400/20"
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20"
                     >
                       {s}
                     </span>
@@ -657,7 +744,7 @@ function renderExpandableRow(
                     </>
                   ) : (
                     <>
-                      <Zap className="w-3.5 h-3.5 text-indigo-500" />
+                      <Zap className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
                       Resolve contact via Apollo
                     </>
                   )}
@@ -676,7 +763,7 @@ function renderExpandableRow(
                       ? 'Force a fresh Apollo lookup — spends 1 credit even though data is on file'
                       : 'Look up email & phone via Apollo — 1 credit if found'
                   }
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shrink-0"
                 >
                   {isEnriching ? (
                     <>
@@ -800,7 +887,7 @@ function renderExpandableRow(
                       onSendOutreach?.(candidate.id);
                     }}
                     disabled={isSendingOutreach}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   >
                     {isSendingOutreach ? (
                       <>
@@ -913,7 +1000,7 @@ function TabButton({
       onClick={onClick}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
         active
-          ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-400/20'
+          ? 'bg-indigo-50 dark:bg-gray-100 dark:bg-gray-800/10 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 dark:border-gray-200 dark:border-gray-700/20'
           : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 border border-transparent'
       }`}
     >
@@ -928,7 +1015,7 @@ function CountChip({ children, muted }: { children: ReactNode; muted?: boolean }
       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
         muted
           ? 'bg-gray-200/80 dark:bg-white/10 text-gray-600 dark:text-gray-400'
-          : 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+          : 'bg-gray-100 dark:bg-gray-800 dark:bg-gray-100 dark:bg-gray-800/10 text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300'
       }`}
     >
       {children}
@@ -964,7 +1051,7 @@ function ContactRow({
               target={external ? '_blank' : undefined}
               rel={external ? 'noopener noreferrer' : undefined}
               onClick={e => e.stopPropagation()}
-              className="text-xs font-medium text-indigo-700 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 truncate flex items-center gap-1"
+              className="text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-700 dark:text-gray-300 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-700 dark:text-gray-300 truncate flex items-center gap-1"
               title={value!}
             >
               <span className="truncate">{value}</span>

@@ -23,7 +23,7 @@ export function Phase2Sourcing({
   return (
     <section className="flex flex-col gap-5">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-gray-900 dark:bg-gray-700 flex items-center justify-center shrink-0">
           <span className="text-xs font-bold text-white">2</span>
         </div>
         <div>

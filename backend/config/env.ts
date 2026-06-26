@@ -27,6 +27,12 @@ export const env = {
   // Auth
   JWT_SECRET: process.env.JWT_SECRET || 'change-me-in-production',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  // Cookie domain for the auth + OAuth-state cookies. Set to a leading-dot
+  // parent domain (e.g. ".talentscanr.com") so a cookie set on www. is also
+  // sent to the apex host and vice-versa — without it the OAuth state cookie
+  // is lost across the www↔apex redirect and sign-in fails with "session
+  // expired". Leave empty for localhost / *.run.app (host-only cookies).
+  COOKIE_DOMAIN: (process.env.COOKIE_DOMAIN || '').trim(),
   // Comma-separated allowlist of emails that should always be ADMIN. Applied
   // on register (new accounts) and on login (self-heal for existing rows).
   ADMIN_EMAILS: parseList(process.env.ADMIN_EMAILS).map(e => e.toLowerCase()),
@@ -58,7 +64,7 @@ export const env = {
   // candidates from public posts in hiring-relevant subreddits.
   REDDIT_CLIENT_ID: process.env.REDDIT_CLIENT_ID || '',
   REDDIT_CLIENT_SECRET: process.env.REDDIT_CLIENT_SECRET || '',
-  REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT || 'aries-sourcing/0.1',
+  REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT || 'talentscanr-sourcing/1.0',
 
   // GitHub sourcing — finds developers from public GitHub profiles via the
   // Search API. A no-scope Personal Access Token is optional but lifts the

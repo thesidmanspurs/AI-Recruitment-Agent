@@ -38,6 +38,31 @@ process.on('uncaughtException', err => {
 });
 
 const app = express();
+app.set('trust proxy', true);
+
+// ── Canonical domain redirect ───────────────────────────────────────────────
+// Force the public custom domain (env.APP_URL host, e.g. talentscanr.com). The
+// Google OAuth flow stores an anti-CSRF cookie scoped to ".talentscanr.com";
+// that cookie can never be set from the raw "*.run.app" host, so starting
+// sign-in there always fails with "session expired". Bouncing run.app → the
+// canonical host up front means the whole flow happens on one domain.
+// Exempts health probes and webhooks (external callers may hit run.app).
+const CANONICAL_HOST = (() => {
+  try { return new URL(env.APP_URL).host; } catch { return ''; }
+})();
+app.use((req, res, next) => {
+  const host = (req.headers.host || '').toLowerCase();
+  if (
+    CANONICAL_HOST &&
+    host.endsWith('.run.app') &&
+    req.method === 'GET' &&
+    !req.path.startsWith('/api/health') &&
+    !req.path.startsWith('/api/webhooks')
+  ) {
+    return res.redirect(302, `https://${CANONICAL_HOST}${req.originalUrl}`);
+  }
+  next();
+});
 
 // Stripe webhook MUST receive the raw request body for signature verification,
 // so it's mounted with express.raw BEFORE the global express.json() parser.

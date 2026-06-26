@@ -77,7 +77,7 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
         result ? (
           <button
             onClick={close}
-            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
           >
             Done
           </button>
@@ -93,7 +93,7 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
             <button
               onClick={() => handleSubmit()}
               disabled={submitting || valid.length === 0}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? (
                 <>
@@ -170,7 +170,7 @@ export function AddFromLinkedInModal({ open, onClose, onSubmit }: AddFromLinkedI
               onChange={e => setText(e.target.value)}
               placeholder={`https://www.linkedin.com/in/satyanadella/\nhttps://www.linkedin.com/in/sundarpichai/\nhttps://www.linkedin.com/in/...`}
               rows={10}
-              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 resize-y dark:placeholder:text-gray-600"
+              className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm dark:text-gray-100 font-mono leading-relaxed focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10 resize-y dark:placeholder:text-gray-600"
             />
             <p className="text-[11px] text-gray-500 dark:text-gray-400">
               One URL per line (or comma-separated).{' '}

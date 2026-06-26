@@ -50,14 +50,14 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
     >
       <div className="w-full max-w-sm">
         <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
             <span className="text-base font-extrabold text-white">A</span>
           </div>
-          <span className="text-gray-900 font-bold text-lg">ARIES</span>
+          <span className="text-gray-900 dark:text-white font-bold text-lg">TalentScanr</span>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">Create your account</h2>
-        <p className="text-sm text-gray-500 mb-8">Get started with AI-powered recruiting</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Create your account</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-8">Get started with AI-powered recruiting</p>
 
         {error && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6">
@@ -108,7 +108,7 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg px-4 py-2.5 text-sm shadow-sm shadow-indigo-600/20 transition-colors"
+            className="mt-2 w-full flex items-center justify-center gap-2 bg-black dark:bg-gray-800 hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg px-4 py-2.5 text-sm shadow-sm transition-colors"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -121,11 +121,11 @@ export function RegisterPage({ onRegister, onSwitchToLogin }: RegisterPageProps)
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 dark:text-slate-400 mt-6">
           Already have an account?{' '}
           <button
             onClick={onSwitchToLogin}
-            className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+            className="text-indigo-600 hover:text-gray-400 dark:text-gray-500 dark:hover:text-indigo-300 font-medium transition-colors"
           >
             Sign in
           </button>

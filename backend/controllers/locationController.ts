@@ -20,7 +20,7 @@ import { createError } from '../middleware/errorHandler.js';
  */
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
-const USER_AGENT = 'aries-recruitment/0.1 (admin@aries.com)';
+const USER_AGENT = 'talentscanr/1.0 (admin@talentscanr.com)';
 
 interface NominatimResult {
   display_name?: string;

@@ -32,7 +32,7 @@ export default function OutreachCampaignTracker({
     { status: 'Sourced', title: 'Sourced snap', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
     { status: 'Enriched', title: 'Enriched base', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
     { status: 'Outreach Sent', title: 'Outreach Sent', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' },
-    { status: 'Opened', title: 'Opened/Read', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
+    { status: 'Opened', title: 'Opened/Read', color: 'text-gray-700 dark:text-gray-300', bg: 'bg-indigo-50 border-gray-200 dark:border-gray-700' },
     { status: 'Replied', title: 'Replied', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100' },
     { status: 'No Response', title: 'No Response (Alert)', color: 'text-rose-600', bg: 'bg-rose-50 border-rose-100' },
   ];
@@ -148,7 +148,7 @@ export default function OutreachCampaignTracker({
       <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-sm border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-400" />
+            <Sparkles className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             <h3 className="font-sans font-semibold text-sm">Interactive Campaign Outreach Sandbox</h3>
           </div>
           <p className="text-xs text-slate-300">
@@ -160,7 +160,7 @@ export default function OutreachCampaignTracker({
           <button
             onClick={handleBulkStartCampaign}
             disabled={candidates.filter(c => c.outreachStatus === 'Enriched').length === 0}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium px-4 py-2.5 rounded-xl transition duration-150"
+            className="flex items-center gap-1.5 bg-gray-900 dark:bg-gray-700 hover:bg-gray-100 dark:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium px-4 py-2.5 rounded-xl transition duration-150"
           >
             <Send className="w-3.5 h-3.5" />
             Bulk Outreach Launch
@@ -245,7 +245,7 @@ export default function OutreachCampaignTracker({
                             <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-semibold">
                               {candidate.platform}
                             </span>
-                            <span className="text-[10px] text-indigo-600 font-sans font-bold flex items-center gap-0.5">
+                            <span className="text-[10px] text-gray-700 dark:text-gray-300 font-sans font-bold flex items-center gap-0.5">
                               ⭐ {candidate.matchScore.toFixed(1)}
                             </span>
                           </div>
@@ -276,7 +276,7 @@ export default function OutreachCampaignTracker({
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[10px] font-mono tracking-wider font-semibold rounded uppercase px-2 py-0.5 bg-indigo-50 text-indigo-600">
+                    <span className="text-[10px] font-mono tracking-wider font-semibold rounded uppercase px-2 py-0.5 bg-indigo-50 text-gray-700 dark:text-gray-300">
                       Pipeline state
                     </span>
                     <span className="text-xs text-slate-400">•</span>
@@ -317,7 +317,7 @@ export default function OutreachCampaignTracker({
               {selectedCandidate.notes && (
                 <div className="space-y-1.5">
                   <h4 className="text-xs font-bold text-slate-800">Recruiter Action Logs:</h4>
-                  <div className="bg-indigo-50/40 text-xs text-slate-700 p-2.5 rounded-lg border border-indigo-100 font-sans leading-relaxed">
+                  <div className="bg-indigo-50/40 text-xs text-slate-700 p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 font-sans leading-relaxed">
                     {selectedCandidate.notes}
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export default function OutreachCampaignTracker({
                   </pre>
                   <button
                     onClick={() => handleStartCampaign(selectedCandidate)}
-                    className="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2.5 rounded-xl transition duration-150 shadow-sm"
+                    className="w-full flex items-center justify-center gap-1.5 bg-gray-900 dark:bg-gray-700 hover:bg-gray-100 dark:bg-gray-800 text-white font-medium text-xs py-2.5 rounded-xl transition duration-150 shadow-sm"
                   >
                     <Send className="w-3.5 h-3.5" />
                     Start Sourcing Sequence
@@ -357,7 +357,7 @@ export default function OutreachCampaignTracker({
               {(selectedCandidate.outreachStatus === 'No Response' || selectedCandidate.outreachStatus === 'Replied' || selectedCandidate.outreachStatus === 'Opened' || selectedCandidate.outreachStatus === 'Outreach Sent') && (
                 <div className="space-y-3 pt-3 border-t">
                   <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                    <CheckSquare className="w-4 h-4 text-indigo-600" />
+                    <CheckSquare className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                     Manual Outreach Takeover
                   </h4>
                   <p className="text-[11px] text-slate-500 leading-normal">
@@ -398,7 +398,7 @@ export default function OutreachCampaignTracker({
                       rows={3}
                       value={takeoverNotes}
                       onChange={(e) => setTakeoverNotes(e.target.value)}
-                      className="w-full bg-slate-50 focus:bg-white text-xs border border-slate-200 rounded-lg p-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full bg-slate-50 focus:bg-white text-xs border border-slate-200 rounded-lg p-2.5 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
                     />
                     <button
                       onClick={() => handleSaveTakeoverNotes(selectedCandidate)}

@@ -1,4 +1,5 @@
 import { Briefcase, Building2, Globe, CheckCircle, AlertCircle } from 'lucide-react';
+import type { Key } from 'react';
 import type { Candidate } from '../../types';
 import { ScoreBar } from './ScoreBar';
 import { Badge } from '../shared/Badge';
@@ -9,6 +10,7 @@ interface CandidateCardProps {
   onEnrich?: (candidate: Candidate) => void;
   onSendOutreach?: (candidate: Candidate) => void;
   onViewDetails?: (candidate: Candidate) => void;
+  key?: Key;
 }
 
 const platformVariant: Record<string, 'blue' | 'purple' | 'yellow'> = {

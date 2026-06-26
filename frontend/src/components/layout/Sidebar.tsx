@@ -45,11 +45,11 @@ export function Sidebar({
     <aside className="w-64 shrink-0 flex flex-col bg-[#0d1117] h-screen select-none">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-gray-900 dark:bg-gray-700 flex items-center justify-center shrink-0">
           <span className="text-sm font-extrabold text-white">T</span>
         </div>
         <div className="flex flex-col"> 
-          <span className="text-white font-bold text-[15px] tracking-tight">ARIES</span>
+          <span className="text-white font-bold text-[15px] tracking-tight">TalentScanr</span>
           <p className="text-[8px] font-semibold tracking-widest text-gray-500 uppercase">
             AI Recruitment{"   "}& <br></br>
             Intelligent Engagement
