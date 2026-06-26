@@ -204,15 +204,11 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   // score threshold — so candidates are never hidden from the "All" tab.
   const tableCandidates = useMemo(() => candidates.map(toCandidate), [candidates]);
 
-  // The Both/LinkedIn/GitHub selector also filters which candidates are shown,
-  // so picking "GitHub" lists only GitHub people (not leftover LinkedIn rows
-  // from earlier runs). LinkedIn bucket = everything that isn't GitHub
-  // (Apollo + Reddit). "Both" shows all.
-  const displayedCandidates = useMemo(() => {
-    if (sourceMode === 'github') return tableCandidates.filter(c => c.platform === 'GitHub');
-    if (sourceMode === 'linkedin') return tableCandidates.filter(c => c.platform !== 'GitHub');
-    return tableCandidates;
-  }, [tableCandidates, sourceMode]);
+  // The Both/LinkedIn/GitHub selector controls ONLY which channels get sourced
+  // (see handleSource) — it deliberately does NOT filter the table. Sourcing is
+  // additive, so the table always shows every candidate on the campaign; an
+  // empty view after a single-channel run would look like data loss.
+  const displayedCandidates = tableCandidates;
 
   // ── Workflow step state — shared by header stepper, playbook panel, guide modal ──
   const stepStatuses = useMemo<Record<string, StepperStatus>>(() => {
@@ -584,7 +580,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                     {/* Source channel selector */}
                     <div
                       className="inline-flex items-center rounded-lg border border-gray-300 dark:border-white/10 overflow-hidden text-xs font-semibold"
-                      title="Choose which channels to source from"
+                      title="Choose which channels to source from. The table always shows every candidate already on the campaign."
                     >
                       {(['both', 'linkedin', 'github'] as const).map(m => (
                         <button
@@ -722,25 +718,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
               {/* Candidate table */}
               <div id="candidates-table" />
-              {/* Filter notice — the channel toggle hides (never deletes) the
-                  other channels' candidates. Make that explicit so a filtered
-                  view is never mistaken for lost data. */}
-              {candidates.length > 0 && displayedCandidates.length < tableCandidates.length && (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300 mb-3">
-                  <span>
-                    Showing <strong>{sourceMode === 'github' ? 'GitHub' : 'LinkedIn'}</strong> only —{' '}
-                    {tableCandidates.length - displayedCandidates.length} candidate
-                    {tableCandidates.length - displayedCandidates.length === 1 ? '' : 's'} from other channels
-                    {' '}hidden (not deleted).
-                  </span>
-                  <button
-                    onClick={() => setSourceMode('both')}
-                    className="shrink-0 font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200"
-                  >
-                    Show all
-                  </button>
-                </div>
-              )}
               {candidates.length === 0 ? (
                 <EmptySourcing onSource={handleSource} sourcing={sourcing} />
               ) : (
