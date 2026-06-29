@@ -51,8 +51,25 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
           boxShadow: '0 1px 0 rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.05)',
         }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between h-[74px] gap-4">
-          <button onClick={() => onNavigate('/')} className="flex items-center gap-2.5">
-            <img src={logoSrc} alt="TalentScanr" className="h-[52px] w-auto" />
+          <button onClick={() => onNavigate('/')} className="flex items-center gap-2.5" aria-label="TalentScanr home">
+            {/* Horizontal lockup: scanner icon (cropped from the brand logo)
+                + bold wordmark. Crop maths derived from the icon's opaque
+                bounding box in logo.png (x[108,419] y[15,272], 312×258). */}
+            <span
+              aria-hidden
+              className="block shrink-0"
+              style={{
+                width: '48px',
+                height: '40px',
+                backgroundImage: `url(${logoSrc})`,
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '86px 63px',
+                backgroundPosition: '-17px -2px',
+              }}
+            />
+            <span className="text-[23px] font-extrabold tracking-tight text-[#213a5c] dark:text-white leading-none">
+              TalentScanr
+            </span>
           </button>
 
           {/* Glass pill nav with mouse-following indicator */}
