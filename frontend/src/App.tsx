@@ -9,6 +9,7 @@ import { LandingPage } from './pages/marketing/LandingPage';
 import { EngineFeaturesPage } from './pages/marketing/EngineFeaturesPage';
 import { PricingPage } from './pages/marketing/PricingPage';
 import { FaqPage } from './pages/marketing/FaqPage';
+import { PolicyPage } from './pages/marketing/PolicyPage';
 import { ToastProvider } from './components/shared/Toast';
 import { useAuth } from './hooks/useAuth';
 import { paymentsApi } from './api/paymentsApi';
@@ -21,6 +22,7 @@ import { paymentsApi } from './api/paymentsApi';
  *   /engine-features  → marketing
  *   /pricing          → marketing (pricing + estimate calculator)
  *   /faq              → marketing
+ *   /policy           → privacy policy, terms & GDPR (Trust Centre)
  *   /login, /register → focused auth screen
  *
  * Authenticated:
@@ -159,6 +161,7 @@ function AuthGate() {
   if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} {...mkt} />;
   if (path === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} {...mkt} />;
   if (path === '/faq') return <FaqPage onNavigate={navigate} {...mkt} />;
+  if (path === '/policy') return <PolicyPage onNavigate={navigate} {...mkt} />;
 
   // ── Auth screens — shown when logged out. ─────────────────────────────────
   if (!user && (path === '/login' || path === '/register')) {

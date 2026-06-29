@@ -1,7 +1,7 @@
 import { type ReactNode, useRef, useState, useEffect, useCallback } from 'react';
 import logoSrc from '../../public/logo.png';
 
-export type MarketingTab = 'home' | 'features' | 'pricing' | 'faq';
+export type MarketingTab = 'home' | 'features' | 'pricing' | 'faq' | 'policy';
 
 const NAV: { tab: MarketingTab; label: string; to: string }[] = [
   { tab: 'home',     label: 'Overview', to: '/' },
@@ -143,6 +143,7 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
             <button onClick={() => onNavigate('/engine-features')} className="hover:text-white transition-colors">Features</button>
             <button onClick={() => onNavigate('/pricing')} className="hover:text-white transition-colors">Pricing</button>
             <button onClick={() => onNavigate('/faq')} className="hover:text-white transition-colors">FAQ</button>
+            <button onClick={() => onNavigate('/policy')} className="hover:text-white transition-colors">Privacy &amp; Terms</button>
             <span className="text-gray-600">© 2026 TalentScanr</span>
           </div>
         </div>
