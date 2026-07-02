@@ -1,6 +1,6 @@
 import { ArrowRight, Zap, Search, Star, Mail as MailIcon, BarChart2, Shield } from 'lucide-react';
 import { MarketingShell } from '../../components/marketing/MarketingShell';
-import logoSrc from '../../public/logo.png';
+const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
 interface LandingPageProps {
   onLogin: (email: string, password: string) => Promise<void>;

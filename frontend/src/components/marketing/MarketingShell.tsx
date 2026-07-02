@@ -1,5 +1,5 @@
 import { type ReactNode, useRef, useState, useEffect, useCallback } from 'react';
-import logoSrc from '../../public/logo.png';
+const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
 export type MarketingTab = 'home' | 'features' | 'pricing' | 'faq' | 'policy';
 
@@ -52,19 +52,19 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
         }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between h-[74px] gap-4">
           <button onClick={() => onNavigate('/')} className="flex items-center gap-2.5" aria-label="TalentScanr home">
-            {/* Horizontal lockup: scanner icon (cropped from the brand logo)
+            {/* Horizontal lockup: AI-head icon (cropped from the brand logo)
                 + bold wordmark. Crop maths derived from the icon's opaque
-                bounding box in logo.png (x[108,419] y[15,272], 312×258). */}
+                bounding box in logo.png (x[183,315] y[52,183], 133×132). */}
             <span
               aria-hidden
               className="block shrink-0"
               style={{
-                width: '48px',
+                width: '42px',
                 height: '40px',
                 backgroundImage: `url(${logoSrc})`,
                 backgroundRepeat: 'no-repeat',
-                backgroundSize: '86px 63px',
-                backgroundPosition: '-17px -2px',
+                backgroundSize: '160px 97px',
+                backgroundPosition: '-55px -16px',
               }}
             />
             <span className="text-[23px] font-extrabold tracking-tight text-[#213a5c] dark:text-white leading-none">

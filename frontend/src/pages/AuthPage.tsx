@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
 import { ApiError } from '../api/client';
-import logoSrc from '../public/logo.png';
+const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
 type Mode = 'login' | 'register';
 

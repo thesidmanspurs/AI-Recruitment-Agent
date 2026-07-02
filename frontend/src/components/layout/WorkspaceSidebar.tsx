@@ -1,6 +1,6 @@
 import { Database, Plus, ShieldCheck } from 'lucide-react';
 import type { CampaignDto } from '../../api/campaignApi';
-import logoSrc from '../../public/logo.png';
+const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
 /**
  * Full-height dark workspace sidebar (design ref: TalentFlow cockpit).
