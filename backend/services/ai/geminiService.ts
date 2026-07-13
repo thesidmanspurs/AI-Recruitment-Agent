@@ -67,6 +67,82 @@ export const geminiService = {
     return JSON.parse(text.trim()) as JobAnalysis;
   },
 
+  // Draft a brand-new job description (when the box is empty) OR clean up and
+  // enrich the one the recruiter already pasted. Returns plain text destined
+  // for the New-campaign textarea (reviewed by the user before analysis).
+  async generateJobDescription(params: {
+    jobTitle?: string;
+    location?: string;
+    jobType?: string;
+    department?: string;
+    existingText?: string;
+  }): Promise<string> {
+    const client = getClient();
+    if (!client) throw new Error('Gemini client not initialised — check GEMINI_API_KEY');
+
+    const hasText = (params.existingText || '').trim().length > 0;
+    const context = [
+      params.jobTitle ? `Role / campaign: ${params.jobTitle}` : '',
+      params.department ? `Department: ${params.department}` : '',
+      params.jobType ? `Employment type: ${params.jobType}` : '',
+      params.location ? `Work location: ${params.location}` : '',
+    ].filter(Boolean).join('\n');
+
+    const prompt = hasText
+      ? `Improve and expand the job description below. Fix structure and grammar, keep it true to the original intent, and make sure it contains: a 1–2 sentence intro, a "Responsibilities:" list, and a "Requirements:" list with specific, sourceable technologies and skills. Do NOT invent a company name, salary, or unrelated perks. Return plain text only — no markdown "#" headers.\n\nContext:\n${context || '(none provided)'}\n\nCurrent description:\n"""\n${params.existingText}\n"""`
+      : `Write a concise, professional job description for the role below. Include a 1–2 sentence intro, a "Responsibilities:" list (4–6 bullets), and a "Requirements:" list (4–6 bullets) naming specific, sourceable technologies and skills. Do NOT invent a company name, salary, or unrelated perks. Return plain text only — no markdown "#" headers.\n\nContext:\n${context || '(no extra context — infer a sensible standard version of this role)'}`;
+
+    const response = await client.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt,
+      config: {
+        systemInstruction:
+          'You are an expert technical recruiter who writes clear, specific, unbiased job descriptions that are easy to source candidates against.',
+      },
+    });
+    const text = response.text;
+    if (!text) throw new Error('Gemini returned empty response for job description generation');
+    return text.trim();
+  },
+
+  // Enhance an already-extracted spec: sharpen the title, add missing high-signal
+  // alternate titles / keywords, and make requirements crisper and more sourceable.
+  // Grounded in the original job text so it never fabricates unrelated skills.
+  async enhanceJobSpec(params: {
+    rawJobText: string;
+    jobTitle: string;
+    extractedKeywords: string[];
+    requirements: string[];
+  }): Promise<JobAnalysis> {
+    const client = getClient();
+    if (!client) throw new Error('Gemini client not initialised — check GEMINI_API_KEY');
+
+    const response = await client.models.generateContent({
+      model: GEMINI_MODEL,
+      contents:
+        `Refine and STRENGTHEN the recruitment spec below. Sharpen the primary title, add any missing high-signal alternate titles recruiters search on LinkedIn, add specific tech/skill keywords that are clearly implied by the job description, and rewrite the requirements to be crisper and more sourceable. Stay grounded in the job description — do NOT fabricate unrelated skills.\n\nJob Description:\n"""\n${params.rawJobText}\n"""\n\nCurrent title: ${params.jobTitle}\nCurrent keywords: ${params.extractedKeywords.join(', ')}\nCurrent requirements:\n- ${params.requirements.join('\n- ')}`,
+      config: {
+        systemInstruction:
+          'You are an expert recruitment AI. Return an improved primary title, 2–4 closest alternative titles, 6–9 hyper-specific tech/skill keywords, 3–5 crisp actionable requirements, and the top sourcing platforms from [LinkedIn, Upwork, Reddit].',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            alternateTitles: { type: Type.ARRAY, items: { type: Type.STRING } },
+            extractedKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+            requirements: { type: Type.ARRAY, items: { type: Type.STRING } },
+            preferredPlatforms: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ['title', 'alternateTitles', 'extractedKeywords', 'requirements', 'preferredPlatforms'],
+        },
+      },
+    });
+    const text = response.text;
+    if (!text) throw new Error('Gemini returned empty response for job spec enhancement');
+    return JSON.parse(text.trim()) as JobAnalysis;
+  },
+
   // Phase 2 — generate realistic candidate profiles from sourcing query
   async sourceCandidates(params: {
     title: string;

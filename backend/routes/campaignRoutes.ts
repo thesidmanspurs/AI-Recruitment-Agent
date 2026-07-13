@@ -8,9 +8,12 @@ const router = Router();
 
 // ── Campaign CRUD ─────────────────────────────────────────────────────────────
 router.post('/', jobSpecController.createCampaign);
+router.post('/draft-jd', jobSpecController.draftJobDescription); // AI draft/enhance JD (pre-create)
 router.get('/', jobSpecController.listCampaigns);
 router.get('/:id', jobSpecController.getCampaign);
 router.put('/:id', jobSpecController.updateCampaign);
+router.post('/:id/reanalyze', jobSpecController.reanalyzeCampaign);     // review popup: "Try again"
+router.post('/:id/enhance-spec', jobSpecController.enhanceCampaignSpec); // review popup: "Enhance with AI"
 router.delete('/:id', jobSpecController.deleteCampaign);
 
 // ── Candidates (scoped to campaign) ──────────────────────────────────────────

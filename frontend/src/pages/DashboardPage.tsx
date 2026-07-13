@@ -82,6 +82,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
     resetCandidates,
     deleteCampaign,
     sourceCandidates,
+    refreshCampaigns,
   } = useCampaigns();
 
   const [showCreate, setShowCreate] = useState(false);
@@ -840,7 +841,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
       </div>
 
       {showCreate && (
-        <CreateCampaignModal onClose={() => setShowCreate(false)} onCreate={createCampaign} />
+        <CreateCampaignModal onClose={() => setShowCreate(false)} onCreate={createCampaign} onSaved={refreshCampaigns} />
       )}
 
       <AddFromLinkedInModal

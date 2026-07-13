@@ -124,6 +124,11 @@ export const campaignApi = {
       status?: CampaignStatus;
       jobText?: string;
       outreachTemplate?: string | null;
+      // Direct spec edits from the review popup ("repair").
+      jobTitle?: string;
+      alternateTitles?: string[];
+      extractedKeywords?: string[];
+      requirements?: string[];
     }
   ) {
     return apiClient.put<{
@@ -132,6 +137,28 @@ export const campaignApi = {
       isSimulated: boolean;
       simulationReason?: string;
     }>(`/campaigns/${id}`, input);
+  },
+
+  // AI "write / enhance" for the job-description box (pre-create).
+  draftJobDescription(input: {
+    name?: string;
+    jobTitle?: string;
+    location?: string;
+    jobType?: string;
+    department?: string;
+    jobText?: string;
+  }) {
+    return apiClient.post<{ success: boolean; text: string }>('/campaigns/draft-jd', input);
+  },
+
+  // Review popup — "Try again": re-extract the spec from the stored job text.
+  reanalyze(id: string) {
+    return apiClient.post<{ success: boolean; data: CampaignDto }>(`/campaigns/${id}/reanalyze`, {});
+  },
+
+  // Review popup — "Enhance with AI": strengthen the extracted spec.
+  enhanceSpec(id: string) {
+    return apiClient.post<{ success: boolean; data: CampaignDto }>(`/campaigns/${id}/enhance-spec`, {});
   },
 
   delete(id: string) {

@@ -121,7 +121,10 @@ export const jobSpecController = {
   // Gemini analysis so title/keywords/requirements stay in sync.
   async updateCampaign(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, location, jobType, department, status, jobText, outreachTemplate } = req.body as {
+      const {
+        name, location, jobType, department, status, jobText, outreachTemplate,
+        jobTitle, alternateTitles, extractedKeywords, requirements,
+      } = req.body as {
         name?: string;
         location?: string;
         jobType?: string;
@@ -129,6 +132,12 @@ export const jobSpecController = {
         status?: 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
         jobText?: string;
         outreachTemplate?: string | null;
+        // Direct spec edits from the review popup ("repair"). Applied verbatim
+        // (they win over re-analysis) when no new jobText is supplied.
+        jobTitle?: string;
+        alternateTitles?: string[];
+        extractedKeywords?: string[];
+        requirements?: string[];
       };
 
       const existing = await campaignRepository.findById(req.params.id, req.user!.id);
@@ -173,8 +182,96 @@ export const jobSpecController = {
         });
       }
 
+      // Direct spec edits (from the review popup) — applied verbatim. These win
+      // over any re-analysis above, so a "repair" is never silently overwritten.
+      if (typeof jobTitle === 'string' && jobTitle.trim()) update.jobTitle = jobTitle.trim();
+      if (Array.isArray(alternateTitles)) update.alternateTitles = alternateTitles;
+      if (Array.isArray(extractedKeywords)) {
+        update.extractedKeywords = extractedKeywords.map(s => String(s).trim()).filter(Boolean);
+      }
+      if (Array.isArray(requirements)) {
+        update.requirements = requirements.map(s => String(s).trim()).filter(Boolean);
+      }
+
       const campaign = await campaignRepository.update(req.params.id, req.user!.id, update);
       res.json({ success: true, data: campaign, isSimulated, simulationReason });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /api/campaigns/draft-jd
+  // Draft a job description from the header fields (empty box) or enhance the
+  // text the recruiter already typed. Pre-creation helper for the "AI" button.
+  async draftJobDescription(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { name, jobTitle, location, jobType, department, jobText } = req.body as {
+        name?: string; jobTitle?: string; location?: string; jobType?: string;
+        department?: string; jobText?: string;
+      };
+      if (!geminiService.isAvailable()) {
+        return next(createError('AI drafting is unavailable — GEMINI_API_KEY is not configured.', 503));
+      }
+      const text = await geminiService.generateJobDescription({
+        jobTitle: (jobTitle || name || '').trim() || undefined,
+        location, jobType, department,
+        existingText: jobText,
+      });
+      res.json({ success: true, text });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /api/campaigns/:id/reanalyze  — "Try again": re-extract the spec from
+  // the stored job text (cache bypassed so a fresh pass can differ).
+  async reanalyzeCampaign(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const existing = await campaignRepository.findById(req.params.id, req.user!.id);
+      if (!existing) return next(createError('Campaign not found.', 404));
+      if (!geminiService.isAvailable()) {
+        return next(createError('AI analysis is unavailable — GEMINI_API_KEY is not configured.', 503));
+      }
+      const analysis = await geminiService.analyzeJobSpec(existing.rawJobText);
+      setCachedAnalysis(existing.rawJobText, analysis);
+      const campaign = await campaignRepository.update(req.params.id, req.user!.id, {
+        jobTitle: analysis.title,
+        alternateTitles: analysis.alternateTitles,
+        extractedKeywords: analysis.extractedKeywords,
+        requirements: analysis.requirements,
+        preferredPlatforms: analysis.preferredPlatforms,
+        analyzedAt: new Date(),
+      });
+      res.json({ success: true, data: campaign });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /api/campaigns/:id/enhance-spec  — "Enhance with AI": strengthen the
+  // extracted title/keywords/requirements, grounded in the stored job text.
+  async enhanceCampaignSpec(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const existing = await campaignRepository.findById(req.params.id, req.user!.id);
+      if (!existing) return next(createError('Campaign not found.', 404));
+      if (!geminiService.isAvailable()) {
+        return next(createError('AI enhancement is unavailable — GEMINI_API_KEY is not configured.', 503));
+      }
+      const analysis = await geminiService.enhanceJobSpec({
+        rawJobText: existing.rawJobText,
+        jobTitle: existing.jobTitle,
+        extractedKeywords: existing.extractedKeywords,
+        requirements: existing.requirements,
+      });
+      const campaign = await campaignRepository.update(req.params.id, req.user!.id, {
+        jobTitle: analysis.title,
+        alternateTitles: analysis.alternateTitles,
+        extractedKeywords: analysis.extractedKeywords,
+        requirements: analysis.requirements,
+        preferredPlatforms: analysis.preferredPlatforms,
+        analyzedAt: new Date(),
+      });
+      res.json({ success: true, data: campaign });
     } catch (err) {
       next(err);
     }
