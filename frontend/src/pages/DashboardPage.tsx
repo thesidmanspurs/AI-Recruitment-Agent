@@ -41,7 +41,7 @@ import { useToast } from '../components/shared/Toast';
 import { toCandidate } from '../lib/candidateAdapter';
 import type { AuthUser } from '../hooks/useAuth';
 import type { CampaignDto } from '../api/campaignApi';
-import { Trash2, Linkedin } from 'lucide-react';
+import { Trash2, Linkedin, Infinity as InfinityIcon } from 'lucide-react';
 
 interface DashboardPageProps {
   user?: AuthUser | null;
@@ -88,6 +88,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [buyingPass, setBuyingPass] = useState(false);
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
@@ -283,6 +284,23 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
       }
     } catch {
       // surfaced via hook state
+    }
+  }
+
+  // Campaign Pass — pay $299 once to unlock unlimited reveals for this campaign.
+  async function handleBuyPass() {
+    if (!activeId) return;
+    setBuyingPass(true);
+    try {
+      const res = await paymentsApi.createCheckout('campaign-pass', activeId);
+      window.location.href = res.checkoutUrl;
+    } catch (err) {
+      toast.push({
+        title: 'Could not start checkout',
+        body: err instanceof Error ? err.message : 'Please try again.',
+        tone: 'error',
+      });
+      setBuyingPass(false);
     }
   }
 
@@ -630,6 +648,25 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                       <Trash2 className="w-4 h-4" />
                       Delete
                     </button>
+                    {activeCampaign.unlimited ? (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 rounded-lg"
+                        title="Campaign Pass active — unlimited reveals, no credits used on this campaign"
+                      >
+                        <InfinityIcon className="w-4 h-4" />
+                        Unlimited
+                      </span>
+                    ) : (
+                      <button
+                        onClick={handleBuyPass}
+                        disabled={buyingPass}
+                        title="Pay $299 once — unlimited email/phone reveals for this campaign (no credits used)"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {buyingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <InfinityIcon className="w-4 h-4" />}
+                        Unlock unlimited · $299
+                      </button>
+                    )}
                     <button
                       onClick={handleExport}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"

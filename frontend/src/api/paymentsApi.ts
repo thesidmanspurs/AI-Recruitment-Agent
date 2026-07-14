@@ -59,10 +59,11 @@ export const paymentsApi = {
     }>('/payments/balance');
   },
 
-  createCheckout(packageId: string) {
+  // campaignId is required only for the per-campaign 'campaign-pass' product.
+  createCheckout(packageId: string, campaignId?: string) {
     return apiClient.post<{ success: boolean; checkoutUrl: string; sessionId: string }>(
       '/payments/create-checkout',
-      { packageId }
+      { packageId, ...(campaignId ? { campaignId } : {}) }
     );
   },
 
@@ -72,6 +73,9 @@ export const paymentsApi = {
       paid: boolean;
       paymentStatus: string;
       balance: number;
+      packageId: string | null;
+      campaignId: string | null;
+      isCampaignPass: boolean;
     }>(`/payments/verify-session?session_id=${encodeURIComponent(sessionId)}`);
   },
 

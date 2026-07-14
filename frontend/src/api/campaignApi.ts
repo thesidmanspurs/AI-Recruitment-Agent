@@ -28,6 +28,9 @@ export interface CampaignDto {
   requirements: string[];
   preferredPlatforms: string[];
   outreachTemplate?: string | null;
+  /** Campaign Pass: true = unlimited reveals for this campaign (no credits). */
+  unlimited?: boolean;
+  unlimitedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

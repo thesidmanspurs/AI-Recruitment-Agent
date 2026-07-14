@@ -63,10 +63,11 @@ export const outreachController = {
       let isSimulated = false;
       let simulationReason: string | undefined;
 
-      // Revealing a real contact via Apollo costs 1 credit. Require one up
-      // front so we never reveal with an empty balance. (When Apollo isn't
-      // configured we only return simulated/mock data, which is free.)
-      if (apolloService.isAvailable()) {
+      // Campaign Pass campaigns reveal for free (unlimited). Otherwise revealing
+      // a real contact via Apollo costs 1 credit — require one up front so we
+      // never reveal with an empty balance. (Simulated/mock data is always free.)
+      const unlimited = campaign.unlimited === true;
+      if (apolloService.isAvailable() && !unlimited) {
         await creditService.assertHasCredits(userId, 1);
       }
 
@@ -115,7 +116,7 @@ export const outreachController = {
       // produced contact data. Empty results and mock/simulated data are free.
       let creditsRemaining = await creditService.getBalance(userId);
       const revealedReal = !isSimulated && result.found && (!!result.email || !!result.phone);
-      if (revealedReal) {
+      if (revealedReal && !unlimited) {
         creditsRemaining = await creditService.spend(userId, 1, `Apollo contact reveal: ${candidate.name}`);
       }
 

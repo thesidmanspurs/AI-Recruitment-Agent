@@ -1,7 +1,7 @@
 import type Stripe from 'stripe';
 import { prisma } from '../../config/database.js';
 import { creditService } from '../credits/creditService.js';
-import { getPackage } from '../../config/creditPackages.js';
+import { getPackage, CAMPAIGN_PASS_ID } from '../../config/creditPackages.js';
 import { getStripe } from './stripeService.js';
 
 /**
@@ -79,6 +79,26 @@ export const billingService = {
         where: { id: userId },
         data: { stripeCustomerId: session.customer },
       }).catch(() => {/* customer id may already be set; ignore */});
+    }
+
+    // Campaign Pass — unlock unlimited reveals for the target campaign instead
+    // of granting shared credits. Idempotent (setting the flag again is a
+    // no-op), so webhook + verify-session can both run it safely.
+    if (pkg.id === CAMPAIGN_PASS_ID) {
+      if (session.payment_status !== 'paid') return;
+      const campaignId = session.metadata?.campaignId;
+      if (!campaignId) {
+        console.error('[Billing] campaign-pass session missing campaignId', session.id);
+        return;
+      }
+      const result = await prisma.campaign.updateMany({
+        where: { id: campaignId, userId, unlimited: false },
+        data: { unlimited: true, unlimitedAt: new Date() },
+      });
+      if (result.count > 0) {
+        console.log(`[Billing] ✅ Campaign Pass: campaign ${campaignId} unlocked (session ${session.id})`);
+      }
+      return;
     }
 
     if (pkg.kind === 'one_time') {

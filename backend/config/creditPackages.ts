@@ -50,7 +50,23 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
     priceCents: 6500, // $65.00
     currency: 'usd',
   },
+  {
+    // Campaign Pass — one-time $299 that unlocks UNLIMITED reveals for a single
+    // campaign (credits: 0 because it grants no shared balance; it flips the
+    // campaign's `unlimited` flag instead). Bought from the campaign page with
+    // a campaignId; hidden from the generic Credits packages list.
+    id: 'campaign-pass',
+    name: 'Campaign Pass',
+    label: 'Unlimited reveals for one campaign',
+    kind: 'one_time',
+    credits: 0,
+    priceCents: 29900, // $299.00
+    currency: 'usd',
+  },
 ];
+
+/** Package id for the per-campaign unlimited pass. */
+export const CAMPAIGN_PASS_ID = 'campaign-pass';
 
 export function getPackage(id: string): CreditPackage | undefined {
   return CREDIT_PACKAGES.find(p => p.id === id);

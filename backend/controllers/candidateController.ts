@@ -513,9 +513,10 @@ export const candidateController = {
       if (!apolloService.isAvailable()) {
         return next(createError('Apollo is not configured on the server.', 503));
       }
-      // Revealing a contact costs 1 credit each. Require at least one before
-      // we start; this throws 402 with a "buy credits" message when empty.
-      await creditService.assertHasCredits(userId, 1);
+      // Campaign Pass: this campaign has unlimited reveals — skip all credit
+      // gating/spending. Otherwise revealing a contact costs 1 credit each.
+      const unlimited = campaign.unlimited === true;
+      if (!unlimited) await creditService.assertHasCredits(userId, 1);
 
       const all = await candidateRepository.findAllByCampaign(campaignId);
       const selected = all.filter(c => candidateIds.includes(c.id));
@@ -525,8 +526,8 @@ export const candidateController = {
       let outOfCredits = false;       // the user's purchased credits ran out
       const skipped: Array<{ id: string; reason: string }> = [];
       // Track spendable credits locally so we never reveal more than the user
-      // can pay for (1 credit per reveal).
-      let creditsLeft = await creditService.getBalance(userId);
+      // can pay for (1 credit per reveal). Unlimited campaigns => Infinity.
+      let creditsLeft = unlimited ? Number.POSITIVE_INFINITY : await creditService.getBalance(userId);
 
       for (const c of selected) {
         if (c.emailEnriched) { skipped.push({ id: c.id, reason: 'Already enriched.' }); continue; }
@@ -548,8 +549,8 @@ export const candidateController = {
             outreachStatus: 'ENRICHED',
           });
           // Charge AFTER a confirmed reveal so the user only pays for contacts
-          // they actually got. Guarded by creditsLeft above.
-          await creditService.spend(userId, 1, `Apollo contact reveal: ${m.name ?? c.name}`);
+          // they actually got. Guarded by creditsLeft above. Free on a Pass.
+          if (!unlimited) await creditService.spend(userId, 1, `Apollo contact reveal: ${m.name ?? c.name}`);
           creditsLeft--;
           enriched++;
         } catch (err) {
@@ -610,9 +611,11 @@ export const candidateController = {
       if (!campaign) return next(createError('Campaign not found.', 404));
 
       // Each LinkedIn URL we resolve reveals a real contact via Apollo, which
-      // costs 1 credit per added candidate. Require at least one to start.
-      await creditService.assertHasCredits(userId, 1);
-      let creditsLeft = await creditService.getBalance(userId);
+      // costs 1 credit per added candidate — unless this campaign has a Pass
+      // (unlimited reveals). Require at least one credit to start otherwise.
+      const unlimited = campaign.unlimited === true;
+      if (!unlimited) await creditService.assertHasCredits(userId, 1);
+      let creditsLeft = unlimited ? Number.POSITIVE_INFINITY : await creditService.getBalance(userId);
 
       if (!apolloService.isAvailable()) {
         return next(createError('Apollo is not configured on the server.', 503));
@@ -692,8 +695,8 @@ export const candidateController = {
           outreachStatus: 'ENRICHED',
         });
         added.push(enriched);
-        // Charge 1 credit for this revealed contact.
-        await creditService.spend(userId, 1, `LinkedIn URL reveal: ${result.name}`);
+        // Charge 1 credit for this revealed contact (free on a Campaign Pass).
+        if (!unlimited) await creditService.spend(userId, 1, `LinkedIn URL reveal: ${result.name}`);
         creditsLeft--;
 
         await campaignRepository.addLog(campaignId, {

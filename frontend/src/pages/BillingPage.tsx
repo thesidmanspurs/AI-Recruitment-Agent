@@ -59,7 +59,11 @@ export function BillingPage({ user, onBack }: BillingPageProps) {
           setVerifying(true);
           const res = await paymentsApi.verifySession(sessionId);
           if (res.paid) {
-            toast.push({ title: 'Payment complete', body: `Your credits are ready. Balance: ${res.balance}.`, tone: 'success' });
+            if (res.isCampaignPass) {
+              toast.push({ title: 'Campaign unlocked', body: 'Unlimited reveals are now active on that campaign — open it from your workspace.', tone: 'success' });
+            } else {
+              toast.push({ title: 'Payment complete', body: `Your credits are ready. Balance: ${res.balance}.`, tone: 'success' });
+            }
           } else {
             toast.push({ title: 'Payment pending', body: `Status: ${res.paymentStatus}. Credits will appear once it clears.`, tone: 'warning' });
           }

@@ -212,6 +212,11 @@ model Campaign {
   // "Subject\n\nBody" with {{placeholders}} the backend substitutes at draft
   // time. Empty/null = fall back to Gemini per-candidate generation.
   outreachTemplate   String?        @db.Text
+  // Campaign Pass: a one-time $299 purchase unlocks UNLIMITED Apollo reveals
+  // for THIS campaign only (reveals here never consume the shared credit
+  // balance). Set true by billing on a paid `campaign-pass` checkout.
+  unlimited          Boolean        @default(false)
+  unlimitedAt        DateTime?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   candidates         Candidate[]

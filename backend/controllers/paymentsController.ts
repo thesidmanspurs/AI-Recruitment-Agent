@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database.js';
 import { createError } from '../middleware/errorHandler.js';
 import { env, isStripeConfigured } from '../config/env.js';
-import { CREDIT_PACKAGES, getPackage } from '../config/creditPackages.js';
+import { CREDIT_PACKAGES, getPackage, CAMPAIGN_PASS_ID } from '../config/creditPackages.js';
 import { getStripe } from '../services/billing/stripeService.js';
 import { billingService } from '../services/billing/billingService.js';
 import { creditService } from '../services/credits/creditService.js';
@@ -25,7 +25,9 @@ export const paymentsController = {
       success: true,
       stripeEnabled: isStripeConfigured(),
       publishableKey: env.STRIPE_PUBLISHABLE_KEY || null,
-      packages: CREDIT_PACKAGES.map(p => ({
+      // Campaign Pass is bought from a campaign page (needs a campaignId), not
+      // the generic Credits list — so exclude it here.
+      packages: CREDIT_PACKAGES.filter(p => p.id !== CAMPAIGN_PASS_ID).map(p => ({
         id: p.id,
         name: p.name,
         label: p.label,
@@ -72,7 +74,7 @@ export const paymentsController = {
       if (!isStripeConfigured()) {
         return next(createError('Payments are not configured on the server.', 503));
       }
-      const { packageId } = req.body as { packageId?: string };
+      const { packageId, campaignId } = req.body as { packageId?: string; campaignId?: string };
       if (!packageId) return next(createError('packageId is required.', 400));
       const pkg = getPackage(packageId);
       if (!pkg) return next(createError('Unknown package.', 404));
@@ -82,6 +84,20 @@ export const paymentsController = {
         select: { id: true, email: true, name: true, stripeCustomerId: true, subscriptionStatus: true },
       });
       if (!user) return next(createError('User not found.', 404));
+
+      // Campaign Pass — must target a campaign the user owns that isn't already
+      // unlocked. The campaignId is carried in metadata so billing can flip it.
+      if (pkg.id === CAMPAIGN_PASS_ID) {
+        if (!campaignId) return next(createError('campaignId is required for the Campaign Pass.', 400));
+        const campaign = await prisma.campaign.findFirst({
+          where: { id: campaignId, userId: user.id },
+          select: { id: true, name: true, unlimited: true },
+        });
+        if (!campaign) return next(createError('Campaign not found.', 404));
+        if (campaign.unlimited) {
+          return next(createError('This campaign already has unlimited reveals.', 409));
+        }
+      }
 
       // Block buying a second concurrent subscription.
       if (
@@ -108,11 +124,13 @@ export const paymentsController = {
       }
 
       const appUrl = env.APP_URL.replace(/\/$/, '');
-      const metadata = {
+      const isPass = pkg.id === CAMPAIGN_PASS_ID;
+      const metadata: Record<string, string> = {
         userId: user.id,
         packageId: pkg.id,
         credits: String(pkg.credits),
         kind: pkg.kind,
+        ...(isPass && campaignId ? { campaignId } : {}),
       };
 
       const session = await stripe.checkout.sessions.create({
@@ -126,7 +144,9 @@ export const paymentsController = {
               unit_amount: pkg.priceCents,
               product_data: {
                 name: pkg.name,
-                description: `${pkg.credits} credits${pkg.kind === 'subscription' ? ' / month' : ''}`,
+                description: isPass
+                  ? 'Unlimited Apollo email/phone reveals for one campaign'
+                  : `${pkg.credits} credits${pkg.kind === 'subscription' ? ' / month' : ''}`,
               },
               ...(pkg.kind === 'subscription'
                 ? { recurring: { interval: pkg.interval ?? 'month' } }
@@ -177,6 +197,9 @@ export const paymentsController = {
         paid,
         paymentStatus: session.payment_status,
         balance,
+        packageId: session.metadata?.packageId ?? null,
+        campaignId: session.metadata?.campaignId ?? null,
+        isCampaignPass: session.metadata?.packageId === CAMPAIGN_PASS_ID,
       });
     } catch (err) {
       next(err);
