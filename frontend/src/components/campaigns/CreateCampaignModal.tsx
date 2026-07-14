@@ -88,6 +88,10 @@ export function CreateCampaignModal({ onClose, onCreate, onSaved }: CreateCampai
   }
 
   async function handleAiDraft() {
+    if (!name.trim()) {
+      setError('Enter a campaign name first — AI uses it to write the job description.');
+      return;
+    }
     setError(null);
     setDrafting(true);
     try {
@@ -280,8 +284,10 @@ export function CreateCampaignModal({ onClose, onCreate, onSaved }: CreateCampai
                       </span>
                     )}
                     {/* AI: draft when empty, enhance when text exists */}
-                    <button type="button" onClick={handleAiDraft} disabled={drafting || uploading || submitting} className={toolBtn}
-                      title={jobText.trim() ? 'Improve & expand the current description with AI' : 'Let AI write a draft from the fields above'}>
+                    <button type="button" onClick={handleAiDraft} disabled={drafting || uploading || submitting || !name.trim()} className={toolBtn}
+                      title={!name.trim()
+                        ? 'Enter a campaign name first'
+                        : jobText.trim() ? 'Improve & expand the current description with AI' : 'Let AI write a draft from the campaign name + fields above'}>
                       {drafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                       {drafting ? 'Writing…' : jobText.trim() ? 'AI enhance' : 'AI'}
                     </button>

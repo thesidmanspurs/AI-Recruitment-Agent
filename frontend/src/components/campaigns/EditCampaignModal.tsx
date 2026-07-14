@@ -91,6 +91,10 @@ export function EditCampaignModal({
   // AI: enhance the current JD (it's never empty here) so title/keywords get
   // refreshed on save. Falls back to a draft from the header fields if empty.
   async function handleAiDraft() {
+    if (!name.trim()) {
+      setError('Enter a campaign name first — AI uses it to write the job description.');
+      return;
+    }
     setError(null);
     setDrafting(true);
     try {
@@ -227,9 +231,9 @@ export function EditCampaignModal({
           label="Job description"
           action={
             <div className="flex items-center gap-2">
-              <button type="button" onClick={handleAiDraft} disabled={drafting || submitting}
+              <button type="button" onClick={handleAiDraft} disabled={drafting || submitting || !name.trim()}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                title={jobText.trim() ? 'Improve & expand this description with AI' : 'Let AI write a draft from the fields above'}>
+                title={!name.trim() ? 'Enter a campaign name first' : jobText.trim() ? 'Improve & expand this description with AI' : 'Let AI write a draft from the fields above'}>
                 {drafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
                 {drafting ? 'Writing…' : jobText.trim() ? 'AI enhance' : 'AI'}
               </button>
