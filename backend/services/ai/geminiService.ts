@@ -88,16 +88,28 @@ export const geminiService = {
       params.location ? `Work location: ${params.location}` : '',
     ].filter(Boolean).join('\n');
 
+    // A detailed, sourceable JD — must state seniority/years of experience and
+    // name a concrete tech stack so downstream keyword/requirement extraction
+    // has real signal to work with.
+    const SECTIONS =
+      'Structure it with these plain-text sections (no markdown "#" headers, use "Section:" labels and "* " bullets):\n' +
+      '1. Overview — 2–3 sentences: the role, seniority level, and its impact.\n' +
+      '2. Responsibilities: — 6–8 specific bullets.\n' +
+      '3. Required Qualifications: — 6–9 bullets. MUST include an explicit years-of-experience bar (e.g. "5+ years …"), and name concrete technologies, languages, frameworks, cloud platforms, tools and methodologies relevant to this role. Be specific and sourceable, not generic.\n' +
+      '4. Preferred / Nice-to-have: — 3–5 bullets (certifications, adjacent tools, domain experience).\n' +
+      '5. Tech stack: — one line listing the core stack, comma-separated.\n' +
+      'Do NOT invent a company name, salary, or unrelated perks. Return plain text only.';
+
     const prompt = hasText
-      ? `Improve and expand the job description below. Fix structure and grammar, keep it true to the original intent, and make sure it contains: a 1–2 sentence intro, a "Responsibilities:" list, and a "Requirements:" list with specific, sourceable technologies and skills. Do NOT invent a company name, salary, or unrelated perks. Return plain text only — no markdown "#" headers.\n\nContext:\n${context || '(none provided)'}\n\nCurrent description:\n"""\n${params.existingText}\n"""`
-      : `Write a concise, professional job description for the role below. Include a 1–2 sentence intro, a "Responsibilities:" list (4–6 bullets), and a "Requirements:" list (4–6 bullets) naming specific, sourceable technologies and skills. Do NOT invent a company name, salary, or unrelated perks. Return plain text only — no markdown "#" headers.\n\nContext:\n${context || '(no extra context — infer a sensible standard version of this role)'}`;
+      ? `Improve and substantially EXPAND the job description below into a complete, detailed spec. Fix structure and grammar and keep it true to the original intent, but fill any gaps — especially add an explicit years-of-experience requirement and a concrete, named tech stack if they are missing.\n\n${SECTIONS}\n\nContext:\n${context || '(none provided)'}\n\nCurrent description:\n"""\n${params.existingText}\n"""`
+      : `Write a detailed, professional job description for the role below.\n\n${SECTIONS}\n\nContext:\n${context || '(no extra context — infer a sensible standard version of this role)'}`;
 
     const response = await client.models.generateContent({
       model: GEMINI_MODEL,
       contents: prompt,
       config: {
         systemInstruction:
-          'You are an expert technical recruiter who writes clear, specific, unbiased job descriptions that are easy to source candidates against.',
+          'You are an expert technical recruiter who writes clear, specific, unbiased job descriptions. You always state a concrete seniority / years-of-experience bar and name the exact technologies, frameworks and tools for the role so recruiters can source against them.',
       },
     });
     const text = response.text;
