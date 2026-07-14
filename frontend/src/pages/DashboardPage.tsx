@@ -45,7 +45,7 @@ import { Trash2, Linkedin, Infinity as InfinityIcon } from 'lucide-react';
 
 // Reveals included in a Campaign Pass — mirrors CAMPAIGN_PASS_REVEAL_CAP on the
 // backend (backend/config/creditPackages.ts). Keep in sync.
-const PASS_REVEAL_CAP = 90;
+const PASS_REVEAL_CAP = 120;
 
 interface DashboardPageProps {
   user?: AuthUser | null;
