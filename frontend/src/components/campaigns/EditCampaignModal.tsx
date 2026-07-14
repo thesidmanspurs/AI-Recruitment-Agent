@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { Loader2, FileEdit, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, FileEdit, AlertCircle, RefreshCw, Wand2, ClipboardPaste } from 'lucide-react';
 import { ApiError } from '../../api/client';
 import { CenterModal } from '../shared/CenterModal';
-import type { CampaignDto } from '../../api/campaignApi';
+import { campaignApi, type CampaignDto } from '../../api/campaignApi';
 
 interface EditCampaignModalProps {
   open: boolean;
@@ -45,6 +45,7 @@ export function EditCampaignModal({
   const [outreachTemplate, setOutreachTemplate] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,6 +85,39 @@ export function EditCampaignModal({
       setError(err instanceof ApiError ? err.message : 'Failed to update campaign.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // AI: enhance the current JD (it's never empty here) so title/keywords get
+  // refreshed on save. Falls back to a draft from the header fields if empty.
+  async function handleAiDraft() {
+    setError(null);
+    setDrafting(true);
+    try {
+      const r = await campaignApi.draftJobDescription({
+        name: name.trim() || undefined,
+        jobTitle: name.trim() || undefined,
+        location: location.trim() || undefined,
+        jobType: jobType.trim() || undefined,
+        department: department.trim() || undefined,
+        jobText: jobText.trim() || undefined,
+      });
+      setJobText(r.text);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'AI drafting failed. Try again.');
+    } finally {
+      setDrafting(false);
+    }
+  }
+
+  async function handlePaste() {
+    setError(null);
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text.trim()) { setError('Clipboard is empty — copy a job description first.'); return; }
+      setJobText(prev => (prev.trim() ? `${prev.trim()}\n\n${text.trim()}` : text.trim()));
+    } catch {
+      setError('Couldn’t read the clipboard. Your browser may have blocked it — paste manually with Ctrl+V.');
     }
   }
 
@@ -191,6 +225,21 @@ export function EditCampaignModal({
 
         <Field
           label="Job description"
+          action={
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={handleAiDraft} disabled={drafting || submitting}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                title={jobText.trim() ? 'Improve & expand this description with AI' : 'Let AI write a draft from the fields above'}>
+                {drafting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                {drafting ? 'Writing…' : jobText.trim() ? 'AI enhance' : 'AI'}
+              </button>
+              <button type="button" onClick={handlePaste} disabled={submitting}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-60 transition-colors"
+                title="Paste from clipboard">
+                <ClipboardPaste className="w-3 h-3" /> Paste
+              </button>
+            </div>
+          }
           hint={
             jdChanged
               ? 'You changed the job description. Saving will re-run Gemini analysis to update title, keywords and requirements.'
@@ -251,19 +300,24 @@ function Field({
   label,
   required,
   hint,
+  action,
   children,
 }: {
   label: string;
   required?: boolean;
   hint?: string;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        {action}
+      </div>
       {children}
       {hint && <p className="text-[11px] text-gray-500 dark:text-gray-400">{hint}</p>}
     </div>
