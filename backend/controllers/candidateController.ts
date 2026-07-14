@@ -9,7 +9,7 @@ import { candidateRepository } from '../repositories/candidateRepository.js';
 import { screenProfiles } from '../services/screening/screeningService.js';
 import { usageService } from '../services/usage/usageService.js';
 import { creditService } from '../services/credits/creditService.js';
-import { CAMPAIGN_PASS_REVEAL_CAP } from '../config/creditPackages.js';
+import { CAMPAIGN_PASS_REVEAL_CAP, EMAIL_REVEAL_CREDITS, PHONE_REVEAL_CREDITS } from '../config/creditPackages.js';
 import { createError } from '../middleware/errorHandler.js';
 
 export const candidateController = {
@@ -719,9 +719,21 @@ export const candidateController = {
           outreachStatus: 'ENRICHED',
         });
         added.push(enriched);
-        // Charge 1 credit for this revealed contact (free on a Campaign Pass).
-        if (!unlimited) await creditService.spend(userId, 1, `LinkedIn URL reveal: ${result.name}`);
-        creditsLeft--;
+        // Charge email (1) + phone (4, only if a number was revealed). Free on
+        // a Campaign Pass (which counts one reveal against its allowance).
+        if (unlimited) {
+          creditsLeft--; // one reveal against the pass allowance
+        } else {
+          const cost = EMAIL_REVEAL_CREDITS + (result.phone ? PHONE_REVEAL_CREDITS : 0);
+          const charge = Math.min(cost, creditsLeft); // never overspend the balance
+          if (charge > 0) {
+            await creditService.spend(
+              userId, charge,
+              `LinkedIn reveal: ${result.name}${result.phone ? ' (email + phone)' : ' (email)'}`
+            );
+          }
+          creditsLeft -= charge;
+        }
 
         await campaignRepository.addLog(campaignId, {
           message: `Added ${result.name} via LinkedIn URL${result.email ? ` (${result.email})` : ''}`,

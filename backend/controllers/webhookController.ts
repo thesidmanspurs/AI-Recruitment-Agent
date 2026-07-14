@@ -6,6 +6,8 @@ import { campaignRepository } from '../repositories/campaignRepository.js';
 import { prisma } from '../config/database.js';
 import { getStripe } from '../services/billing/stripeService.js';
 import { billingService } from '../services/billing/billingService.js';
+import { creditService } from '../services/credits/creditService.js';
+import { PHONE_REVEAL_CREDITS } from '../config/creditPackages.js';
 
 /**
  * Apollo phone-reveal webhook.
@@ -110,6 +112,28 @@ export const webhookController = {
           phone,
           phoneEnriched: true,
         });
+
+        // Charge for the phone number — it's a separate, pricier reveal than
+        // the email (which was already billed at enrich time). Skip on Campaign
+        // Pass campaigns (reveals are free there) and when this candidate's
+        // phone was already billed (webhook retries). Best-effort: the phone is
+        // already delivered, so never charge more than the balance.
+        if (!candidate.phoneEnriched) {
+          const camp = await prisma.campaign.findUnique({
+            where: { id: candidate.campaignId },
+            select: { userId: true, unlimited: true },
+          });
+          if (camp && !camp.unlimited) {
+            const bal = await creditService.getBalance(camp.userId);
+            const charge = Math.min(PHONE_REVEAL_CREDITS, bal);
+            if (charge > 0) {
+              await creditService
+                .spend(camp.userId, charge, `Phone reveal: ${candidate.name}`)
+                .catch(() => {/* phone already delivered — don't fail the webhook */});
+            }
+          }
+        }
+
         await campaignRepository.addLog(candidate.campaignId, {
           message: `Apollo phone reveal received for ${candidate.name} (${phone}).`,
           candidateId: candidate.id,

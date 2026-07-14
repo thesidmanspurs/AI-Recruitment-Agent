@@ -83,3 +83,11 @@ export function getPackage(id: string): CreditPackage | undefined {
 
 /** Credits charged per Apollo contact reveal (email/phone). */
 export const CREDITS_PER_REVEAL = 1;
+
+/**
+ * Per-channel reveal pricing. Email is cheap for us (Apollo email is
+ * unlimited); a phone number costs 8 Apollo mobile credits (~$1.60), so it's
+ * priced higher to stay above cost.
+ */
+export const EMAIL_REVEAL_CREDITS = 1;
+export const PHONE_REVEAL_CREDITS = 4;

@@ -652,22 +652,6 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                       <Trash2 className="w-4 h-4" />
                       Delete
                     </button>
-                    {activeCampaign.unlimited && (
-                      <span
-                        className="inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm shadow-emerald-500/25"
-                        title={`Campaign Pass active — ${Math.max(0, PASS_REVEAL_CAP - stats.enriched)} of ${PASS_REVEAL_CAP} reveals left. No credits used on this campaign.`}
-                      >
-                        <span className="w-6 h-6 rounded-md bg-white/20 flex items-center justify-center">
-                          <InfinityIcon className="w-3.5 h-3.5" />
-                        </span>
-                        <span className="leading-none">
-                          Pass
-                          <span className="ml-1.5 font-normal text-white/85 tabular-nums">
-                            {Math.max(0, PASS_REVEAL_CAP - stats.enriched)}/{PASS_REVEAL_CAP} left
-                          </span>
-                        </span>
-                      </span>
-                    )}
                     <button
                       onClick={handleExport}
                       className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-black dark:bg-gray-800 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
@@ -882,11 +866,41 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                 </SectionCard>
               </div>
 
-              {/* Sticky upsell bar — pinned to the bottom of the workspace while
-                  the campaign isn't yet unlocked. Keeps the CTA prominent but
-                  out of the crowded action row. */}
-              {!activeCampaign.unlimited && (
-                <div className="sticky bottom-4 z-20 mt-2">
+              {/* Sticky bar pinned to the bottom of the workspace. Shows the
+                  Campaign Pass status when unlocked (with the reveal counter),
+                  otherwise the upsell CTA — keeping both out of the crowded row. */}
+              <div className="sticky bottom-4 z-20 mt-2">
+                {activeCampaign.unlimited ? (
+                  (() => {
+                    const revealsLeft = Math.max(0, PASS_REVEAL_CAP - stats.enriched);
+                    const pct = Math.min(100, Math.round((stats.enriched / PASS_REVEAL_CAP) * 100));
+                    return (
+                      <div className="flex items-center justify-between gap-4 rounded-xl border border-emerald-200 dark:border-emerald-400/25 bg-white/95 dark:bg-[#10131c]/95 backdrop-blur px-4 sm:px-5 py-3 shadow-lg shadow-black/10">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center shrink-0">
+                            <InfinityIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              Campaign Pass active — reveals are free on this campaign
+                            </p>
+                            <p className="text-[12px] text-gray-500 dark:text-gray-400 truncate">
+                              No credits used here · {revealsLeft} of {PASS_REVEAL_CAP} reveals left
+                            </p>
+                          </div>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2 shrink-0">
+                          <div className="w-28 h-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                            {revealsLeft} left
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
                   <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 dark:border-amber-400/25 bg-white/95 dark:bg-[#10131c]/95 backdrop-blur px-4 sm:px-5 py-3 shadow-lg shadow-black/10">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
@@ -910,8 +924,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                       <span className="hidden sm:inline">Unlock ·</span> $299
                     </button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </>
           ) : null}
         </main>
