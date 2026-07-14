@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Check, ShoppingBag } from 'lucide-react';
 import { ApiError } from '../api/client';
 const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
@@ -53,43 +53,66 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-5 py-12 relative overflow-hidden bg-white text-gray-900"
-      style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen w-full flex bg-white text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* Light editorial background — dot pattern + violet glow, matching LandingPage */}
-      <style>{`
-        .auth-dots {
-          background-image: radial-gradient(circle, #d8dae0 1px, transparent 1px);
-          background-size: 26px 26px;
-        }
-      `}</style>
-      <div className="auth-dots absolute inset-0 pointer-events-none opacity-60" />
-      <div className="absolute inset-x-0 top-0 h-[480px] pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(ellipse 55% 60% at 50% -10%, rgba(124,58,237,0.12), transparent)' }} />
+      {/* ── LEFT: black brand panel (desktop only) ─────────────────────────── */}
+      <aside className="hidden lg:flex w-[46%] max-w-[620px] relative overflow-hidden bg-[#0a0a0a] text-white flex-col justify-between p-12">
+        {/* faint dot grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07]"
+          style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
+        {/* soft top glow */}
+        <div className="absolute inset-x-0 top-0 h-[420px] pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(ellipse 60% 60% at 30% -10%, rgba(255,255,255,0.10), transparent)' }} />
 
-      {/* Logo */}
-      <button onClick={() => onNavigate('/')} className="relative z-10 mb-8">
-        <img src={logoSrc} alt="TalentScanr" className="h-12 w-auto" />
-      </button>
+        <button onClick={() => onNavigate('/')} className="relative z-10 self-start">
+          <img src={logoSrc} alt="TalentScanr" className="h-11 w-auto brightness-0 invert" />
+        </button>
 
-      <div className="relative z-10 w-full max-w-[420px]">
-        {/* soft violet halo behind the card */}
-        <div className="absolute -inset-1 rounded-[28px] blur-2xl pointer-events-none"
-          style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.18), rgba(99,102,241,0.06))' }} />
+        <div className="relative z-10 max-w-md">
+          <h2 className="text-[42px] leading-[1.1] font-normal tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+            Find the people<br />others can’t.
+          </h2>
+          <p className="mt-5 text-[15px] leading-relaxed text-gray-400">
+            AI sourcing across LinkedIn, GitHub and Reddit — scored, ranked, and ready to reach out.
+          </p>
+          <div className="mt-9 flex flex-col gap-3.5">
+            {PERKS.map(p => (
+              <div key={p} className="flex items-center gap-3 text-[13.5px] text-gray-300">
+                <span className="w-5 h-5 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+                  <Check className="w-3 h-3 text-white" />
+                </span>
+                {p}
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <div className="relative rounded-3xl border border-gray-200 bg-white/95 backdrop-blur shadow-xl shadow-violet-100/40 p-8">
+        <p className="relative z-10 text-[11px] text-gray-600">© 2026 TalentScanr · AI Talent Sourcing</p>
+      </aside>
 
+      {/* ── RIGHT: form panel ──────────────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col items-center justify-center px-5 py-12 relative">
+        {/* subtle dot grid on the light side too */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.5] lg:hidden"
+          style={{ backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
+
+        {/* mobile logo (left panel hidden) */}
+        <button onClick={() => onNavigate('/')} className="lg:hidden relative z-10 mb-8">
+          <img src={logoSrc} alt="TalentScanr" className="h-11 w-auto" />
+        </button>
+
+        <div className="relative z-10 w-full max-w-[400px]">
           {pendingLabel && (
-            <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
-              <ShoppingBagIcon />
-              <p className="text-[13px] text-violet-900">
+            <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <ShoppingBag className="w-4 h-4 text-gray-900 mt-0.5 shrink-0" />
+              <p className="text-[13px] text-gray-700">
                 {isRegister ? 'Create your account' : 'Sign in'} to continue to your{' '}
-                <strong className="font-semibold">{pendingLabel}</strong> — you'll go straight to secure checkout.
+                <strong className="font-semibold text-gray-900">{pendingLabel}</strong> — you’ll go straight to secure checkout.
               </p>
             </div>
           )}
 
-          <div className="text-center mb-7">
+          <div className="mb-7">
             <h1 className="text-4xl font-normal text-gray-900 mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
               {isRegister ? 'Create your account' : 'Welcome back'}
             </h1>
@@ -101,7 +124,7 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
           <button
             type="button"
             onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-gray-50 text-gray-800 font-semibold text-[14px] rounded-xl py-3 border border-gray-200 hover:border-gray-300 transition-colors shadow-sm"
+            className="w-full flex items-center justify-center gap-2.5 bg-white hover:bg-gray-50 text-gray-800 font-semibold text-[14px] rounded-xl py-3 border border-gray-300 hover:border-gray-400 transition-colors"
           >
             <GoogleMark /> Continue with Google
           </button>
@@ -130,7 +153,7 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
               <div className="flex items-center justify-between mb-1.5">
                 <span className="block text-[10px] font-bold tracking-[0.1em] text-gray-500 uppercase">Password</span>
                 {!isRegister && (
-                  <button type="button" className="text-[11px] font-medium text-violet-600 hover:text-violet-700">
+                  <button type="button" className="text-[11px] font-medium text-gray-500 hover:text-gray-900">
                     Forgot?
                   </button>
                 )}
@@ -141,10 +164,10 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
                   type={showPw ? 'text' : 'password'} value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder={isRegister ? 'Min. 8 characters' : 'Your password'} required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-10 py-2.5 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 focus:bg-white transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-10 py-2.5 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:bg-white transition-all"
                 />
                 <button type="button" onClick={() => setShowPw(s => !s)}
-                  className="text-gray-400 hover:text-gray-600 absolute right-3 top-1/2 -translate-y-1/2">
+                  className="text-gray-400 hover:text-gray-700 absolute right-3 top-1/2 -translate-y-1/2">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -152,35 +175,24 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
 
             <button
               type="submit" disabled={loading}
-              className="mt-1 w-full flex items-center justify-center gap-2 text-white font-semibold text-[14px] rounded-xl py-3.5 transition-all disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}
+              className="mt-1 w-full flex items-center justify-center gap-2 text-white font-semibold text-[14px] rounded-xl py-3.5 bg-black hover:bg-gray-800 transition-colors disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" />
                 : <>{isRegister ? 'Create account' : 'Sign in'} <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 
-          <p className="text-center text-[13px] text-gray-500 mt-7">
+          <p className="text-[13px] text-gray-500 mt-7">
             {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => onNavigate(isRegister ? '/login' : '/register')}
-              className="text-violet-600 hover:text-violet-700 font-semibold"
+              className="text-gray-900 font-semibold underline underline-offset-2 hover:text-black"
             >
               {isRegister ? 'Sign in' : 'Create one free'}
             </button>
           </p>
         </div>
-
-        {/* perks strip under the card — editorial light tone */}
-        <div className="relative mt-6 flex flex-col gap-2">
-          {PERKS.map(p => (
-            <div key={p} className="flex items-center gap-2.5 justify-center text-[12.5px] text-gray-500">
-              <Check className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-              {p}
-            </div>
-          ))}
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -199,18 +211,10 @@ function AuthField({
         <input
           type={type} value={value} onChange={e => onChange(e.target.value)}
           placeholder={placeholder} required={required} autoFocus={autoFocus}
-          className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-3.5 py-2.5 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 focus:bg-white transition-all"
+          className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-3.5 py-2.5 text-[14px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900/10 focus:bg-white transition-all"
         />
       </div>
     </label>
-  );
-}
-
-function ShoppingBagIcon() {
-  return (
-    <svg className="w-4 h-4 text-violet-600 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
   );
 }
 
