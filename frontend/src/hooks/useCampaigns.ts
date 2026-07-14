@@ -126,14 +126,14 @@ export function useCampaigns() {
   }, [refreshCampaigns]);
 
   const [enrichingSelected, setEnrichingSelected] = useState(false);
-  const enrichSelected = useCallback(async (candidateIds: string[]): Promise<{ enriched: number; creditsExhausted: boolean }> => {
-    if (!activeId) return { enriched: 0, creditsExhausted: false };
+  const enrichSelected = useCallback(async (candidateIds: string[]): Promise<{ enriched: number; creditsExhausted: boolean; passCapReached: boolean }> => {
+    if (!activeId) return { enriched: 0, creditsExhausted: false, passCapReached: false };
     setEnrichingSelected(true);
     setError(null);
     try {
       const res = await campaignApi.enrichSelected(activeId, candidateIds);
       setCandidates(res.candidates);
-      return { enriched: res.enriched, creditsExhausted: res.creditsExhausted };
+      return { enriched: res.enriched, creditsExhausted: res.creditsExhausted, passCapReached: !!res.passCapReached };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Enrichment failed.');
       throw err;

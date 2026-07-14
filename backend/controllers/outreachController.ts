@@ -6,6 +6,7 @@ import { formatGeminiError } from '../services/ai/geminiErrors.js';
 import { trackingService } from '../services/tracking/trackingService.js';
 import { usageService } from '../services/usage/usageService.js';
 import { creditService } from '../services/credits/creditService.js';
+import { CAMPAIGN_PASS_REVEAL_CAP } from '../config/creditPackages.js';
 import { campaignRepository } from '../repositories/campaignRepository.js';
 import { candidateRepository } from '../repositories/candidateRepository.js';
 import { prisma } from '../config/database.js';
@@ -63,12 +64,22 @@ export const outreachController = {
       let isSimulated = false;
       let simulationReason: string | undefined;
 
-      // Campaign Pass campaigns reveal for free (unlimited). Otherwise revealing
-      // a real contact via Apollo costs 1 credit — require one up front so we
-      // never reveal with an empty balance. (Simulated/mock data is always free.)
+      // Campaign Pass campaigns reveal for free, up to the pass cap (bounds our
+      // Apollo cost). Otherwise revealing a real contact costs 1 credit — require
+      // one up front. (Simulated/mock data is always free.)
       const unlimited = campaign.unlimited === true;
       if (apolloService.isAvailable() && !unlimited) {
         await creditService.assertHasCredits(userId, 1);
+      }
+      if (apolloService.isAvailable() && unlimited) {
+        const revealed = (await candidateRepository.findAllByCampaign(campaignId))
+          .filter(c => c.emailEnriched || c.phoneEnriched).length;
+        if (revealed >= CAMPAIGN_PASS_REVEAL_CAP) {
+          return next(createError(
+            `Campaign Pass reveal limit reached — this pass includes ${CAMPAIGN_PASS_REVEAL_CAP} contact reveals and they're all used.`,
+            402
+          ));
+        }
       }
 
       if (apolloService.isAvailable()) {

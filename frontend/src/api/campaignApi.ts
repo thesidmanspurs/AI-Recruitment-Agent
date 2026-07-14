@@ -228,6 +228,7 @@ export const campaignApi = {
       enriched: number;
       creditsExhausted: boolean;
       outOfCredits: boolean;
+      passCapReached?: boolean;
       creditsRemaining: number;
       skipped: Array<{ id: string; reason: string }>;
       candidates: CandidateDto[];

@@ -43,6 +43,10 @@ import type { AuthUser } from '../hooks/useAuth';
 import type { CampaignDto } from '../api/campaignApi';
 import { Trash2, Linkedin, Infinity as InfinityIcon } from 'lucide-react';
 
+// Reveals included in a Campaign Pass — mirrors CAMPAIGN_PASS_REVEAL_CAP on the
+// backend (backend/config/creditPackages.ts). Keep in sync.
+const PASS_REVEAL_CAP = 90;
+
 interface DashboardPageProps {
   user?: AuthUser | null;
   onLogout?: () => void;
@@ -651,20 +655,20 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                     {activeCampaign.unlimited ? (
                       <span
                         className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 rounded-lg"
-                        title="Campaign Pass active — unlimited reveals, no credits used on this campaign"
+                        title={`Campaign Pass active — no credits used on this campaign. Includes ${PASS_REVEAL_CAP} contact reveals.`}
                       >
                         <InfinityIcon className="w-4 h-4" />
-                        Unlimited
+                        Pass · {Math.max(0, PASS_REVEAL_CAP - stats.enriched)} reveals left
                       </span>
                     ) : (
                       <button
                         onClick={handleBuyPass}
                         disabled={buyingPass}
-                        title="Pay $299 once — unlimited email/phone reveals for this campaign (no credits used)"
+                        title={`Pay $299 once — up to ${PASS_REVEAL_CAP} email/phone reveals on this campaign, no credits used`}
                         className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                       >
                         {buyingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <InfinityIcon className="w-4 h-4" />}
-                        Unlock unlimited · $299
+                        Unlock campaign · $299
                       </button>
                     )}
                     <button
@@ -769,13 +773,22 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   onEnrichSelected={async (ids) => {
                     try {
                       const r = await enrichSelected(ids);
-                      toast.push({
-                        title: r.creditsExhausted ? 'Some emails revealed' : 'Emails revealed',
-                        body: r.creditsExhausted
-                          ? `Revealed ${r.enriched}, then Apollo credits ran out.`
-                          : `Revealed email for ${r.enriched} candidate${r.enriched === 1 ? '' : 's'}.`,
-                        tone: r.creditsExhausted ? 'warning' : 'success',
-                      });
+                      if (r.passCapReached) {
+                        toast.push({
+                          title: 'Campaign Pass limit reached',
+                          body: `Revealed ${r.enriched}. This pass includes ${PASS_REVEAL_CAP} reveals and they're now all used.`,
+                          tone: 'warning',
+                          duration: 9_000,
+                        });
+                      } else {
+                        toast.push({
+                          title: r.creditsExhausted ? 'Some emails revealed' : 'Emails revealed',
+                          body: r.creditsExhausted
+                            ? `Revealed ${r.enriched}, then Apollo credits ran out.`
+                            : `Revealed email for ${r.enriched} candidate${r.enriched === 1 ? '' : 's'}.`,
+                          tone: r.creditsExhausted ? 'warning' : 'success',
+                        });
+                      }
                     } catch (err) {
                       toast.push({ title: 'Get email failed', body: err instanceof Error ? err.message : String(err), tone: 'error' });
                     }

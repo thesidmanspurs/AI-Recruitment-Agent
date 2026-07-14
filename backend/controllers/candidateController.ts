@@ -9,6 +9,7 @@ import { candidateRepository } from '../repositories/candidateRepository.js';
 import { screenProfiles } from '../services/screening/screeningService.js';
 import { usageService } from '../services/usage/usageService.js';
 import { creditService } from '../services/credits/creditService.js';
+import { CAMPAIGN_PASS_REVEAL_CAP } from '../config/creditPackages.js';
 import { createError } from '../middleware/errorHandler.js';
 
 export const candidateController = {
@@ -525,9 +526,18 @@ export const candidateController = {
       let creditsExhausted = false;   // Apollo's own lead credits ran out
       let outOfCredits = false;       // the user's purchased credits ran out
       const skipped: Array<{ id: string; reason: string }> = [];
-      // Track spendable credits locally so we never reveal more than the user
-      // can pay for (1 credit per reveal). Unlimited campaigns => Infinity.
-      let creditsLeft = unlimited ? Number.POSITIVE_INFINITY : await creditService.getBalance(userId);
+      // Track spendable "reveals" locally. Paid campaigns: purchased credits.
+      // Pass campaigns: the included allowance (cap − already-revealed) so our
+      // Apollo cost per pass stays bounded (~$130–150).
+      const alreadyRevealed = all.filter(c => c.emailEnriched || c.phoneEnriched).length;
+      const passRemaining = Math.max(0, CAMPAIGN_PASS_REVEAL_CAP - alreadyRevealed);
+      let creditsLeft = unlimited ? passRemaining : await creditService.getBalance(userId);
+      if (unlimited && passRemaining <= 0) {
+        return next(createError(
+          `Campaign Pass reveal limit reached — this pass includes ${CAMPAIGN_PASS_REVEAL_CAP} contact reveals and they're all used.`,
+          402
+        ));
+      }
 
       for (const c of selected) {
         if (c.emailEnriched) { skipped.push({ id: c.id, reason: 'Already enriched.' }); continue; }
@@ -578,7 +588,12 @@ export const candidateController = {
           402
         ));
       }
-      res.json({ success: true, enriched, creditsExhausted, outOfCredits, creditsRemaining, skipped, candidates: fresh });
+      res.json({
+        success: true, enriched, creditsExhausted,
+        outOfCredits: outOfCredits && !unlimited,
+        passCapReached: unlimited && outOfCredits,
+        creditsRemaining, skipped, candidates: fresh,
+      });
     } catch (err) {
       next(err);
     }
@@ -612,22 +627,31 @@ export const candidateController = {
 
       // Each LinkedIn URL we resolve reveals a real contact via Apollo, which
       // costs 1 credit per added candidate — unless this campaign has a Pass
-      // (unlimited reveals). Require at least one credit to start otherwise.
+      // (bounded reveals). Require at least one credit to start otherwise.
       const unlimited = campaign.unlimited === true;
       if (!unlimited) await creditService.assertHasCredits(userId, 1);
-      let creditsLeft = unlimited ? Number.POSITIVE_INFINITY : await creditService.getBalance(userId);
 
       if (!apolloService.isAvailable()) {
         return next(createError('Apollo is not configured on the server.', 503));
       }
 
+      const existingCandidates = await candidateRepository.findAllByCampaign(campaignId);
+      // Pass allowance = cap − reveals already made on this campaign.
+      const passRemaining = Math.max(
+        0,
+        CAMPAIGN_PASS_REVEAL_CAP - existingCandidates.filter(c => c.emailEnriched || c.phoneEnriched).length
+      );
+      let creditsLeft = unlimited ? passRemaining : await creditService.getBalance(userId);
+      if (unlimited && passRemaining <= 0) {
+        return next(createError(
+          `Campaign Pass reveal limit reached — this pass includes ${CAMPAIGN_PASS_REVEAL_CAP} contact reveals and they're all used.`,
+          402
+        ));
+      }
+
       // Skip URLs that already map to a candidate on this campaign.
       const existingByLinkedIn = new Set(
-        (
-          await candidateRepository.findAllByCampaign(campaignId)
-        )
-          .map(c => (c.linkedinUrl ?? '').toLowerCase())
-          .filter(Boolean)
+        existingCandidates.map(c => (c.linkedinUrl ?? '').toLowerCase()).filter(Boolean)
       );
 
       const added: Awaited<ReturnType<typeof candidateRepository.findById>>[] = [];
