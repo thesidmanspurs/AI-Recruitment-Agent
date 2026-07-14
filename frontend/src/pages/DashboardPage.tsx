@@ -654,11 +654,18 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                     </button>
                     {activeCampaign.unlimited && (
                       <span
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 rounded-lg"
-                        title={`Campaign Pass active — no credits used on this campaign. Includes ${PASS_REVEAL_CAP} contact reveals.`}
+                        className="inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm shadow-emerald-500/25"
+                        title={`Campaign Pass active — ${Math.max(0, PASS_REVEAL_CAP - stats.enriched)} of ${PASS_REVEAL_CAP} reveals left. No credits used on this campaign.`}
                       >
-                        <InfinityIcon className="w-4 h-4" />
-                        Pass · {Math.max(0, PASS_REVEAL_CAP - stats.enriched)} left
+                        <span className="w-6 h-6 rounded-md bg-white/20 flex items-center justify-center">
+                          <InfinityIcon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="leading-none">
+                          Pass
+                          <span className="ml-1.5 font-normal text-white/85 tabular-nums">
+                            {Math.max(0, PASS_REVEAL_CAP - stats.enriched)}/{PASS_REVEAL_CAP} left
+                          </span>
+                        </span>
                       </span>
                     )}
                     <button
