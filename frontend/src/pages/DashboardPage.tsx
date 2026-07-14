@@ -652,24 +652,14 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                       <Trash2 className="w-4 h-4" />
                       Delete
                     </button>
-                    {activeCampaign.unlimited ? (
+                    {activeCampaign.unlimited && (
                       <span
                         className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-400/20 rounded-lg"
                         title={`Campaign Pass active — no credits used on this campaign. Includes ${PASS_REVEAL_CAP} contact reveals.`}
                       >
                         <InfinityIcon className="w-4 h-4" />
-                        Pass · {Math.max(0, PASS_REVEAL_CAP - stats.enriched)} reveals left
+                        Pass · {Math.max(0, PASS_REVEAL_CAP - stats.enriched)} left
                       </span>
-                    ) : (
-                      <button
-                        onClick={handleBuyPass}
-                        disabled={buyingPass}
-                        title={`Pay $299 once — up to ${PASS_REVEAL_CAP} email/phone reveals on this campaign, no credits used`}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {buyingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <InfinityIcon className="w-4 h-4" />}
-                        Unlock campaign · $299
-                      </button>
                     )}
                     <button
                       onClick={handleExport}
@@ -884,6 +874,37 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   <ChannelMix channels={channelMix} />
                 </SectionCard>
               </div>
+
+              {/* Sticky upsell bar — pinned to the bottom of the workspace while
+                  the campaign isn't yet unlocked. Keeps the CTA prominent but
+                  out of the crowded action row. */}
+              {!activeCampaign.unlimited && (
+                <div className="sticky bottom-4 z-20 mt-2">
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-200 dark:border-amber-400/25 bg-white/95 dark:bg-[#10131c]/95 backdrop-blur px-4 sm:px-5 py-3 shadow-lg shadow-black/10">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
+                        <InfinityIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          Unlock this campaign — unlimited reveals
+                        </p>
+                        <p className="text-[12px] text-gray-500 dark:text-gray-400 truncate">
+                          $299 one-time · up to {PASS_REVEAL_CAP} email/phone reveals, no credits used
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleBuyPass}
+                      disabled={buyingPass}
+                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    >
+                      {buyingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <InfinityIcon className="w-4 h-4" />}
+                      <span className="hidden sm:inline">Unlock ·</span> $299
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           ) : null}
         </main>
