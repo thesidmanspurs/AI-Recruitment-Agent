@@ -41,7 +41,7 @@ import { useToast } from '../components/shared/Toast';
 import { toCandidate } from '../lib/candidateAdapter';
 import type { AuthUser } from '../hooks/useAuth';
 import type { CampaignDto } from '../api/campaignApi';
-import { Trash2, Linkedin, Infinity as InfinityIcon } from 'lucide-react';
+import { Trash2, Linkedin, Infinity as InfinityIcon, Menu } from 'lucide-react';
 
 // Reveals included in a Campaign Pass — mirrors CAMPAIGN_PASS_REVEAL_CAP on the
 // backend (backend/config/creditPackages.ts). Keep in sync.
@@ -93,6 +93,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [buyingPass, setBuyingPass] = useState(false);
+  const [mobileNav, setMobileNav] = useState(false);
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
@@ -408,13 +409,23 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
         onHome={onOpenHome}
         activeCampaignName={activeCampaign?.name}
         candidateCount={candidates.length}
+        mobileOpen={mobileNav}
+        onCloseMobile={() => setMobileNav(false)}
       />
 
       {/* Main workspace column */}
       <div className="flex-1 flex flex-col min-w-0 max-h-screen overflow-y-auto">
       <header className="border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#10131c] sticky top-0 z-10 transition-colors">
-        <div className="px-6 sm:px-8 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="px-4 sm:px-8 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMobileNav(true)}
+              aria-label="Open menu"
+              className="lg:hidden shrink-0 w-9 h-9 -ml-1 rounded-md flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
                 <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-none truncate">
@@ -433,7 +444,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
           </div>
 
           {user && (
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               {usage && (
                 <div
                   className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md border text-[11px] font-medium ${
@@ -490,7 +501,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                 title="Configure the email you send outreach from"
               >
                 <Mail className="w-3.5 h-3.5" />
-                Email
+                <span className="hidden sm:inline">Email</span>
               </button>
               {user.role === 'ADMIN' && onOpenAdmin && (
                 <button
@@ -498,7 +509,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-gray-100 border border-gray-200 text-gray-700 hover:bg-gray-200 dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10 transition-colors"
                 >
                   <Shield className="w-3.5 h-3.5" />
-                  Admin
+                  <span className="hidden sm:inline">Admin</span>
                 </button>
               )}
               <button
@@ -506,7 +517,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           )}
@@ -514,13 +525,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
         {/* Workflow stepper strip — visible whenever a user is signed in */}
         {user && (
-          <div className="px-6 sm:px-8 pb-3 -mt-1 flex items-center justify-center sm:justify-start overflow-x-auto">
+          <div className="px-4 sm:px-8 pb-3 -mt-1 flex items-center justify-center sm:justify-start overflow-x-auto">
             <HeaderStepper steps={headerSteps} onHelp={() => setShowGuide(true)} />
           </div>
         )}
       </header>
 
-      <div className="px-6 sm:px-8 py-8">
+      <div className="px-4 sm:px-8 py-6 sm:py-8">
         {/* Main content */}
         <main className="flex-1 min-w-0 flex flex-col gap-6">
           {loading ? (
