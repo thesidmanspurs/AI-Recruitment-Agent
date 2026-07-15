@@ -3,13 +3,18 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
     // root is the frontend/ dir so `index.html` resolves correctly whether
     // Vite is invoked from the repo root (production build via npm run build)
     // or from inside frontend/ (dev).
     root: __dirname,
     plugins: [react(), tailwindcss()],
+    // Strip all console.* and debugger statements from the production bundle so
+    // internal logging never leaks to end users' DevTools. (Dev keeps them.)
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     build: {
       // Emit into frontend/dist/ so the Dockerfile's runtime stage can
       // COPY frontend/dist into the image.

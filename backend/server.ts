@@ -1,4 +1,6 @@
 import express from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -39,6 +41,16 @@ process.on('uncaughtException', err => {
 
 const app = express();
 app.set('trust proxy', true);
+
+// ── Security headers (helmet) ───────────────────────────────────────────────
+// HSTS, X-Frame-Options (clickjacking), X-Content-Type-Options: nosniff,
+// Referrer-Policy, and removes the X-Powered-By fingerprint. CSP is left OFF:
+// the SPA leans heavily on inline styles + Stripe redirects, so a strict policy
+// would break the UI — the headers above still block the common attack classes.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
 
 // ── Canonical domain redirect ───────────────────────────────────────────────
 // Force the public custom domain (env.APP_URL host, e.g. talentscanr.com). The
@@ -81,6 +93,17 @@ app.options('/api/*', apiCors);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
+// Brute-force / credential-stuffing protection: cap login & register attempts
+// per IP (trust proxy is on so this keys off the real client IP). Deliberately
+// NOT applied to /me (polled) or /logout.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many attempts. Please wait a few minutes and try again.' },
+});
+app.use(['/api/auth/login', '/api/auth/register'], authLimiter);
 app.use('/api/auth', authRoutes);
 
 // Google OAuth callback. Public + top-level path to match the OAuth client's

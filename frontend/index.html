@@ -15,6 +15,20 @@
 
 <body>
     <div id="root"></div>
+    <!-- Self-XSS deterrent (like Facebook/Google). Can't and doesn't try to
+         "block" DevTools — that's impossible — but warns users against pasting
+         attacker-supplied code into the console. Inline so it survives the
+         production console-strip. -->
+    <script>
+      (function () {
+        try {
+          var big = 'font-size:22px;font-weight:800;color:#dc2626';
+          var small = 'font-size:13px;color:#374151';
+          console.log('%cStop!', big);
+          console.log('%cThis browser console is for developers. Do NOT paste or run code here — an attacker could use it to hijack your TalentScanr account (self-XSS). If someone told you to paste something here, it is a scam.', small);
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
 </body>
 
