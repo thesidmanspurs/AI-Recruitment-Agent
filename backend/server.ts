@@ -43,13 +43,35 @@ const app = express();
 app.set('trust proxy', true);
 
 // ── Security headers (helmet) ───────────────────────────────────────────────
-// HSTS, X-Frame-Options (clickjacking), X-Content-Type-Options: nosniff,
-// Referrer-Policy, and removes the X-Powered-By fingerprint. CSP is left OFF:
-// the SPA leans heavily on inline styles + Stripe redirects, so a strict policy
-// would break the UI — the headers above still block the common attack classes.
+// HSTS, X-Frame-Options, nosniff, Referrer-Policy, no X-Powered-By, PLUS a
+// Content-Security-Policy. CSP is enforced ONLY in production — Vite's dev
+// server needs inline scripts/eval/websockets that a strict policy would break.
+// Directives are tuned to the app: same-origin scripts (the self-XSS warning is
+// an external /self-xss-warn.js so no 'unsafe-inline' is needed), inline styles
+// (the SPA + Tailwind use them), Google Fonts, and https images (candidate
+// avatars from Apollo/GitHub). Stripe/Google auth are full-page redirects, so
+// no extra script/frame sources are required.
+const isProd = process.env.NODE_ENV === 'production';
 app.use(helmet({
-  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: isProd
+    ? {
+        useDefaults: true,
+        directives: {
+          'default-src': ["'self'"],
+          'script-src': ["'self'"],
+          'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+          'img-src': ["'self'", 'data:', 'https:'],
+          'connect-src': ["'self'"],
+          'frame-ancestors': ["'none'"],
+          'object-src': ["'none'"],
+          'base-uri': ["'self'"],
+          'form-action': ["'self'"],
+          'upgrade-insecure-requests': [],
+        },
+      }
+    : false,
 }));
 
 // ── Canonical domain redirect ───────────────────────────────────────────────
@@ -88,6 +110,19 @@ app.use(requestLogger);
 // ── CORS — only on /api; the SPA itself is same-origin via Vite middleware ──
 app.use('/api', apiCors);
 app.options('/api/*', apiCors);
+
+// ── Global API rate limit ───────────────────────────────────────────────────
+// Lenient per-IP cap to blunt scraping / abuse without affecting normal use
+// (active dashboards poll a few times/min — 300/min leaves ample headroom).
+// Webhooks (Stripe/Apollo bursts) and health probes are exempt.
+app.use('/api', rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.originalUrl.startsWith('/api/webhooks') || req.originalUrl.startsWith('/api/health'),
+  message: { success: false, error: 'Too many requests — slow down and try again shortly.' },
+}));
 
 // ── Public routes ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
