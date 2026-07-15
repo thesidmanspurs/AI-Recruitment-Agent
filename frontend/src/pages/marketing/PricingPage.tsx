@@ -1,13 +1,16 @@
-import { useMemo, useState } from 'react';
 import { Check, ArrowRight, Zap, Repeat, Shield } from 'lucide-react';
 import { MarketingShell } from '../../components/marketing/MarketingShell';
 
 interface PageProps {
   onNavigate: (to: string) => void;
-  onSelectPlan: (packageId: string) => void;
+  // Kept for API compatibility with App.tsx; plan CTAs now route to sign-up /
+  // contact-sales rather than triggering a Stripe checkout directly.
+  onSelectPlan?: (packageId: string) => void;
   authed?: boolean;
   onOpenWorkspace?: () => void;
 }
+
+const SALES_EMAIL = 'sales@talentscanr.com';
 
 const FREE_FEATURES = [
   { icon: '🔍', label: 'Multi-platform sourcing', sub: 'LinkedIn, Reddit, GitHub' },
@@ -21,32 +24,33 @@ const FREE_FEATURES = [
   { icon: '🗂️', label: 'Multi-campaign workspace', sub: 'Run all roles in parallel' },
 ];
 
-const SUB_FEATURES = [
-  '2,000 contact-reveal credits monthly',
+const STARTER_FEATURES = [
+  'Pay only for the campaigns you run',
+  '$0.50 per verified email or phone unlocked',
   'Unlimited AI sourcing, scoring & drafting',
-  'Send from Gmail or Resend custom domain',
+  'No monthly commitment — cancel anytime',
+  'Full CSV export',
+];
+
+const PRO_FEATURES = [
+  'Up to 5 active campaigns',
+  '200 contacts included (email + phone)',
+  'Unlimited AI sourcing, scoring & drafting',
   'Reply tracking + 48h no-response alerts',
-  'Multi-seat workspace isolation',
-  'Cancel anytime — no contracts',
+  'Send from Gmail or Resend custom domain',
+  'Priority support',
 ];
 
-const TOPUP_FEATURES = [
-  '1,000 additional credits, one-time',
-  'Stacks on your subscription balance',
-  '1 credit = 1 verified email or phone',
-  'Buy as many packs as needed',
-  'Credits never expire',
+const ENTERPRISE_FEATURES = [
+  'Unlimited campaigns & contacts',
+  'Volume contact pricing',
+  'Dedicated onboarding & support',
+  'SSO & advanced security controls',
+  'Custom integrations + SLA',
 ];
 
-export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace }: PageProps) {
-  const [reveals, setReveals] = useState(2500);
-
-  const estimate = useMemo(() => {
-    const base = 2000, subCost = 149;
-    if (reveals <= base) return { plan: 'Start Tier', monthly: subCost, detail: `${base.toLocaleString()} credits cover it all`, packs: 0 };
-    const packs = Math.ceil((reveals - base) / 1000);
-    return { plan: `Start Tier + ${packs} Top-Up${packs > 1 ? 's' : ''}`, monthly: subCost + packs * 65, detail: `${base.toLocaleString()} sub + ${(packs * 1000).toLocaleString()} top-up`, packs };
-  }, [reveals]);
+export function PricingPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
+  const goStart = () => onNavigate(authed ? '/home' : '/register');
 
   return (
     <MarketingShell current="pricing" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
@@ -55,16 +59,16 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
       <section className="relative overflow-hidden bg-white border-b border-gray-100">
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139,92,246,0.08), transparent)' }} />
-        <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-20 text-center">
+        <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-violet-200 bg-violet-50 text-violet-600 text-[12px] font-mono uppercase tracking-wider mb-8">
             Simple, transparent pricing
           </div>
           <h1 className="text-6xl font-normal text-gray-900 max-w-3xl mx-auto mb-5 leading-tight"
             style={{ fontFamily: "'DM Serif Display', serif" }}>
-            Pay for contacts,<br /><span className="italic text-violet-600">not seats</span>
+            Pricing that scales<br /><span className="italic text-violet-600">with your hiring</span>
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto leading-relaxed mb-10">
-            Sourcing, scoring, and outreach drafting are free. Credits only when you reveal a verified contact — 1 credit per reveal.
+            Sourcing, scoring and outreach drafting are always free. Choose how you pay to unlock verified contacts.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {[
@@ -83,67 +87,22 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
       {/* ── PLANS ─────────────────────────────────────────────────────────────── */}
       <section className="bg-gray-50 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
 
-            {/* Start Tier */}
-            <div className="relative rounded-2xl p-px overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.7), rgba(99,102,241,0.4), rgba(139,92,246,0.15))' }}>
-              <div className="rounded-2xl p-8 flex flex-col h-full bg-white">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-violet-500 mb-1">Monthly subscription</p>
-                    <h3 className="text-xl font-bold text-gray-900">Start Tier</h3>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-violet-600 text-white px-3 py-1 rounded-full">
-                    Popular
-                  </span>
-                </div>
-
-                <div className="mb-1">
-                  <span className="text-7xl font-normal text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>$149</span>
-                  <span className="text-gray-400 text-base ml-2">/ month</span>
-                </div>
-                <p className="text-[12px] font-mono text-gray-400 mb-8">2,000 credits included · renews monthly</p>
-
-                <ul className="space-y-3.5 flex-1 mb-8">
-                  {SUB_FEATURES.map(f => (
-                    <li key={f} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-violet-600" />
-                      </div>
-                      <span className="text-[14px] text-gray-600">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button onClick={() => onSelectPlan('start-tier')}
-                  className="w-full py-4 rounded-xl font-semibold text-[15px] transition-all text-white"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}>
-                  Start subscription →
-                </button>
-              </div>
-            </div>
-
-            {/* Top-Up */}
+            {/* Starter — pay per campaign */}
             <div className="rounded-2xl p-8 flex flex-col border border-gray-200 bg-white">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-gray-400 mb-1">One-time purchase</p>
-                  <h3 className="text-xl font-bold text-gray-900">Top-Up Pack</h3>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider border border-gray-300 text-gray-500 px-3 py-1 rounded-full">
-                  Add-on
-                </span>
+              <div className="mb-6">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-gray-400 mb-1">Pay per campaign</p>
+                <h3 className="text-xl font-bold text-gray-900">Starter</h3>
               </div>
-
               <div className="mb-1">
-                <span className="text-7xl font-normal text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>$65</span>
-                <span className="text-gray-400 text-base ml-2">one-time</span>
+                <span className="text-6xl font-normal text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>$99</span>
+                <span className="text-gray-400 text-base ml-2">/ campaign</span>
               </div>
-              <p className="text-[12px] font-mono text-gray-400 mb-8">1,000 credits · never expires</p>
+              <p className="text-[12px] font-mono text-gray-400 mb-8">+ $0.50 per contact unlocked</p>
 
               <ul className="space-y-3.5 flex-1 mb-8">
-                {TOPUP_FEATURES.map(f => (
+                {STARTER_FEATURES.map(f => (
                   <li key={f} className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="w-3 h-3 text-gray-500" />
@@ -153,12 +112,82 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
                 ))}
               </ul>
 
-              <button onClick={() => onSelectPlan('topup-1000')}
+              <button onClick={goStart}
                 className="w-full py-4 rounded-xl font-semibold text-[15px] border border-gray-200 hover:border-gray-400 text-gray-700 hover:text-gray-900 transition-all bg-gray-50 hover:bg-gray-100">
-                Buy a top-up
+                Get started
               </button>
             </div>
+
+            {/* Pro — featured */}
+            <div className="relative rounded-2xl p-px overflow-hidden md:-mt-3 md:mb-[-0.75rem] shadow-xl shadow-violet-100/60"
+              style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.8), rgba(99,102,241,0.45), rgba(139,92,246,0.15))' }}>
+              <div className="rounded-2xl p-8 flex flex-col h-full bg-white">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-violet-500 mb-1">Monthly subscription</p>
+                    <h3 className="text-xl font-bold text-gray-900">Pro</h3>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-violet-600 text-white px-3 py-1 rounded-full">
+                    Most popular
+                  </span>
+                </div>
+                <div className="mb-1">
+                  <span className="text-6xl font-normal text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>$149</span>
+                  <span className="text-gray-400 text-base ml-2">/ month</span>
+                </div>
+                <p className="text-[12px] font-mono text-gray-400 mb-8">Up to 5 campaigns · 200 contacts included</p>
+
+                <ul className="space-y-3.5 flex-1 mb-8">
+                  {PRO_FEATURES.map(f => (
+                    <li key={f} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 text-violet-600" />
+                      </div>
+                      <span className="text-[14px] text-gray-600">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button onClick={goStart}
+                  className="w-full py-4 rounded-xl font-semibold text-[15px] transition-all text-white"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}>
+                  Start Pro →
+                </button>
+              </div>
+            </div>
+
+            {/* Enterprise — contact sales */}
+            <div className="rounded-2xl p-8 flex flex-col border border-gray-200 bg-gray-900 text-white">
+              <div className="mb-6">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-gray-400 mb-1">Custom</p>
+                <h3 className="text-xl font-bold text-white">Enterprise</h3>
+              </div>
+              <div className="mb-1">
+                <span className="text-6xl font-normal" style={{ fontFamily: "'DM Serif Display', serif" }}>Custom</span>
+              </div>
+              <p className="text-[12px] font-mono text-gray-400 mb-8">Tailored to your hiring volume</p>
+
+              <ul className="space-y-3.5 flex-1 mb-8">
+                {ENTERPRISE_FEATURES.map(f => (
+                  <li key={f} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                    <span className="text-[14px] text-gray-300">{f}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <a href={`mailto:${SALES_EMAIL}?subject=TalentScanr%20Enterprise%20enquiry`}
+                className="w-full py-4 rounded-xl font-semibold text-[15px] text-center bg-white text-gray-900 hover:bg-gray-100 transition-colors">
+                Contact sales
+              </a>
+            </div>
           </div>
+
+          <p className="text-center text-[12px] text-gray-400 mt-8">
+            All plans include unlimited AI sourcing, scoring and outreach drafting — you only pay to unlock verified contacts.
+          </p>
         </div>
       </section>
 
@@ -223,8 +252,8 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
               </div>
               <div className="px-6 divide-y divide-gray-50">
                 {[
-                  { label: 'Fee structure', value: '$149/month flat' },
-                  { label: '$120k engineer hire', value: '$149 + ~$10 credits' },
+                  { label: 'Fee structure', value: 'From $99/campaign or $149/mo' },
+                  { label: '$120k engineer hire', value: '~$99 + a few $ in contacts' },
                   { label: 'Time to shortlist', value: 'Same day' },
                   { label: 'Data ownership', value: 'Yours — export any time' },
                   { label: 'Outreach', value: 'Gemini-drafted per candidate' },
@@ -240,84 +269,6 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
         </div>
       </section>
 
-      {/* ── CALCULATOR ────────────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <p className="text-[11px] font-mono tracking-widest uppercase text-gray-400 mb-3">Credit calculator</p>
-            <h2 className="text-4xl font-normal text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
-              Estimate your monthly cost
-            </h2>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <div className="border border-gray-200 rounded-2xl p-8 bg-white shadow-sm mb-6">
-              <div className="flex items-baseline justify-between mb-6">
-                <label className="text-[14px] font-medium text-gray-700">Contact reveals per month</label>
-                <span className="text-3xl font-normal text-gray-900 tabular-nums" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                  {reveals.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="relative mb-8">
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${((reveals - 250) / (10000 - 250)) * 100}%`,
-                      background: 'linear-gradient(to right, #7c3aed, #6366f1)',
-                    }} />
-                </div>
-                <input type="range" min={250} max={10000} step={250} value={reveals}
-                  onChange={e => setReveals(Number(e.target.value))}
-                  className="absolute inset-0 w-full opacity-0 cursor-pointer h-2" />
-              </div>
-
-              <div className="mb-6">
-                <div className="flex justify-between text-[11px] font-mono text-gray-400 mb-2">
-                  <span>Subscription (2,000)</span>
-                  {estimate.packs > 0 && <span>Top-up ({(estimate.packs * 1000).toLocaleString()})</span>}
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div className="h-full bg-violet-500 transition-all"
-                    style={{ width: `${Math.min(100, (2000 / reveals) * 100)}%` }} />
-                  {estimate.packs > 0 && (
-                    <div className="h-full bg-indigo-300 transition-all"
-                      style={{ width: `${Math.min(100, ((estimate.packs * 1000) / reveals) * 100)}%` }} />
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border border-gray-100 rounded-xl p-5 bg-gray-50">
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-2">Recommended plan</p>
-                  <p className="text-[15px] font-semibold text-gray-900 leading-snug">{estimate.plan}</p>
-                  <p className="text-[12px] text-gray-500 mt-1">{estimate.detail}</p>
-                </div>
-                <div className="border border-violet-200 rounded-xl p-5 bg-violet-50 flex flex-col justify-center">
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-violet-500 mb-2">Monthly total</p>
-                  <p className="text-5xl font-normal text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>${estimate.monthly}</p>
-                  <p className="text-[12px] text-gray-500 mt-1">/ month</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { reveals: '≤2,000', cost: '$149/mo', note: 'Sub only' },
-                { reveals: '3,000', cost: '$214/mo', note: '+1 top-up' },
-                { reveals: '5,000', cost: '$344/mo', note: '+3 top-ups' },
-              ].map(ex => (
-                <div key={ex.reveals} className="border border-gray-200 rounded-xl px-4 py-4 bg-white text-center">
-                  <p className="text-[11px] font-mono text-gray-400 mb-1">{ex.reveals} reveals</p>
-                  <p className="text-[18px] font-bold text-gray-900">{ex.cost}</p>
-                  <p className="text-[11px] text-gray-400 mt-1">{ex.note}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── CTA ───────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-white border-t border-gray-100">
         <div className="absolute inset-0 pointer-events-none"
@@ -327,10 +278,10 @@ export function PricingPage({ onNavigate, onSelectPlan, authed, onOpenWorkspace 
             Start free,<br /><span className="italic text-violet-600">spend only when you hire</span>
           </h2>
           <p className="text-gray-500 text-lg leading-relaxed max-w-xl mx-auto mb-10">
-            Source, score, and draft outreach before spending a single credit.
+            Source, score, and draft outreach before spending a single dollar.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <button onClick={() => onNavigate('/register')}
+            <button onClick={() => onNavigate(authed ? '/home' : '/register')}
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-[16px] text-white transition-all"
               style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)', boxShadow: '0 4px 20px rgba(124,58,237,0.25)' }}>
               Create free account <ArrowRight className="w-4 h-4" />
