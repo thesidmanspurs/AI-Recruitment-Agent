@@ -878,8 +878,10 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
               </div>
 
               {/* Sticky bar pinned to the bottom of the workspace. Shows the
-                  Campaign Pass status when unlocked (with the reveal counter),
-                  otherwise the upsell CTA — keeping both out of the crowded row. */}
+                  Campaign Pass status when unlocked (with the reveal counter).
+                  The unlock UPSELL only appears when the user has no credits to
+                  reveal with — recruiters with credits aren't nagged. */}
+              {(activeCampaign.unlimited || (creditBalance ?? 0) < 1) && (
               <div className="sticky bottom-4 z-20 mt-2">
                 {activeCampaign.unlimited ? (
                   (() => {
@@ -937,6 +939,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   </div>
                 )}
               </div>
+              )}
             </>
           ) : null}
         </main>
