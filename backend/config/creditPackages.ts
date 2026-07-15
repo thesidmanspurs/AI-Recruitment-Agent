@@ -60,7 +60,7 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
     label: 'Unlimited reveals for one campaign',
     kind: 'one_time',
     credits: 0,
-    priceCents: 29900, // $299.00
+    priceCents: 9900, // $99.00
     currency: 'usd',
   },
 ];
@@ -69,11 +69,12 @@ export const CREDIT_PACKAGES: CreditPackage[] = [
 export const CAMPAIGN_PASS_ID = 'campaign-pass';
 
 /**
- * Max contact reveals included in a Campaign Pass. "Unlimited"-feel but capped
- * to protect margin: worst case each reveal also pulls a phone (8 Apollo mobile
- * credits ≈ $1.60), so 120 × $1.60 ≈ $192 — still well under the $299 price,
- * and typical email-heavy usage costs far less. Counted as distinct enriched
- * candidates.
+ * Max contact reveals included in a Campaign Pass ($99). "Unlimited"-feel but
+ * capped. Typical (email-heavy) usage costs us ~$0 in Apollo, so margin is
+ * healthy. NOTE: worst case every reveal also pulls a phone (8 Apollo mobile
+ * credits ≈ $1.60) → 120 × $1.60 ≈ $192, which would exceed the $99 price — but
+ * Apollo's own mobile-credit cap bounds real phone cost well below that.
+ * Counted as distinct enriched candidates.
  */
 export const CAMPAIGN_PASS_REVEAL_CAP = 120;
 

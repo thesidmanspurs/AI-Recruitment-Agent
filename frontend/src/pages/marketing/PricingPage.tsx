@@ -24,21 +24,26 @@ const FREE_FEATURES = [
   { icon: '🗂️', label: 'Multi-campaign workspace', sub: 'Run all roles in parallel' },
 ];
 
+// Benefits every plan includes — appended to each tier so all plans show them.
+const COMMON_FEATURES = [
+  'Unlimited AI sourcing, scoring & drafting',
+  'Reply tracking + 48h no-response alerts',
+  'Send from Gmail or Resend custom domain',
+  'Full CSV export',
+];
+
 const STARTER_FEATURES = [
   'Pay only for the campaigns you run',
   '$0.50 per verified email or phone unlocked',
-  'Unlimited AI sourcing, scoring & drafting',
   'No monthly commitment — cancel anytime',
-  'Full CSV export',
+  ...COMMON_FEATURES,
 ];
 
 const PRO_FEATURES = [
   'Up to 5 active campaigns',
   '200 contacts included (email + phone)',
-  'Unlimited AI sourcing, scoring & drafting',
-  'Reply tracking + 48h no-response alerts',
-  'Send from Gmail or Resend custom domain',
   'Priority support',
+  ...COMMON_FEATURES,
 ];
 
 const ENTERPRISE_FEATURES = [
@@ -47,6 +52,7 @@ const ENTERPRISE_FEATURES = [
   'Dedicated onboarding & support',
   'SSO & advanced security controls',
   'Custom integrations + SLA',
+  ...COMMON_FEATURES,
 ];
 
 export function PricingPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {

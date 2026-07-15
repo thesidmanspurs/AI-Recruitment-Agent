@@ -292,7 +292,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
     }
   }
 
-  // Campaign Pass — pay $299 once to unlock unlimited reveals for this campaign.
+  // Campaign Pass — pay $99 once to unlock unlimited reveals for this campaign.
   async function handleBuyPass() {
     if (!activeId) return;
     setBuyingPass(true);
@@ -924,7 +924,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                           Unlock this campaign — unlimited reveals
                         </p>
                         <p className="text-[12px] text-gray-500 dark:text-gray-400 truncate">
-                          $299 one-time · up to {PASS_REVEAL_CAP} email/phone reveals, no credits used
+                          $99 one-time · up to {PASS_REVEAL_CAP} email/phone reveals, no credits used
                         </p>
                       </div>
                     </div>
@@ -934,7 +934,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                       className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm"
                     >
                       {buyingPass ? <Loader2 className="w-4 h-4 animate-spin" /> : <InfinityIcon className="w-4 h-4" />}
-                      <span className="hidden sm:inline">Unlock ·</span> $299
+                      <span className="hidden sm:inline">Unlock ·</span> $99
                     </button>
                   </div>
                 )}
