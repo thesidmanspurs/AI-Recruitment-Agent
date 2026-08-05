@@ -70,7 +70,13 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load sessions');
+      const msg = err instanceof Error ? err.message : 'Failed to load sessions';
+      // 403 = no ranking access → show paywall modal instead of error banner
+      if (msg.toLowerCase().includes('ranking') || msg.toLowerCase().includes('403') || msg.toLowerCase().includes('upgrade') || msg.toLowerCase().includes('plan')) {
+        setPaywallFeature('ranking');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -124,7 +130,12 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
 
       setView('results');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process CVs against JD criteria');
+      const msg = err instanceof Error ? err.message : 'Failed to process CVs against JD criteria';
+      if (msg.toLowerCase().includes('ranking') || msg.toLowerCase().includes('403') || msg.toLowerCase().includes('upgrade') || msg.toLowerCase().includes('plan')) {
+        setPaywallFeature('ranking');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
       setUploading(false);
