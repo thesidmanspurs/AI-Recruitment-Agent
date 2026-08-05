@@ -1,40 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { UserCheck, KeyRound, Mail, Lock, ArrowRight, Sparkles, Trophy, Shield } from 'lucide-react';
+import { UserCheck, KeyRound, Mail, Lock, ArrowRight } from 'lucide-react';
 import { CenterModal } from './CenterModal';
 import { authApi } from '../../api/authApi';
 import { useToast } from './Toast';
-
-interface AccountOption {
-  email: string;
-  password: string;
-  name: string;
-  badge: string;
-  icon: 'pro' | 'ranking' | 'admin';
-}
-
-const PRESET_HELPERS: AccountOption[] = [
-  {
-    email: 'pro.user@talentscanr.com',
-    password: 'Password123!',
-    name: 'Pro Tester',
-    badge: 'Pro Plan',
-    icon: 'pro',
-  },
-  {
-    email: 'ranking.user@talentscanr.com',
-    password: 'Password123!',
-    name: 'Ranking Tester',
-    badge: 'Ranking Plan',
-    icon: 'ranking',
-  },
-  {
-    email: 'admin@talentscanr.com',
-    password: 'Admin@123456',
-    name: 'System Admin',
-    badge: 'Admin',
-    icon: 'admin',
-  },
-];
 
 interface QuickAccountSwitcherModalProps {
   open: boolean;
@@ -54,10 +22,7 @@ export function QuickAccountSwitcherModal({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fillCredentials = (acc: AccountOption) => {
-    setEmail(acc.email);
-    setPassword(acc.password);
-  };
+
 
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -112,33 +77,6 @@ export function QuickAccountSwitcherModal({
             <span className="font-bold text-gray-900 dark:text-white truncate max-w-[220px]">{currentEmail}</span>
           </div>
         )}
-
-        {/* Quick autofill helper chips */}
-        <div>
-          <label className="block text-[11px] font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider mb-2">
-            Quick Fill Test Credentials:
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {PRESET_HELPERS.map(acc => (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => fillCredentials(acc)}
-                className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-left transition-all group"
-              >
-                <div className="flex items-center gap-1.5 mb-1">
-                  {acc.icon === 'pro' && <Sparkles className="w-3.5 h-3.5 text-emerald-500" />}
-                  {acc.icon === 'ranking' && <Trophy className="w-3.5 h-3.5 text-amber-500" />}
-                  {acc.icon === 'admin' && <Shield className="w-3.5 h-3.5 text-indigo-500" />}
-                  <span className="font-bold text-xs text-gray-900 dark:text-white truncate">{acc.name}</span>
-                </div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono block truncate">
-                  {acc.badge}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Formal Login Form */}
         <form onSubmit={handleLoginSubmit} className="space-y-4 pt-2 border-t border-gray-100 dark:border-white/10">
