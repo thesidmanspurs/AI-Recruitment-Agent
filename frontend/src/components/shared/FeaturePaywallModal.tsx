@@ -1,18 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { MouseEvent, KeyboardEvent as KBEvent } from 'react';
 import {
-  RiRocketLine,
-  RiTrophyLine,
-  RiTimeLine,
-  RiCloseLine,
-  RiCheckLine,
-  RiArrowRightLine,
-  RiThunderstormsLine,
-  RiEmotionSadLine,
-  RiMagicLine,
-  RiShieldCheckLine,
-} from 'react-icons/ri';
-import { HiOutlineLightningBolt, HiLightningBolt } from 'react-icons/hi';
+  Rocket, Trophy, Clock, X, Check, ArrowRight,
+  Frown, Sparkles, ShieldCheck, Zap
+} from 'lucide-react';
 
 /* ─── Inject CSS keyframes once ──────────────────────────────────────── */
 const KEYFRAME_ID = 'paywall-keyframes';
@@ -71,8 +62,8 @@ function AnimatedOrb({ isSourcing }: { isSourcing: boolean }) {
         animation: 'paywall-float 3.5s ease-in-out infinite',
       }}>
         {isSourcing
-          ? <RiRocketLine size={22} color="#fff" />
-          : <RiTrophyLine size={22} color="#fff" />
+          ? <Rocket size={22} color="#fff" />
+          : <Trophy size={22} color="#fff" />
         }
       </span>
     </div>
@@ -108,7 +99,7 @@ function FeatureRow({ label }: { label: string }) {
         background: 'rgba(16,185,129,0.12)', display: 'flex',
         alignItems: 'center', justifyContent: 'center', marginTop: 1,
       }}>
-        <RiCheckLine size={11} color="#10b981" />
+        <Check size={11} color="#10b981" />
       </span>
       <span style={{ fontSize: 11.5, color: '#6b7280', lineHeight: 1.5 }}>{label}</span>
     </div>
@@ -126,22 +117,21 @@ interface FeaturePaywallModalProps {
 export function FeaturePaywallModal({
   open, onClose, targetFeature, onUpgrade,
 }: FeaturePaywallModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const isSourcing = targetFeature === 'sourcing';
-
-  useEffect(() => { injectKeyframes(); }, []);
 
   useEffect(() => {
     if (!open) return;
+    injectKeyframes();
     const h = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, [open, onClose]);
 
   if (!open) return null;
 
-  const handleOverlay = (e: MouseEvent<HTMLDivElement>) => {
-    if (e.target === overlayRef.current) onClose();
+  const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (modalRef.current && !modalRef.current.contains(e.target as Node)) onClose();
   };
 
   const sourcingFeatures = [
@@ -166,8 +156,7 @@ export function FeaturePaywallModal({
 
   return (
     <div
-      ref={overlayRef}
-      onMouseDown={handleOverlay as any}
+      onClick={handleBackdropClick}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(0,0,0,0.6)',
@@ -176,15 +165,17 @@ export function FeaturePaywallModal({
         padding: '1rem',
       }}
     >
-      <div style={{
-        width: '100%', maxWidth: 500,
-        borderRadius: 24,
-        background: 'linear-gradient(170deg, #ffffff 0%, #f9fafb 100%)',
-        boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
-        overflow: 'hidden',
-        position: 'relative',
-      }}>
-
+      <div
+        ref={modalRef}
+        style={{
+          width: '100%', maxWidth: 500,
+          borderRadius: 24,
+          background: 'linear-gradient(170deg, #ffffff 0%, #f9fafb 100%)',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
         {/* ── Top shimmer bar ── */}
         <div style={{
           height: 4, background: grad,
@@ -214,7 +205,7 @@ export function FeaturePaywallModal({
               flexShrink: 0,
             }}
           >
-            <RiCloseLine size={16} color="#9ca3af" />
+            <X size={16} color="#9ca3af" />
           </button>
         </div>
 
@@ -244,7 +235,7 @@ export function FeaturePaywallModal({
             border: '1px solid rgba(239,68,68,0.18)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
-              <RiEmotionSadLine size={14} color="#ef4444" />
+              <Frown size={14} color="#ef4444" />
               <span style={{ fontSize: 10, fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Without This
               </span>
@@ -266,7 +257,7 @@ export function FeaturePaywallModal({
             border: `1px solid ${isSourcing ? 'rgba(249,115,22,0.25)' : 'rgba(139,92,246,0.25)'}`,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
-              <HiOutlineLightningBolt size={15} color={accentColor} />
+              <Zap size={15} color={accentColor} />
               <span style={{ fontSize: 10, fontWeight: 800, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 With This
               </span>
@@ -289,7 +280,7 @@ export function FeaturePaywallModal({
           border: '1px solid rgba(0,0,0,0.07)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
-            <RiMagicLine size={14} color="#f59e0b" />
+            <Sparkles size={14} color="#f59e0b" />
             <span style={{ fontSize: 10, fontWeight: 800, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Everything Included
             </span>
@@ -305,7 +296,7 @@ export function FeaturePaywallModal({
 
         {/* ── Trust badge ── */}
         <div style={{ padding: '0 22px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <RiShieldCheckLine size={13} color="#10b981" />
+          <ShieldCheck size={13} color="#10b981" />
           <span style={{ fontSize: 10, color: '#9ca3af' }}>
             Cancel anytime · No contracts · SOC 2 compliant · 14-day money-back
           </span>
@@ -338,12 +329,12 @@ export function FeaturePaywallModal({
             }}
           >
             {isSourcing
-              ? <RiRocketLine size={16} color="#fff" />
-              : <RiTrophyLine size={16} color="#fff" />
+              ? <Rocket size={16} color="#fff" />
+              : <Trophy size={16} color="#fff" />
             }
             <span>Unlock {isSourcing ? 'Sourcing — $159/mo' : 'CV Ranking — $109/mo'}</span>
             <span style={{ animation: 'paywall-bounce-x 1.2s ease-in-out infinite' }}>
-              <RiArrowRightLine size={15} color="#fff" />
+              <ArrowRight size={15} color="#fff" />
             </span>
           </button>
         </div>
@@ -356,9 +347,9 @@ export function FeaturePaywallModal({
           display: 'flex', justifyContent: 'center', gap: 22,
         }}>
           {[
-            { icon: <RiTimeLine size={13} color="#f59e0b" />, text: 'Setup in 2 min' },
-            { icon: <HiLightningBolt size={13} color="#3b82f6" />, text: 'Instant activation' },
-            { icon: <RiShieldCheckLine size={13} color="#10b981" />, text: 'No contracts' },
+            { icon: <Clock size={13} color="#f59e0b" />, text: 'Setup in 2 min' },
+            { icon: <Zap size={13} color="#3b82f6" />, text: 'Instant activation' },
+            { icon: <ShieldCheck size={13} color="#10b981" />, text: 'No contracts' },
           ].map(({ icon, text }) => (
             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               {icon}
