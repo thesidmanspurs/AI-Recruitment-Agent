@@ -452,20 +452,19 @@ function UsersTab({
   const [selected, setSelected] = useState<AdminUserRow | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  const reload = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await adminApi.listUsers(page, pageSize);
       setUsers(res.data);
       setTotal(res.total);
       setTotalPages(res.totalPages);
-      // If the currently-open detail modal targets a user, refresh its row
-      // reference so blocked/role flags update without reopening.
+      // Refresh row reference so updated planType/role flags update cleanly
       setSelected(curr => (curr ? res.data.find(u => u.id === curr.id) ?? null : null));
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Failed to load users.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [page, pageSize, onError]);
 
@@ -605,7 +604,7 @@ function UsersTab({
         user={selected}
         currentUser={currentUser}
         onClose={() => setSelected(null)}
-        onChanged={reload}
+        onChanged={() => reload(true)}
       />
       <CreateUserModal
         open={showCreate}

@@ -52,9 +52,9 @@ export function UserDetailModal({
   const [blockReason, setBlockReason] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
-  // Hydrate instantly when user changes
+  // Hydrate instantly when user changes or modal opens
   useEffect(() => {
-    if (!user) return;
+    if (!user || !open) return;
     setName(user.name);
     setEmail(user.email);
     setLimitOverride(user.dailyLimitOverride == null ? '' : String(user.dailyLimitOverride));
@@ -63,7 +63,7 @@ export function UserDetailModal({
     setBlockReason('');
     setNewPassword('');
     setBehavior(null);
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, open]);
 
   // Load behavior asynchronously in background without blocking modal UI
   useEffect(() => {
@@ -74,7 +74,7 @@ export function UserDetailModal({
       .then(setBehavior)
       .catch(() => { /* silent fallback */ })
       .finally(() => setBehaviorLoading(false));
-  }, [open, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, user?.id]);
 
   if (!user) return null;
 
@@ -106,7 +106,7 @@ export function UserDetailModal({
       setError('Daily limit override must be a non-negative number, or blank.');
       return;
     }
-    const ok = await run(() =>
+    const res = await run(() =>
       adminApi.updateUser(user.id, {
         name: name.trim(),
         email: email.trim(),
@@ -114,22 +114,36 @@ export function UserDetailModal({
         planType,
       })
     );
-    if (ok) onChanged();
+    if (res) {
+      if (res.user) {
+        user.name = res.user.name;
+        user.email = res.user.email;
+        user.planType = res.user.planType;
+        user.dailyLimitOverride = res.user.dailyLimitOverride;
+      }
+      onChanged();
+    }
   }
 
   async function handleToggleRole() {
     if (!user) return;
     const next: UserRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
-    const ok = await run(() => adminApi.setRole(user.id, next));
-    if (ok) onChanged();
+    const res = await run(() => adminApi.setRole(user.id, next));
+    if (res && res.user) {
+      user.role = res.user.role;
+      onChanged();
+    }
   }
 
   async function handleSetBlocked(blocked: boolean) {
     if (!user) return;
-    const ok = await run(() =>
+    const res = await run(() =>
       adminApi.setBlocked(user.id, blocked, blocked ? blockReason.trim() || undefined : undefined)
     );
-    if (ok) {
+    if (res && res.user) {
+      user.isBlocked = res.user.isBlocked;
+      user.blockedReason = res.user.blockedReason;
+      user.blockedAt = res.user.blockedAt;
       setBlockReason('');
       onChanged();
     }
