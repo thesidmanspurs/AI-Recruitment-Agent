@@ -245,7 +245,7 @@ export function LandingPage({ onNavigate, authed, onOpenWorkspace, onOpenRanking
               <button
                 type="button"
                 onClick={() => (authed ? (onOpenWorkspace ? onOpenWorkspace() : onNavigate('/home')) : onNavigate('/register'))}
-                className="group relative p-5 rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-b from-amber-500/10 to-transparent hover:from-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between"
+                className="group relative p-5 rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-b from-amber-500/10 to-transparent hover:from-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -268,8 +268,8 @@ export function LandingPage({ onNavigate, authed, onOpenWorkspace, onOpenRanking
               {/* Option 2: CV Batch Ranking */}
               <button
                 type="button"
-                onClick={() => (authed ? (onOpenRanking ? onOpenRanking() : onNavigate('/ranking')) : onNavigate('/ranking'))}
-                className="group relative p-5 rounded-2xl border border-purple-200 dark:border-purple-500/20 bg-gradient-to-b from-purple-500/10 to-transparent hover:from-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between"
+                onClick={() => (authed ? (onOpenRanking ? onOpenRanking() : onNavigate('/ranking')) : onNavigate('/login'))}
+                className="group relative p-5 rounded-2xl border border-purple-200 dark:border-purple-500/20 bg-gradient-to-b from-purple-500/10 to-transparent hover:from-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
