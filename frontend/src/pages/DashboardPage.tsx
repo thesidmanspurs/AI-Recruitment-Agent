@@ -36,6 +36,8 @@ import { CreateCampaignModal } from '../components/campaigns/CreateCampaignModal
 import { EditCampaignModal } from '../components/campaigns/EditCampaignModal';
 import { AddFromLinkedInModal } from '../components/campaigns/AddFromLinkedInModal';
 import { ConfirmModal } from '../components/shared/CenterModal';
+import { QuickAccountSwitcherModal } from '../components/shared/QuickAccountSwitcherModal';
+import { FeaturePaywallModal } from '../components/shared/FeaturePaywallModal';
 import { useCampaigns } from '../hooks/useCampaigns';
 import { useToast } from '../components/shared/Toast';
 import { toCandidate } from '../lib/candidateAdapter';
@@ -52,10 +54,11 @@ interface DashboardPageProps {
   onLogout?: () => void;
   onOpenAdmin?: () => void;
   onOpenBilling?: () => void;
+  onOpenRanking?: () => void;
   onOpenHome?: () => void;
 }
 
-export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpenHome }: DashboardPageProps = {}) {
+export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpenRanking, onOpenHome }: DashboardPageProps = {}) {
   const {
     campaigns,
     activeCampaign,
@@ -97,6 +100,8 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
   const [showAddLinkedIn, setShowAddLinkedIn] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showEmailSettings, setShowEmailSettings] = useState(false);
+  const [showSwitchAccount, setShowSwitchAccount] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState<'sourcing' | 'ranking' | null>(null);
   const [emailCanSend, setEmailCanSend] = useState<boolean | null>(null); // null = unknown/loading
   const [sourceLocations, setSourceLocations] = useState<string[]>([]);
   // Which channels to source from: both (default), LinkedIn only, or GitHub only.
@@ -398,6 +403,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
         }}
       />
 
+      <FeaturePaywallModal
+        open={paywallFeature !== null}
+        onClose={() => setPaywallFeature(null)}
+        targetFeature={paywallFeature ?? 'ranking'}
+        onUpgrade={() => onOpenBilling?.()}
+      />
+
       {/* Persistent dark workspace sidebar (campaigns + status + credits) */}
       <WorkspaceSidebar
         campaigns={campaigns}
@@ -406,11 +418,23 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
         onNew={() => setShowCreate(true)}
         creditBalance={creditBalance}
         onOpenBilling={onOpenBilling}
+        onOpenRanking={onOpenRanking}
+        onOpenSwitchAccount={() => setShowSwitchAccount(true)}
+        onLogout={onLogout}
+        onPaywallClick={setPaywallFeature}
+        user={user ?? undefined}
         onHome={onOpenHome}
         activeCampaignName={activeCampaign?.name}
         candidateCount={candidates.length}
+        currentMode="sourcing"
         mobileOpen={mobileNav}
         onCloseMobile={() => setMobileNav(false)}
+      />
+
+      <QuickAccountSwitcherModal
+        open={showSwitchAccount}
+        onClose={() => setShowSwitchAccount(false)}
+        currentEmail={user?.email}
       />
 
       {/* Main workspace column */}
@@ -464,7 +488,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   </span>
                 </div>
               )}
-              <div className="hidden sm:flex items-center gap-2.5 pr-3 border-r border-gray-200 dark:border-white/10">
+              {/* Clickable user profile badge opening Quick Account Switcher */}
+              <button
+                type="button"
+                onClick={() => setShowSwitchAccount(true)}
+                title="Click to switch account"
+                className="hidden sm:flex items-center gap-2.5 pr-3 border-r border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 p-1 rounded-lg transition-colors text-left"
+              >
                 <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-600 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-white">
                     {user.name.charAt(0).toUpperCase()}
@@ -476,7 +506,7 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
                   </p>
                   <p className="text-[10px] text-gray-500 mt-0.5 truncate">{user.email}</p>
                 </div>
-              </div>
+              </button>
               <ThemeToggle />
               {onOpenBilling && (
                 <button

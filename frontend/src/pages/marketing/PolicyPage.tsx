@@ -122,35 +122,35 @@ export function PolicyPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
     <MarketingShell current="policy" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
 
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-white border-b border-gray-100">
+      <section className="relative overflow-hidden bg-white dark:bg-[#0a0a0a] border-b border-gray-200/80 dark:border-white/10 transition-colors">
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16,185,129,0.08), transparent)' }} />
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-16 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600 text-[12px] font-mono uppercase tracking-wider mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 text-[12px] font-mono uppercase tracking-wider mb-8">
             <Lock className="w-3.5 h-3.5" />
             Trust Centre
           </div>
-          <h1 className="text-6xl font-normal text-gray-900 max-w-3xl mx-auto mb-5 leading-tight"
+          <h1 className="text-6xl font-normal text-gray-900 dark:text-white max-w-3xl mx-auto mb-5 leading-tight"
             style={{ fontFamily: "'DM Serif Display', serif" }}>
-            Privacy, Terms<br /><span className="italic text-emerald-600">& Public Sourcing</span>
+            Privacy, Terms<br /><span className="italic text-emerald-600 dark:text-emerald-400">& Public Sourcing</span>
           </h1>
-          <p className="text-lg text-gray-500 max-w-xl mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
             Platform rules, public-sourcing compliance, and data protection — written plainly.
           </p>
         </div>
       </section>
 
       {/* ── CONTENT ───────────────────────────────────────────────────────────── */}
-      <section className="bg-white">
+      <section className="bg-white dark:bg-[#0a0a0a] transition-colors">
         <div className="max-w-6xl mx-auto px-6 py-16 grid lg:grid-cols-[220px_1fr] gap-12">
 
           {/* Sticky section nav */}
           <aside className="hidden lg:block">
             <div className="sticky top-28 space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-gray-400 mb-3 px-3">On this page</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-3 px-3">On this page</p>
               {SECTIONS.map(s => (
                 <a key={s.id} href={`#${s.id}`}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[14px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors">
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[14px] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                   <s.icon className="w-4 h-4 shrink-0 text-emerald-500" />
                   {s.eyebrow}
                 </a>
@@ -163,22 +163,21 @@ export function PolicyPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
             {SECTIONS.map(section => (
               <div key={section.id} id={section.id} className="scroll-mt-28">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
-                    <section.icon className="w-4.5 h-4.5 text-emerald-600" />
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-100 dark:border-emerald-500/30 flex items-center justify-center">
+                    <section.icon className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <span className="text-[11px] font-mono uppercase tracking-widest text-gray-400">{section.eyebrow}</span>
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-gray-400 dark:text-gray-400">{section.eyebrow}</span>
                 </div>
-                <h2 className="text-3xl font-normal text-gray-900 mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                <h2 className="text-3xl font-normal text-gray-900 dark:text-white mb-4" style={{ fontFamily: "'DM Serif Display', serif" }}>
                   {section.title}
                 </h2>
-                <p className="text-[15px] text-gray-600 leading-relaxed mb-8">{section.intro}</p>
+                <p className="text-[15px] text-gray-600 dark:text-gray-300 leading-relaxed mb-8 font-normal">{section.intro}</p>
 
                 <div className="space-y-5">
                   {section.clauses.map(clause => (
-                    <div key={clause.heading} className="rounded-2xl border border-gray-150 bg-gray-50/60 px-6 py-5"
-                      style={{ borderColor: '#efefef' }}>
-                      <h3 className="text-[15px] font-semibold text-gray-900 mb-2">{clause.heading}</h3>
-                      <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-line">{clause.body}</p>
+                    <div key={clause.heading} className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/60 dark:bg-white/[0.02] px-6 py-5">
+                      <h3 className="text-[15px] font-bold text-gray-900 dark:text-white mb-2">{clause.heading}</h3>
+                      <p className="text-[14px] text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line font-normal">{clause.body}</p>
                     </div>
                   ))}
                 </div>

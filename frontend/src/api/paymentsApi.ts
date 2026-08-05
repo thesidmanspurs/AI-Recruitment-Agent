@@ -91,4 +91,19 @@ export const paymentsApi = {
       {}
     );
   },
+
+  cancelSubscription(target: 'base' | 'rankingAddon' | 'sourcingAddon' = 'base') {
+    return apiClient.post<{ success: boolean; message: string; cancelAtPeriodEnd: boolean }>(
+      '/payments/cancel-subscription',
+      { target }
+    );
+  },
+
+  resumeSubscription(target: 'base' | 'rankingAddon' | 'sourcingAddon' = 'base') {
+    return apiClient.post<{ success: boolean; message: string; cancelAtPeriodEnd: boolean }>(
+      '/payments/resume-subscription',
+      { target }
+    );
+  },
 };
+

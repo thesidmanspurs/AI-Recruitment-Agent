@@ -10,6 +10,12 @@ export interface AdminUserRow {
   blockedAt: string | null;
   blockedReason: string | null;
   dailyLimitOverride: number | null;
+  planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE';
+  subscriptionStatus?: string | null;
+  subscriptionPlan?: string | null;
+  sourcingAddonActive?: boolean;
+  rankingAddonActive?: boolean;
+  creditBalance?: number;
   createdAt: string;
   lastLoginAt: string | null;
   campaignCount: number;
@@ -225,9 +231,12 @@ export interface AdminSubscriber {
   email: string;
   name: string;
   creditBalance: number;
+  planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE';
   subscriptionStatus: string | null;
   subscriptionPlan: string | null;
   subscriptionCurrentPeriodEnd: string | null;
+  sourcingAddonActive?: boolean;
+  rankingAddonActive?: boolean;
 }
 
 export interface AdminBillingTxn {

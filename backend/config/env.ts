@@ -73,8 +73,15 @@ export const env = {
 
   // Email Outreach is now PER-USER (no shared mailbox). Each recruiter
   // configures their own Gmail App Password or Resend key, encrypted at
-  // rest with ENCRYPTION_KEY. The legacy shared SMTP_* vars are gone.
+  // rest with ENCRYPTION_KEY.
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
+  // System SMTP configuration for password reset emails
+  SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
+  SMTP_USER: process.env.SMTP_USER || '',
+  SMTP_PASS: process.env.SMTP_PASS || '',
+  SMTP_FROM: process.env.SMTP_FROM || '',
+
   // Gmail SMTP host/port are fixed for the per-user Gmail provider.
   GMAIL_SMTP_HOST: 'smtp.gmail.com',
   GMAIL_SMTP_PORT: 465,

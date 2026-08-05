@@ -1,4 +1,5 @@
 import { type ReactNode, useRef, useState, useEffect, useCallback } from 'react';
+import { ThemeToggle } from '../shared/ThemeToggle';
 const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
 export type MarketingTab = 'home' | 'features' | 'pricing' | 'faq' | 'policy';
@@ -38,23 +39,13 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
   }, [current, movePill]);
 
   return (
-    <div className="min-h-screen flex flex-col w-full bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 transition-colors"
+    <div className="min-h-screen flex flex-col w-full bg-[#f9fafb] dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 transition-colors"
       style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* NAV — iOS 26 / macOS 26 liquid glass */}
-      <header className="sticky top-0 z-50 px-6 py-0 transition-colors"
-        style={{
-          background: 'rgba(255,255,255,0.55)',
-          backdropFilter: 'blur(28px) saturate(200%) brightness(1.06)',
-          WebkitBackdropFilter: 'blur(28px) saturate(200%) brightness(1.06)',
-          borderBottom: '1px solid rgba(255,255,255,0.6)',
-          boxShadow: '0 1px 0 rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.05)',
-        }}>
+      {/* NAV — Liquid glass header with dark mode support */}
+      <header className="sticky top-0 z-50 px-6 py-0 transition-colors bg-white/70 dark:bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-gray-200/80 dark:border-white/10 shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between h-[74px] gap-4">
           <button onClick={() => onNavigate('/')} className="flex items-center gap-2.5" aria-label="TalentScanr home">
-            {/* Horizontal lockup: AI-head icon (cropped from the brand logo)
-                + bold wordmark. Crop maths derived from the icon's opaque
-                bounding box in logo.png (x[183,315] y[52,183], 133×132). */}
             <span
               aria-hidden
               className="block shrink-0"
@@ -67,7 +58,7 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
                 backgroundPosition: '-55px -16px',
               }}
             />
-            <span className="text-[23px] font-extrabold tracking-tight text-[#213a5c] dark:text-white leading-none">
+            <span className="text-[23px] font-extrabold tracking-tight text-gray-900 dark:text-white leading-none">
               TalentScanr
             </span>
           </button>
@@ -76,23 +67,15 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
           <nav
             ref={navElRef}
             onMouseLeave={() => movePill(current)}
-            className="hidden md:flex items-center p-1 rounded-2xl gap-0.5 relative"
-            style={{
-              background: 'rgba(0,0,0,0.04)',
-              border: '1px solid rgba(255,255,255,0.7)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 4px rgba(0,0,0,0.06)',
-            }}>
+            className="hidden md:flex items-center p-1 rounded-2xl gap-0.5 relative bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10">
 
             {/* Follower pill */}
             {pill.ready && (
               <div
-                className="absolute top-1 bottom-1 rounded-xl pointer-events-none"
+                className="absolute top-1 bottom-1 rounded-xl pointer-events-none bg-white dark:bg-white/15 border border-gray-200/60 dark:border-white/10 shadow-sm"
                 style={{
                   left: pill.left,
                   width: pill.width,
-                  background: 'rgba(255,255,255,0.52)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
-                  border: '1px solid rgba(0,0,0,0.07)',
                   transition: 'left 0.18s cubic-bezier(0.34,1.2,0.64,1), width 0.18s cubic-bezier(0.34,1.2,0.64,1)',
                 }}
               />
@@ -105,7 +88,7 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
                 onMouseEnter={() => movePill(n.tab)}
                 onClick={() => onNavigate(n.to)}
                 className={`relative z-10 px-5 py-2 rounded-xl text-[15px] font-medium transition-colors duration-150 ${
-                  current === n.tab ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'
+                  current === n.tab ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 {n.label}
@@ -113,34 +96,22 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+
             {authed ? (
               <button onClick={onOpenWorkspace}
-                className="px-5 py-2 rounded-xl text-[15px] font-semibold text-white transition-all duration-200"
-                style={{
-                  background: 'rgba(0,0,0,0.85)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}>
+                className="px-5 py-2 rounded-xl text-[15px] font-semibold text-white bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 transition-colors shadow-xs">
                 Open workspace
               </button>
             ) : (
               <>
                 <button onClick={() => onNavigate('/login')}
-                  className="px-5 py-2 rounded-xl text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                  className="px-4 py-2 rounded-xl text-[15px] font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                   Sign in
                 </button>
                 <button onClick={() => onNavigate('/register')}
-                  className="px-5 py-2 rounded-xl text-[15px] font-semibold text-white transition-all duration-200"
-                  style={{
-                    background: 'rgba(0,0,0,0.85)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                  }}>
+                  className="px-5 py-2 rounded-xl text-[15px] font-semibold text-white bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 transition-colors shadow-xs">
                   Get started
                 </button>
               </>
@@ -151,12 +122,12 @@ export function MarketingShell({ current, onNavigate, children, authed, onOpenWo
 
       <main className="flex-1 w-full relative">{children}</main>
 
-      <footer className="bg-black border-t border-gray-800 px-6 py-8">
+      <footer className="bg-gray-950 border-t border-gray-800 px-6 py-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <img src={logoSrc} alt="TalentScanr" className="h-6 w-auto brightness-0 invert" />
           </div>
-          <div className="flex flex-wrap gap-6 text-[13px] text-gray-500">
+          <div className="flex flex-wrap gap-6 text-[13px] text-gray-400">
             <button onClick={() => onNavigate('/engine-features')} className="hover:text-white transition-colors">Features</button>
             <button onClick={() => onNavigate('/pricing')} className="hover:text-white transition-colors">Pricing</button>
             <button onClick={() => onNavigate('/faq')} className="hover:text-white transition-colors">FAQ</button>

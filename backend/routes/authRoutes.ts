@@ -8,6 +8,8 @@ const router = Router();
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/logout', authController.logout);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 // Google OAuth — kicks off the consent redirect. The callback lives at the
 // top-level /api/callback (see server.ts) to match the OAuth client config.
 router.get('/google', googleAuthController.start);

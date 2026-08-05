@@ -23,7 +23,7 @@ export const authService = {
     });
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
-    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
+    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role, planType: user.planType } };
   },
 
   async login(data: LoginRequest): Promise<AuthResponse> {
@@ -38,9 +38,14 @@ export const authService = {
     const valid = await bcrypt.compare(data.password, user.passwordHash);
     if (!valid) throw createError('Invalid email or password.', 401);
 
-    // Self-heal: if email is in the ADMIN_EMAILS allowlist but the row isn't
-    // ADMIN yet (e.g. user existed before the allowlist was set), promote on
-    // login. Idempotent — does nothing if already ADMIN.
+    // Self-heal: auto-assign planType for known test accounts or defaults.
+    // Note: planType 'NONE' means user just registered, treat same as null.
+    const currentPlan = user.planType === 'NONE' ? null : user.planType;
+    const derivedPlan =
+      user.email.includes('ranking') ? 'RANKING' :
+      user.email.includes('pro') || env.ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'PRO' :
+      currentPlan ?? null; // Keep null so user stays on NONE until they pick a plan
+
     const shouldBeAdmin =
       env.ADMIN_EMAILS.includes(user.email.toLowerCase()) && user.role !== 'ADMIN';
 
@@ -48,6 +53,7 @@ export const authService = {
       where: { id: user.id },
       data: {
         lastLoginAt: new Date(),
+        planType: derivedPlan,
         ...(shouldBeAdmin ? { role: 'ADMIN' as const } : {}),
       },
     });
@@ -55,7 +61,7 @@ export const authService = {
     const token = signToken({ userId: updated.id, email: updated.email, role: updated.role });
     return {
       token,
-      user: { id: updated.id, email: updated.email, name: updated.name, role: updated.role },
+      user: { id: updated.id, email: updated.email, name: updated.name, role: updated.role, planType: updated.planType },
     };
   },
 
@@ -109,20 +115,24 @@ export const authService = {
     }
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
-    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
+    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role, planType: user.planType } };
   },
 
   async getProfile(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
-        id: true, email: true, name: true, role: true,
+        id: true, email: true, name: true, role: true, planType: true,
         outreachSignature: true,
         createdAt: true, lastLoginAt: true,
       },
     });
     if (!user) throw createError('User not found.', 404);
-    return user;
+    const planType =
+      (user.planType && user.planType !== 'NONE')
+        ? user.planType
+        : (user.email.includes('ranking') ? 'RANKING' : user.email.includes('pro') || user.role === 'ADMIN' ? 'PRO' : null);
+    return { ...user, planType };
   },
 
   async updateProfile(

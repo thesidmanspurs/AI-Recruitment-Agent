@@ -4,7 +4,7 @@ import {
   Mail,
   MessageSquare,
   CheckCircle2,
-  Clock,
+  Clock as ClockIcon,
   AlertTriangle,
   Loader2,
   ChevronDown,
@@ -92,7 +92,7 @@ function statusChip(c: CandidateDto) {
   }
   return (
     <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-1.5 py-0.5 rounded-full dark:bg-white/5 dark:text-gray-200 dark:border-white/10">
-      <Clock className="w-3 h-3" /> Sent
+      <ClockIcon className="w-3 h-3" /> Sent
     </span>
   );
 }

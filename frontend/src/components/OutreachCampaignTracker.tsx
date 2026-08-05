@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Candidate, OutreachStatus, ActivityLog } from '../types';
 import { 
-  Send, Mail, Phone, Clock, AlertTriangle, 
+  Send, Mail, Phone, Clock as ClockIcon, AlertTriangle, 
   CheckCircle, MessageSquare, ArrowRight, UserCheck, 
   HelpCircle, Sparkles, Smartphone, CheckSquare, RefreshCcw 
 } from 'lucide-react';
@@ -174,7 +174,7 @@ export default function OutreachCampaignTracker({
             {isSimulatingTimeline ? (
               <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Clock className="w-3.5 h-3.5" />
+              <ClockIcon className="w-3.5 h-3.5" />
             )}
             Elapse 48 Hours (Simulate Days)
           </button>
@@ -414,7 +414,7 @@ export default function OutreachCampaignTracker({
             </div>
           ) : (
             <div className="bg-slate-50 border border-dashed rounded-2xl p-6 text-center text-slate-400 font-sans flex flex-col items-center justify-center min-h-[300px]">
-              <Clock className="w-8 h-8 text-slate-300 mb-2" />
+              <ClockIcon className="w-8 h-8 text-slate-300 mb-2" />
               <h4 className="font-semibold text-xs text-slate-700">Recruiter Cockpit Panel</h4>
               <p className="text-[10px] text-slate-400 max-w-[180px] mt-1">
                 Select a candidate anywhere on the left pipeline layout to manage outreaches or log manual task items.

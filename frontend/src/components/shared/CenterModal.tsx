@@ -41,14 +41,14 @@ export function CenterModal({
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prevOverflow && prevOverflow !== 'hidden' ? prevOverflow : '';
     };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
         onClick={onClose}

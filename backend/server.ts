@@ -19,10 +19,14 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import emailSettingsRoutes from './routes/emailSettingsRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import rankingRoutes from './routes/rankingRoutes.js';
 import { webhookController } from './controllers/webhookController.js';
 import { googleAuthController } from './controllers/googleAuthController.js';
 import { trackingService } from './services/tracking/trackingService.js';
 import { inboxPollingService } from './services/outreach/inboxPollingService.js';
+import { rankingSessionService } from './services/ranking/rankingSessionService.js';
+import { requireSourcingAccess } from './middleware/requireSourcingAccess.js';
+import { requireRankingAccess } from './middleware/requireRankingAccess.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,12 +154,13 @@ app.get('/api/callback', googleAuthController.callback);
 app.use('/api/webhooks', webhookRoutes);
 
 // ── Protected routes (JWT required) ──────────────────────────────────────────
-app.use('/api/campaigns', authenticate, campaignRoutes);
-app.use('/api/upload', authenticate, uploadRoutes);
+app.use('/api/campaigns', authenticate, requireSourcingAccess, campaignRoutes);
+app.use('/api/upload', authenticate, requireSourcingAccess, uploadRoutes);
 app.use('/api/locations', authenticate, locationRoutes);
 app.use('/api/email-settings', authenticate, emailSettingsRoutes);
 app.use('/api/usage', authenticate, usageRoutes);
 app.use('/api/payments', authenticate, paymentRoutes);
+app.use('/api/ranking', authenticate, requireRankingAccess, rankingRoutes);
 app.use('/api/admin', authenticate, requireAdmin, adminRoutes);
 
 // ── Global error handler ──────────────────────────────────────────────────────
@@ -186,6 +191,26 @@ async function startServer(): Promise<void> {
     console.log(`[Server] Running at http://localhost:${env.PORT}`);
     trackingService.startAlertScheduler();
     inboxPollingService.start();
+
+    // ── Ranking session cleanup (daily at 03:00 server time) ─────────────
+    // Delete sessions older than 45 days to respect data retention policy.
+    const scheduleCleanup = () => {
+      const now = new Date();
+      const next3am = new Date(now);
+      next3am.setDate(now.getDate() + (now.getHours() >= 3 ? 1 : 0));
+      next3am.setHours(3, 0, 0, 0);
+      const msUntil3am = next3am.getTime() - now.getTime();
+      setTimeout(async () => {
+        await rankingSessionService.cleanupExpiredSessions().catch(err =>
+          console.error('[RankingCleanup] Error during cleanup:', err instanceof Error ? err.message : err)
+        );
+        setInterval(
+          () => rankingSessionService.cleanupExpiredSessions().catch(() => {}),
+          24 * 60 * 60 * 1000, // every 24h thereafter
+        );
+      }, msUntil3am);
+    };
+    scheduleCleanup();
   });
 }
 

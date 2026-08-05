@@ -1,4 +1,4 @@
-import { Clock, Bell, Mail, MessageSquare } from 'lucide-react';
+import { Clock as ClockIcon, Bell, Mail, MessageSquare } from 'lucide-react';
 import type { ActivityLog } from '../../types';
 import { Badge } from '../shared/Badge';
 
@@ -12,7 +12,7 @@ const typeIcon: Record<ActivityLog['type'], typeof Bell> = {
   outreach: MessageSquare,
   reply: MessageSquare,
   alert: Bell,
-  system: Clock,
+  system: ClockIcon,
 };
 
 const typeBadgeVariant: Record<ActivityLog['type'], 'blue' | 'green' | 'yellow' | 'red' | 'gray' | 'purple'> = {

@@ -29,19 +29,19 @@ export function CandidateCard({
 
   return (
     <div className={[
-      'bg-gray-900 border rounded-xl p-5 flex flex-col gap-4 transition-colors',
-      isApproved ? 'border-green-700/50' : 'border-gray-700/50',
+      'bg-white dark:bg-[#10131c] border rounded-xl p-5 flex flex-col gap-4 transition-colors shadow-xs',
+      isApproved ? 'border-emerald-300 dark:border-emerald-700/50' : 'border-gray-200 dark:border-white/10',
     ].join(' ')}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-white truncate">{candidate.name}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{candidate.name}</h3>
             {candidate.openToWork && (
               <Badge variant="green" size="sm">Open to Work</Badge>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 flex items-center gap-1">
             <Briefcase className="w-3 h-3 shrink-0" />
             {candidate.currentTitle}
           </p>
@@ -59,7 +59,7 @@ export function CandidateCard({
       <ScoreBar score={candidate.matchScore} />
 
       {/* Bio */}
-      <p className="text-xs text-gray-400 line-clamp-2">{candidate.bio}</p>
+      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{candidate.bio}</p>
 
       {/* Skills */}
       <div className="flex flex-wrap gap-1.5">

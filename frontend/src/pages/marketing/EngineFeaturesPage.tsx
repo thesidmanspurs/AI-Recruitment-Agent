@@ -9,15 +9,17 @@ interface PageProps {
 
 const FEATURES = [
   { n: '01', title: 'Autonomous community sourcing', body: 'Crawls LinkedIn via Apollo and GitHub contributor graphs simultaneously — both run in parallel and merge into a single candidate table, tagged by source. Reddit community sourcing is coming soon.', tag: 'Sourcing' },
-  { n: '02', title: 'Calibrated AI quality gates', body: 'Every candidate scored 0–10 against your extracted job spec using semantic embeddings — not keyword matching. Set a suitability threshold; anyone below it moves to a separate queue. Raw data always preserved.', tag: 'Scoring' },
-  { n: '03', title: 'Grounded deep scoring', body: "On demand, Gemini researches a candidate's real public profile and applies your must-have / nice-to-have rubric for a defensible, evidence-backed match score with a written explanation.", tag: 'Scoring' },
-  { n: '04', title: 'Personalised outreach drafting', body: "Gemini writes a unique pitch for each candidate from their actual role history and public profile — not a template with a name substituted. You review in the built-in editor before sending.", tag: 'Outreach' },
-  { n: '05', title: 'Own-domain sending', body: "Connect Gmail via App Password or Resend for custom domain sending. Every message goes from your address. Replies land in your inbox — not a shared TalentScanr pool.", tag: 'Outreach' },
-  { n: '06', title: 'Credit-only enrichment', body: "Sourcing, scoring, and drafting are free. Credits are spent only when you reveal a verified email or phone via Apollo — 1 credit per reveal. Top-Up Packs never expire.", tag: 'Pricing' },
-  { n: '07', title: 'Reply tracking & 48h alerts', body: 'Inbox monitoring surfaces replies against the correct candidate automatically. No-response alerts fire at 48 hours so warm leads never go cold — with full context before you follow up.', tag: 'Tracking' },
-  { n: '08', title: 'Campaign analytics', body: 'Live pipeline breakdown: sourced, enriched, outreach sent, replied, awaiting follow-up. Channel mix panel shows LinkedIn vs GitHub split. Exportable to CSV any time.', tag: 'Analytics' },
-  { n: '09', title: 'Multi-seat workspace isolation', body: 'Each recruiter has isolated campaigns, their own sending identity, and an individual credit balance. Agency consultants can run ten simultaneous client searches with zero cross-contamination.', tag: 'Teams' },
-  { n: '10', title: 'SOC2-aligned & encrypted', body: 'Credentials encrypted at rest with AES-256-GCM, never returned to the client. httpOnly, SameSite=Strict auth cookies. Payments via Stripe — no card data ever touches our servers.', tag: 'Security' },
+  { n: '02', title: 'AI Inbound CV Ranking', body: 'Upload batches of up to 50 candidate CVs (PDF/DOCX) at once. Gemini automatically extracts candidate experience, skills, and education, grading each candidate 0–10 against your job description.', tag: 'Ranking' },
+  { n: '03', title: 'Strengths & Gaps Analysis + 100% Privacy', body: 'Get a clear rationale for every candidate score with bulleted key strengths and missing skill gaps. CV files are parsed in-memory and deleted immediately for 100% privacy compliance.', tag: 'Ranking' },
+  { n: '04', title: 'Calibrated AI quality gates', body: 'Every candidate scored 0–10 against your extracted job spec using semantic embeddings — not keyword matching. Set a suitability threshold; anyone below it moves to a separate queue. Raw data always preserved.', tag: 'Scoring' },
+  { n: '05', title: 'Grounded deep scoring', body: "On demand, Gemini researches a candidate's real public profile and applies your must-have / nice-to-have rubric for a defensible, evidence-backed match score with a written explanation.", tag: 'Scoring' },
+  { n: '06', title: 'Personalised outreach drafting', body: "Gemini writes a unique pitch for each candidate from their actual role history and public profile — not a template with a name substituted. You review in the built-in editor before sending.", tag: 'Outreach' },
+  { n: '07', title: 'Own-domain sending', body: "Connect Gmail via App Password or Resend for custom domain sending. Every message goes from your address. Replies land in your inbox — not a shared TalentScanr pool.", tag: 'Outreach' },
+  { n: '08', title: 'Credit-only enrichment', body: "Sourcing, scoring, and drafting are free. Credits are spent only when you reveal a verified email or phone via Apollo — 1 credit per reveal. Top-Up Packs never expire.", tag: 'Pricing' },
+  { n: '09', title: 'Reply tracking & 48h alerts', body: 'Inbox monitoring surfaces replies against the correct candidate automatically. No-response alerts fire at 48 hours so warm leads never go cold — with full context before you follow up.', tag: 'Tracking' },
+  { n: '10', title: 'Campaign analytics', body: 'Live pipeline breakdown: sourced, enriched, outreach sent, replied, awaiting follow-up. Channel mix panel shows LinkedIn vs GitHub split. Exportable to CSV any time.', tag: 'Analytics' },
+  { n: '11', title: 'Multi-seat workspace isolation', body: 'Each recruiter has isolated campaigns, their own sending identity, and an individual credit balance. Agency consultants can run ten simultaneous client searches with zero cross-contamination.', tag: 'Teams' },
+  { n: '12', title: 'SOC2-aligned & encrypted', body: 'Credentials encrypted at rest with AES-256-GCM, never returned to the client. httpOnly, SameSite=Strict auth cookies. Payments via Stripe — no card data ever touches our servers.', tag: 'Security' },
 ];
 
 const SCORING_STEPS = [
@@ -30,15 +32,16 @@ const SCORING_STEPS = [
 
 const SOURCES: { name: string; signal: string; pro: string; con: string; comingSoon?: boolean }[] = [
   { name: 'LinkedIn via Apollo', signal: 'Professional visibility', pro: 'Accurate titles, employment history, Apollo-verified work emails available for enrichment.', con: 'Only surfaces people who maintain an active LinkedIn profile.' },
-  { name: 'Reddit communities', signal: 'Active domain engagement', comingSoon: true, pro: "Finds practitioners actively contributing to your role's domain — often stronger signal than job titles.", con: 'Profiles are pseudonymous; enrichment requires cross-referencing LinkedIn.' },
+  { name: 'Inbound CV Uploads (PDF/DOCX)', signal: 'Direct Applicant CVs', pro: 'Screen up to 50 CVs in seconds with AI match scoring, strengths & gaps analysis, and 100% in-memory privacy.', con: 'Requires candidate CV documents.' },
   { name: 'GitHub contributors', signal: 'Public code output', pro: "Reveals the actual tech stack a candidate works in — not just what they list on a resume.", con: 'Public repos only; private or corporate work is not visible.' },
 ];
 
-const FREE_ITEMS = ['Candidate sourcing (all platforms)', 'AI fit scoring 0–10', 'Score threshold filtering', 'Outreach draft generation', 'Outreach editor & send queue', 'Reply tracking & 48h alerts', 'Campaign analytics & CSV export', 'Deep scoring (on-demand)'];
+const FREE_ITEMS = ['Candidate sourcing & CV Ranking', 'AI fit scoring 0–10 & Strengths/Gaps', 'Score threshold filtering', 'Outreach draft generation', 'Outreach editor & send queue', 'Reply tracking & 48h alerts', 'Campaign analytics & CSV export', 'Deep scoring (on-demand)'];
 const CREDIT_ITEMS = [{ label: 'Reveal work email via Apollo', cost: '1 credit' }, { label: 'Reveal direct phone via Apollo', cost: '1 credit' }];
 
 const TAG_COLORS: Record<string, string> = {
   Sourcing:  'text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800',
+  Ranking:   'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
   Scoring:   'text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800',
   Outreach:  'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
   Pricing:   'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
@@ -55,24 +58,6 @@ export function EngineFeaturesPage({ onNavigate, authed, onOpenWorkspace }: Page
       {/* ── INTRO ──────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
         <style>{`
-          .ef-dots {
-            background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
-            background-size: 28px 28px;
-          }
-          .dark .ef-dots {
-            background-image: radial-gradient(circle, #1f2937 1px, transparent 1px);
-          }
-          .ef-grid {
-            background-image:
-              linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
-            background-size: 40px 40px;
-          }
-          .dark .ef-grid {
-            background-image:
-              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-          }
         `}</style>
 
         <div className="ef-dots absolute inset-0 pointer-events-none" />

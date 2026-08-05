@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  planType?: 'SOURCING' | 'RANKING' | 'PRO';
 }
 
 export type AuthView = 'login' | 'register';

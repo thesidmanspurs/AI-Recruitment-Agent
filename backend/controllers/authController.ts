@@ -84,4 +84,42 @@ export const authController = {
       next(err);
     }
   },
+
+  // POST /api/auth/forgot-password
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email } = req.body as { email?: string };
+      if (!email?.trim()) return next(createError('Email is required.', 400));
+
+      const { passwordResetService } = await import('../services/auth/passwordResetService.js');
+      await passwordResetService.forgotPassword(email.trim());
+
+      res.json({
+        success: true,
+        message: 'If an account exists with that email, a password reset link has been sent.',
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /api/auth/reset-password
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token, password } = req.body as { token?: string; password?: string };
+      if (!token?.trim() || !password) {
+        return next(createError('Token and password are required.', 400));
+      }
+
+      const { passwordResetService } = await import('../services/auth/passwordResetService.js');
+      await passwordResetService.resetPassword(token.trim(), password);
+
+      res.json({
+        success: true,
+        message: 'Your password has been successfully reset. You can now log in.',
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

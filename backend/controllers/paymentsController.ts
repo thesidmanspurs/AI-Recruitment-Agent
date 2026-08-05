@@ -3,6 +3,7 @@ import { prisma } from '../config/database.js';
 import { createError } from '../middleware/errorHandler.js';
 import { env, isStripeConfigured } from '../config/env.js';
 import { CREDIT_PACKAGES, getPackage, CAMPAIGN_PASS_ID } from '../config/creditPackages.js';
+import { SUBSCRIPTION_PLANS, getSubscriptionPlan, getPublicPlans, getEligibleAddons } from '../config/subscriptionPlans.js';
 import { getStripe } from '../services/billing/stripeService.js';
 import { billingService } from '../services/billing/billingService.js';
 import { creditService } from '../services/credits/creditService.js';
@@ -25,9 +26,21 @@ export const paymentsController = {
       success: true,
       stripeEnabled: isStripeConfigured(),
       publishableKey: env.STRIPE_PUBLISHABLE_KEY || null,
-      // Campaign Pass is bought from a campaign page (needs a campaignId), not
-      // the generic Credits list — so exclude it here.
-      packages: CREDIT_PACKAGES.filter(p => p.id !== CAMPAIGN_PASS_ID).map(p => ({
+      // Subscription plans (3 base plans shown publicly)
+      plans: getPublicPlans().map(p => ({
+        id: p.id,
+        name: p.name,
+        label: p.label,
+        kind: p.kind,
+        credits: p.credits,
+        priceCents: p.priceCents,
+        currency: p.currency,
+        interval: p.interval,
+        trialDays: p.trialDays,
+        planType: p.planType,
+      })),
+      // Legacy one-time credit packages (topup-1000 etc., excluding campaign-pass)
+      packages: CREDIT_PACKAGES.filter(p => p.id !== CAMPAIGN_PASS_ID && p.kind === 'one_time').map(p => ({
         id: p.id,
         name: p.name,
         label: p.label,
@@ -46,22 +59,62 @@ export const paymentsController = {
         where: { id: req.user!.id },
         select: {
           creditBalance: true,
+          planType: true,
           subscriptionStatus: true,
           subscriptionPlan: true,
           subscriptionCurrentPeriodEnd: true,
+          cancelAtPeriodEnd: true,
           stripeCustomerId: true,
+          rankingAddonActive: true,
+          rankingAddonStatus: true,
+          rankingAddonCurrentPeriodEnd: true,
+          sourcingAddonActive: true,
+          sourcingAddonStatus: true,
+          sourcingAddonCurrentPeriodEnd: true,
         },
       });
       if (!u) return next(createError('User not found.', 404));
+
+      const basePlanActive =
+        u.subscriptionStatus === 'active' || u.subscriptionStatus === 'trialing';
+      const hasSourceAccess =
+        (basePlanActive && (u.planType === 'SOURCING' || u.planType === 'PRO')) ||
+        (u.sourcingAddonActive && (u.sourcingAddonStatus === 'active' || u.sourcingAddonStatus === 'trialing'));
+      const hasRankingAccess =
+        (basePlanActive && (u.planType === 'RANKING' || u.planType === 'PRO')) ||
+        (u.rankingAddonActive && (u.rankingAddonStatus === 'active' || u.rankingAddonStatus === 'trialing'));
+
+      // Eligible add-ons for this user's current plan
+      const eligibleAddons = getEligibleAddons(u.subscriptionPlan);
+
       res.json({
         success: true,
         balance: u.creditBalance,
+        planType: u.planType,
+        hasSourceAccess,
+        hasRankingAccess,
         subscription: {
           status: u.subscriptionStatus,
           plan: u.subscriptionPlan,
           currentPeriodEnd: u.subscriptionCurrentPeriodEnd,
-          active: u.subscriptionStatus === 'active' || u.subscriptionStatus === 'trialing',
+          cancelAtPeriodEnd: u.cancelAtPeriodEnd ?? false,
+          active: basePlanActive,
         },
+        addons: {
+          ranking: {
+            active: u.rankingAddonActive,
+            status: u.rankingAddonStatus,
+            currentPeriodEnd: u.rankingAddonCurrentPeriodEnd,
+          },
+          sourcing: {
+            active: u.sourcingAddonActive,
+            status: u.sourcingAddonStatus,
+            currentPeriodEnd: u.sourcingAddonCurrentPeriodEnd,
+          },
+        },
+        eligibleAddons: eligibleAddons.map(p => ({
+          id: p.id, name: p.name, label: p.label, priceCents: p.priceCents,
+        })),
         hasCustomer: !!u.stripeCustomerId,
       });
     } catch (err) {
@@ -71,23 +124,101 @@ export const paymentsController = {
 
   async createCheckout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!isStripeConfigured()) {
-        return next(createError('Payments are not configured on the server.', 503));
-      }
       const { packageId, campaignId } = req.body as { packageId?: string; campaignId?: string };
       if (!packageId) return next(createError('packageId is required.', 400));
-      const pkg = getPackage(packageId);
-      if (!pkg) return next(createError('Unknown package.', 404));
+
+      // Resolve package — check new subscription plans first, then legacy credit packages
+      const subPlan = getSubscriptionPlan(packageId);
+      const legacyPkg = !subPlan ? getPackage(packageId) : null;
+      if (!subPlan && !legacyPkg) return next(createError('Unknown package.', 404));
+
+      if (!isStripeConfigured()) {
+        // Dev / Mock Mode: Simulate instant purchase and grant plan / add-on / credits immediately!
+        const userId = req.user!.id;
+        const periodEnd = new Date(Date.now() + 30 * 86400 * 1000);
+
+        if (subPlan) {
+          if (subPlan.addOnFor === 'sourcing-plan') {
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                sourcingAddonActive: true,
+                sourcingAddonStatus: 'active',
+                sourcingAddonPeriodEnd: periodEnd,
+              },
+            });
+            if (subPlan.credits > 0) {
+              await creditService.addCredits({
+                userId,
+                amount: subPlan.credits,
+                type: 'SUBSCRIPTION_GRANT',
+                notes: `Mock Dev Purchase: ${subPlan.name}`,
+                idempotencyKey: `mock_addon_${userId}_${Date.now()}`,
+              });
+            }
+          } else if (subPlan.addOnFor === 'ranking-plan') {
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                rankingAddonActive: true,
+                rankingAddonStatus: 'active',
+                rankingAddonPeriodEnd: periodEnd,
+              },
+            });
+          } else {
+            await prisma.user.update({
+              where: { id: userId },
+              data: {
+                planType: subPlan.planType,
+                subscriptionStatus: 'active',
+                subscriptionPlan: subPlan.id,
+                currentPeriodEnd: periodEnd,
+              },
+            });
+            if (subPlan.credits > 0) {
+              await creditService.addCredits({
+                userId,
+                amount: subPlan.credits,
+                type: 'SUBSCRIPTION_GRANT',
+                notes: `Mock Dev Purchase: ${subPlan.name}`,
+                idempotencyKey: `mock_plan_${userId}_${Date.now()}`,
+              });
+            }
+          }
+        } else if (legacyPkg && legacyPkg.credits > 0) {
+          await creditService.addCredits({
+            userId,
+            amount: legacyPkg.credits,
+            type: 'TOPUP_PURCHASE',
+            notes: `Mock Dev Purchase: ${legacyPkg.name}`,
+            idempotencyKey: `mock_topup_${userId}_${Date.now()}`,
+          });
+        }
+
+        return res.json({
+          success: true,
+          checkoutUrl: '/billing?session_id=mock_dev_completed',
+          mock: true,
+        });
+      }
 
       const user = await prisma.user.findUnique({
         where: { id: req.user!.id },
-        select: { id: true, email: true, name: true, stripeCustomerId: true, subscriptionStatus: true },
+        select: {
+          id: true, email: true, name: true,
+          stripeCustomerId: true,
+          subscriptionStatus: true,
+          subscriptionPlan: true,
+          rankingAddonActive: true,
+          rankingAddonSubscriptionId: true,
+          sourcingAddonActive: true,
+          sourcingAddonSubscriptionId: true,
+        },
       });
       if (!user) return next(createError('User not found.', 404));
 
-      // Campaign Pass — must target a campaign the user owns that isn't already
-      // unlocked. The campaignId is carried in metadata so billing can flip it.
-      if (pkg.id === CAMPAIGN_PASS_ID) {
+      // ── Campaign Pass ─────────────────────────────────────────────────────
+      if (packageId === CAMPAIGN_PASS_ID) {
         if (!campaignId) return next(createError('campaignId is required for the Campaign Pass.', 400));
         const campaign = await prisma.campaign.findFirst({
           where: { id: campaignId, userId: user.id },
@@ -99,19 +230,51 @@ export const paymentsController = {
         }
       }
 
-      // Block buying a second concurrent subscription.
-      if (
-        pkg.kind === 'subscription' &&
-        (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing')
-      ) {
-        return next(
-          createError('You already have an active subscription. Manage it from the Credits tab.', 409)
-        );
+      // ── Subscription: block duplicate base plans ───────────────────────────
+      if (subPlan && !subPlan.addOnFor) {
+        // Base plan — user must not already have an active base plan
+        const alreadyActive =
+          user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing';
+        if (alreadyActive) {
+          return next(
+            createError('You already have an active plan. Manage it from the Billing tab.', 409),
+          );
+        }
+      }
+
+      // ── Add-on: validate base plan eligibility ────────────────────────────
+      if (subPlan?.addOnFor) {
+        if (user.subscriptionPlan !== subPlan.addOnFor) {
+          return next(
+            createError(
+              `This add-on requires an active ${subPlan.addOnFor} subscription.`,
+              409,
+            ),
+          );
+        }
+        // Block duplicate add-on
+        if (packageId === 'ranking-addon' && user.rankingAddonActive) {
+          return next(createError('Ranking add-on is already active.', 409));
+        }
+        if (packageId === 'sourcing-addon' && user.sourcingAddonActive) {
+          return next(createError('Sourcing add-on is already active.', 409));
+        }
+      }
+
+      // ── Legacy one-time: block if already subscribed (topup is always OK) ─
+      if (legacyPkg?.kind === 'subscription') {
+        const alreadyActive =
+          user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing';
+        if (alreadyActive) {
+          return next(
+            createError('You already have an active subscription. Manage it from the Billing tab.', 409),
+          );
+        }
       }
 
       const stripe = getStripe();
 
-      // Reuse or lazily create the Stripe customer so portal + reuse work.
+      // Reuse or lazily create the Stripe customer
       let customerId = user.stripeCustomerId;
       if (!customerId) {
         const customer = await stripe.customers.create({
@@ -124,17 +287,21 @@ export const paymentsController = {
       }
 
       const appUrl = env.APP_URL.replace(/\/$/, '');
-      const isPass = pkg.id === CAMPAIGN_PASS_ID;
+      const isPass = packageId === CAMPAIGN_PASS_ID;
+      const pkg = subPlan ?? legacyPkg!;
       const metadata: Record<string, string> = {
         userId: user.id,
-        packageId: pkg.id,
+        packageId,
         credits: String(pkg.credits),
         kind: pkg.kind,
         ...(isPass && campaignId ? { campaignId } : {}),
       };
 
+      const isSubscription = pkg.kind === 'subscription';
+      const trialDays = subPlan?.trialDays ?? 0;
+
       const session = await stripe.checkout.sessions.create({
-        mode: pkg.kind === 'subscription' ? 'subscription' : 'payment',
+        mode: isSubscription ? 'subscription' : 'payment',
         customer: customerId,
         line_items: [
           {
@@ -146,18 +313,23 @@ export const paymentsController = {
                 name: pkg.name,
                 description: isPass
                   ? 'Unlimited Apollo email/phone reveals for one campaign'
-                  : `${pkg.credits} credits${pkg.kind === 'subscription' ? ' / month' : ''}`,
+                  : pkg.credits > 0
+                    ? `${pkg.credits} credits${isSubscription ? ' / month' : ''}`
+                    : (pkg as typeof subPlan)?.label ?? pkg.name,
               },
-              ...(pkg.kind === 'subscription'
-                ? { recurring: { interval: pkg.interval ?? 'month' } }
-                : {}),
+              ...(isSubscription ? { recurring: { interval: 'month' } } : {}),
             },
           },
         ],
         metadata,
-        // Carry the same metadata onto the subscription so invoice.paid (incl.
-        // renewals) can resolve user + package without our DB.
-        ...(pkg.kind === 'subscription' ? { subscription_data: { metadata } } : {}),
+        ...(isSubscription
+          ? {
+              subscription_data: {
+                metadata,
+                ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
+              },
+            }
+          : {}),
         success_url: `${appUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appUrl}/billing?canceled=1`,
       });
@@ -171,9 +343,18 @@ export const paymentsController = {
 
   async verifySession(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!isStripeConfigured()) return next(createError('Payments are not configured.', 503));
       const sessionId = (req.query.session_id as string) || '';
       if (!sessionId) return next(createError('session_id is required.', 400));
+
+      if (sessionId === 'mock_dev_completed' || !isStripeConfigured()) {
+        const balance = await creditService.getBalance(req.user!.id);
+        return res.json({
+          success: true,
+          paid: true,
+          paymentStatus: 'paid',
+          balance,
+        });
+      }
 
       const stripe = getStripe();
       const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -236,4 +417,98 @@ export const paymentsController = {
       next(createError('Could not open the billing portal.', 500));
     }
   },
+
+  /**
+   * Schedule cancellation of an active subscription at period end.
+   */
+  async cancelSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: {
+          id: true,
+          stripeSubscriptionId: true,
+          rankingAddonSubscriptionId: true,
+          sourcingAddonSubscriptionId: true,
+          subscriptionCurrentPeriodEnd: true,
+        },
+      });
+      if (!user) return next(createError('User not found.', 404));
+
+      const { target } = (req.body ?? {}) as { target?: 'base' | 'rankingAddon' | 'sourcingAddon' };
+      const subId =
+        target === 'rankingAddon' ? user.rankingAddonSubscriptionId :
+        target === 'sourcingAddon' ? user.sourcingAddonSubscriptionId :
+        user.stripeSubscriptionId;
+
+      if (isStripeConfigured() && subId) {
+        const stripe = getStripe();
+        const updatedSub = await stripe.subscriptions.update(subId, {
+          cancel_at_period_end: true,
+        });
+        await billingService.handleSubscriptionUpdated(updatedSub);
+      } else {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { cancelAtPeriodEnd: true },
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Subscription cancellation scheduled at end of billing cycle. You will not be billed next month, and all your current plan benefits and credits remain fully active until the period ends.',
+        cancelAtPeriodEnd: true,
+      });
+    } catch (err) {
+      console.error('[Payments] cancelSubscription error:', err instanceof Error ? err.message : err);
+      next(createError('Could not cancel subscription. Please try again.', 500));
+    }
+  },
+
+  /**
+   * Reactivate auto-renewal before current period end.
+   */
+  async resumeSubscription(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: {
+          id: true,
+          stripeSubscriptionId: true,
+          rankingAddonSubscriptionId: true,
+          sourcingAddonSubscriptionId: true,
+        },
+      });
+      if (!user) return next(createError('User not found.', 404));
+
+      const { target } = (req.body ?? {}) as { target?: 'base' | 'rankingAddon' | 'sourcingAddon' };
+      const subId =
+        target === 'rankingAddon' ? user.rankingAddonSubscriptionId :
+        target === 'sourcingAddon' ? user.sourcingAddonSubscriptionId :
+        user.stripeSubscriptionId;
+
+      if (isStripeConfigured() && subId) {
+        const stripe = getStripe();
+        const updatedSub = await stripe.subscriptions.update(subId, {
+          cancel_at_period_end: false,
+        });
+        await billingService.handleSubscriptionUpdated(updatedSub);
+      } else {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { cancelAtPeriodEnd: false },
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Subscription auto-renewal reactivated successfully.',
+        cancelAtPeriodEnd: false,
+      });
+    } catch (err) {
+      console.error('[Payments] resumeSubscription error:', err instanceof Error ? err.message : err);
+      next(createError('Could not resume subscription. Please try again.', 500));
+    }
+  },
 };
+

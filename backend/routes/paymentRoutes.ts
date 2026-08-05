@@ -13,4 +13,6 @@ router.post('/create-checkout', paymentsController.createCheckout);
 router.get('/verify-session', paymentsController.verifySession);
 router.get('/history', paymentsController.history);
 router.post('/create-portal-session', paymentsController.createPortalSession);
+router.post('/cancel-subscription', paymentsController.cancelSubscription);
+router.post('/resume-subscription', paymentsController.resumeSubscription);
 export default router;

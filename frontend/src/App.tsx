@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { AppProvider } from './store/AppContext';
@@ -5,6 +6,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AuthPage } from './pages/AuthPage';
 import { AdminPage } from './pages/AdminPage';
 import { BillingPage } from './pages/BillingPage';
+import { RankingPage } from './pages/RankingPage';
 import { LandingPage } from './pages/marketing/LandingPage';
 import { EngineFeaturesPage } from './pages/marketing/EngineFeaturesPage';
 import { PricingPage } from './pages/marketing/PricingPage';
@@ -118,7 +120,8 @@ function AuthGate() {
   }, [login, navigate]);
   const handleRegister = useCallback(async (name: string, email: string, password: string) => {
     await register(name, email, password);
-    if (!readPendingCheckout()) navigate('/home');
+    // New accounts have no plan yet — send them straight to billing to pick one.
+    if (!readPendingCheckout()) navigate('/billing');
   }, [register, navigate]);
 
   // Enforce sensible URLs once the user is known. NOTE: "/" is the PUBLIC
@@ -131,9 +134,16 @@ function AuthGate() {
     if (user.role === 'ADMIN' && (path === '/home' || path === '/login' || path === '/register')) {
       window.history.replaceState({}, '', '/admin');
       setPath('/admin');
-    } else if (user.role !== 'ADMIN' && (path === '/login' || path === '/register' || path.startsWith('/admin'))) {
-      window.history.replaceState({}, '', '/home');
-      setPath('/home');
+    } else if (user.role !== 'ADMIN') {
+      const isRankingUser = user.planType === 'RANKING' || Boolean(user.email?.toLowerCase().includes('ranking'));
+      if (isRankingUser && !path.startsWith('/ranking') && !path.startsWith('/billing') && path !== '/') {
+        window.history.replaceState({}, '', '/ranking');
+        setPath('/ranking');
+      } else if (path === '/login' || path === '/register' || path.startsWith('/admin')) {
+        const dest = isRankingUser ? '/ranking' : '/home';
+        window.history.replaceState({}, '', dest);
+        setPath(dest);
+      }
     }
   }, [user, path]);
 
@@ -164,11 +174,12 @@ function AuthGate() {
   if (path === '/policy') return <PolicyPage onNavigate={navigate} {...mkt} />;
 
   // ── Auth screens — shown when logged out. ─────────────────────────────────
-  if (!user && (path === '/login' || path === '/register')) {
+  if (!user && (path === '/login' || path === '/register' || path === '/forgot-password' || path.startsWith('/reset-password'))) {
     const pendingPkg = readPendingCheckout();
+    const mode = path === '/register' ? 'register' : path === '/forgot-password' ? 'forgot' : path.startsWith('/reset-password') ? 'reset' : 'login';
     return (
       <AuthPage
-        mode={path === '/register' ? 'register' : 'login'}
+        mode={mode}
         onLogin={handleLogin}
         onRegister={handleRegister}
         onNavigate={navigate}
@@ -189,6 +200,17 @@ function AuthGate() {
   if (path.startsWith('/billing')) {
     return <BillingPage user={user} onBack={() => navigate('/home')} />;
   }
+  if (path.startsWith('/ranking')) {
+    return (
+      <RankingPage
+        user={user}
+        onLogout={handleLogout}
+        onOpenAdmin={user?.role === 'ADMIN' ? () => navigate('/admin') : undefined}
+        onOpenBilling={() => navigate('/billing')}
+        onOpenHome={() => navigate('/home')}
+      />
+    );
+  }
 
   // /home (and any other authenticated path) → the workspace.
   return (
@@ -198,16 +220,73 @@ function AuthGate() {
         onLogout={handleLogout}
         onOpenAdmin={user.role === 'ADMIN' ? () => navigate('/admin') : undefined}
         onOpenBilling={() => navigate('/billing')}
+        onOpenRanking={() => navigate('/ranking')}
         onOpenHome={() => navigate('/')}
       />
     </AppProvider>
   );
 }
 
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('React Error Boundary caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0a0c12] flex items-center justify-center p-6 text-center">
+          <div className="max-w-md w-full bg-white dark:bg-[#10131c] p-8 rounded-3xl border border-gray-200 dark:border-white/10 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto text-xl font-bold">
+              ⚠️
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Application Error</h2>
+            <p className="text-xs text-red-900 dark:text-red-200 font-mono bg-red-50 dark:bg-red-500/10 p-3 rounded-xl border border-red-200 dark:border-red-500/20 text-left overflow-auto max-h-32">
+              {this.state.error?.message ?? 'An unexpected error occurred.'}
+            </p>
+            <button
+              onClick={() => {
+                (this as any).setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              className="w-full py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold hover:opacity-90 transition-all"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (this as any).props.children;
+  }
+}
+
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthGate />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthGate />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

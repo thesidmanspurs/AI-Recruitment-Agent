@@ -3,7 +3,7 @@ import type { UserRole } from '../hooks/useAuth';
 
 export interface AuthResponse {
   success: boolean;
-  user: { id: string; email: string; name: string; role: UserRole };
+  user: { id: string; email: string; name: string; role: UserRole; planType?: 'SOURCING' | 'RANKING' | 'PRO' };
 }
 
 export const authApi = {
@@ -19,6 +19,7 @@ export const authApi = {
     success: boolean;
     user: {
       id: string; email: string; name: string; role: UserRole;
+      planType?: 'SOURCING' | 'RANKING' | 'PRO';
       outreachSignature?: string | null;
       createdAt: string; lastLoginAt: string | null;
     };
@@ -31,5 +32,13 @@ export const authApi = {
       success: boolean;
       user: { id: string; email: string; name: string; outreachSignature?: string | null };
     }>('/auth/profile', input);
+  },
+
+  forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.post('/auth/forgot-password', { email });
+  },
+
+  resetPassword(token: string, password: string): Promise<{ success: boolean; message: string }> {
+    return apiClient.post('/auth/reset-password', { token, password });
   },
 };

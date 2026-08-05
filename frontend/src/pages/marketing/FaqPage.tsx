@@ -76,12 +76,12 @@ const FAQS: { q: string; a: string; cat: Category }[] = [
 const CATEGORIES: Category[] = ['All', 'Credits', 'Sourcing', 'Outreach', 'Security', 'Teams'];
 
 const CAT_STYLE: Record<Category, { dot: string; activeBg: string; activeText: string; activeBorder: string; openBg: string; openBorder: string; openText: string }> = {
-  All:      { dot: 'bg-gray-400',    activeBg: 'bg-gray-900',    activeText: 'text-white',       activeBorder: 'border-gray-900',    openBg: 'bg-gray-50',     openBorder: 'border-gray-100',   openText: 'text-gray-600' },
-  Credits:  { dot: 'bg-amber-400',   activeBg: 'bg-amber-50',    activeText: 'text-amber-700',   activeBorder: 'border-amber-200',   openBg: 'bg-amber-50',    openBorder: 'border-amber-100',  openText: 'text-amber-800' },
-  Sourcing: { dot: 'bg-sky-400',     activeBg: 'bg-sky-50',      activeText: 'text-sky-700',     activeBorder: 'border-sky-200',     openBg: 'bg-sky-50',      openBorder: 'border-sky-100',    openText: 'text-sky-800' },
-  Outreach: { dot: 'bg-violet-400',  activeBg: 'bg-violet-50',   activeText: 'text-violet-700',  activeBorder: 'border-violet-200',  openBg: 'bg-violet-50',   openBorder: 'border-violet-100', openText: 'text-violet-800' },
-  Security: { dot: 'bg-emerald-400', activeBg: 'bg-emerald-50',  activeText: 'text-emerald-700', activeBorder: 'border-emerald-200', openBg: 'bg-emerald-50',  openBorder: 'border-emerald-100',openText: 'text-emerald-800' },
-  Teams:    { dot: 'bg-rose-400',    activeBg: 'bg-rose-50',     activeText: 'text-rose-700',    activeBorder: 'border-rose-200',    openBg: 'bg-rose-50',     openBorder: 'border-rose-100',   openText: 'text-rose-800' },
+  All:      { dot: 'bg-gray-400',    activeBg: 'bg-gray-900 dark:bg-white', activeText: 'text-white dark:text-gray-900', activeBorder: 'border-gray-900 dark:border-white', openBg: 'bg-gray-50 dark:bg-white/5', openBorder: 'border-gray-200 dark:border-white/10', openText: 'text-gray-700 dark:text-gray-200' },
+  Credits:  { dot: 'bg-amber-400',   activeBg: 'bg-amber-50 dark:bg-amber-500/20', activeText: 'text-amber-700 dark:text-amber-300', activeBorder: 'border-amber-200 dark:border-amber-500/30', openBg: 'bg-amber-50/60 dark:bg-amber-500/10', openBorder: 'border-amber-200/60 dark:border-amber-500/20', openText: 'text-amber-900 dark:text-amber-200' },
+  Sourcing: { dot: 'bg-sky-400',     activeBg: 'bg-sky-50 dark:bg-sky-500/20', activeText: 'text-sky-700 dark:text-sky-300', activeBorder: 'border-sky-200 dark:border-sky-500/30', openBg: 'bg-sky-50/60 dark:bg-sky-500/10', openBorder: 'border-sky-200/60 dark:border-sky-500/20', openText: 'text-sky-900 dark:text-sky-200' },
+  Outreach: { dot: 'bg-violet-400',  activeBg: 'bg-violet-50 dark:bg-violet-500/20', activeText: 'text-violet-700 dark:text-violet-300', activeBorder: 'border-violet-200 dark:border-violet-500/30', openBg: 'bg-violet-50/60 dark:bg-violet-500/10', openBorder: 'border-violet-200/60 dark:border-violet-500/20', openText: 'text-violet-900 dark:text-violet-200' },
+  Security: { dot: 'bg-emerald-400', activeBg: 'bg-emerald-50 dark:bg-emerald-500/20', activeText: 'text-emerald-700 dark:text-emerald-300', activeBorder: 'border-emerald-200 dark:border-emerald-500/30', openBg: 'bg-emerald-50/60 dark:bg-emerald-500/10', openBorder: 'border-emerald-200/60 dark:border-emerald-500/20', openText: 'text-emerald-900 dark:text-emerald-200' },
+  Teams:    { dot: 'bg-rose-400',    activeBg: 'bg-rose-50 dark:bg-rose-500/20', activeText: 'text-rose-700 dark:text-rose-300', activeBorder: 'border-rose-200 dark:border-rose-500/30', openBg: 'bg-rose-50/60 dark:bg-rose-500/10', openBorder: 'border-rose-200/60 dark:border-rose-500/20', openText: 'text-rose-900 dark:text-rose-200' },
 };
 
 export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
@@ -94,40 +94,40 @@ export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
     <MarketingShell current="faq" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
 
       {/* ── HERO ──────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-white border-b border-gray-100">
+      <section className="relative overflow-hidden bg-white dark:bg-[#0a0a0a] border-b border-gray-200/80 dark:border-white/10 transition-colors">
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245,158,11,0.08), transparent)' }} />
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-20 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-600 text-[12px] font-mono uppercase tracking-wider mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-300 text-[12px] font-mono uppercase tracking-wider mb-8">
             <MessageCircle className="w-3.5 h-3.5" />
             Frequently asked questions
           </div>
-          <h1 className="text-6xl font-normal text-gray-900 max-w-3xl mx-auto mb-5 leading-tight"
+          <h1 className="text-6xl font-normal text-gray-900 dark:text-white max-w-3xl mx-auto mb-5 leading-tight"
             style={{ fontFamily: "'DM Serif Display', serif" }}>
-            Everything you want<br /><span className="italic text-amber-600">to know</span>
+            Everything you want<br /><span className="italic text-amber-600 dark:text-amber-400">to know</span>
           </h1>
-          <p className="text-lg text-gray-500 max-w-lg mx-auto">
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-lg mx-auto">
             From credits to GDPR — we've written down every answer we've given more than twice.
           </p>
         </div>
       </section>
 
       {/* ── QUICK STATS ───────────────────────────────────────────────────────── */}
-      <section className="bg-amber-50 border-b border-amber-100">
+      <section className="bg-amber-50/60 dark:bg-white/[0.02] border-b border-amber-100 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-amber-100 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-amber-200/60 dark:bg-white/10 rounded-2xl overflow-hidden shadow-xs">
             {[
               { value: '$0', label: 'To source & score', icon: '🔍' },
               { value: '1 credit', label: 'Per contact reveal', icon: '⚡' },
               { value: '$65', label: '1,000 top-up credits', icon: '💳' },
               { value: '0', label: 'Lock-in or contracts', icon: '🔓' },
             ].map(s => (
-              <div key={s.label} className="bg-white px-8 py-7 flex flex-col gap-1">
+              <div key={s.label} className="bg-white dark:bg-[#10131c] px-8 py-7 flex flex-col gap-1">
                 <span className="text-2xl mb-1">{s.icon}</span>
-                <span className="text-3xl font-normal text-amber-600" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                <span className="text-3xl font-normal text-amber-600 dark:text-amber-400" style={{ fontFamily: "'DM Serif Display', serif" }}>
                   {s.value}
                 </span>
-                <span className="text-[12px] text-gray-500">{s.label}</span>
+                <span className="text-[12px] text-gray-500 dark:text-gray-400 font-medium">{s.label}</span>
               </div>
             ))}
           </div>
@@ -135,7 +135,7 @@ export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
       </section>
 
       {/* ── CATEGORY FILTER + ACCORDION ───────────────────────────────────────── */}
-      <section className="bg-white border-b border-gray-100">
+      <section className="bg-white dark:bg-[#0a0a0a] border-b border-gray-200/80 dark:border-white/10 transition-colors">
         <div className="max-w-6xl mx-auto px-6 py-16">
 
           {/* Category chips */}
@@ -148,9 +148,9 @@ export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold border transition-all ${
                     isActive
                       ? `${s.activeBg} ${s.activeText} ${s.activeBorder}`
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'
+                      : 'bg-white dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 hover:text-gray-700 dark:hover:text-white'
                   }`}>
-                  {c !== 'All' && <span className={`w-2 h-2 rounded-full ${isActive ? s.dot : 'bg-gray-300'}`} />}
+                  {c !== 'All' && <span className={`w-2 h-2 rounded-full ${isActive ? s.dot : 'bg-gray-300 dark:bg-gray-600'}`} />}
                   {c}
                 </button>
               );
@@ -164,20 +164,19 @@ export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
               const s = CAT_STYLE[faq.cat];
               return (
                 <div key={i}
-                  className={`rounded-2xl border overflow-hidden transition-all ${
-                    isOpen ? 'border-gray-200 shadow-sm' : 'border-gray-150 hover:border-gray-200'
-                  } bg-white`}
-                  style={{ borderColor: isOpen ? undefined : '#efefef' }}>
+                  className={`rounded-2xl border overflow-hidden transition-all bg-white dark:bg-[#10131c] ${
+                    isOpen ? 'border-gray-300 dark:border-white/20 shadow-sm' : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+                  }`}>
                   <button onClick={() => setOpen(isOpen ? null : i)}
-                    className="w-full flex items-start gap-4 px-6 py-5 text-left hover:bg-gray-50 transition-colors">
+                    className="w-full flex items-start gap-4 px-6 py-5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
-                        <p className="text-[15px] font-semibold text-gray-900 leading-snug pr-2">{faq.q}</p>
+                        <p className="text-[15px] font-bold text-gray-900 dark:text-white leading-snug pr-2">{faq.q}</p>
                         <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all border ${
                           isOpen
                             ? `${s.activeBg} ${s.activeText} ${s.activeBorder}`
-                            : 'bg-gray-100 border-gray-200 text-gray-400'
+                            : 'bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-300'
                         }`}>
                           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -204,16 +203,16 @@ export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
 
           {/* Support callout */}
           <div className="max-w-3xl mx-auto mt-10">
-            <div className="flex flex-col sm:flex-row items-center gap-6 bg-gray-50 border border-gray-200 rounded-2xl px-8 py-7">
-              <div className="w-12 h-12 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shrink-0 text-2xl shadow-sm">
+            <div className="flex flex-col sm:flex-row items-center gap-6 bg-gray-50 dark:bg-[#10131c] border border-gray-200 dark:border-white/10 rounded-2xl px-8 py-7 shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 text-2xl shadow-xs">
                 💬
               </div>
               <div className="flex-1 text-center sm:text-left">
-                <p className="text-[15px] font-semibold text-gray-900 mb-1">Still have a question?</p>
-                <p className="text-[13px] text-gray-500">We answer within one business day. No bots — a human replies.</p>
+                <p className="text-[15px] font-bold text-gray-900 dark:text-white mb-1">Still have a question?</p>
+                <p className="text-[13px] text-gray-600 dark:text-gray-400 font-medium">We answer within one business day. No bots — a human replies.</p>
               </div>
               <a href="mailto:support@talentscanr.com"
-                className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-[14px] font-semibold hover:bg-gray-800 transition-colors">
+                className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white text-[14px] font-semibold transition-colors shadow-xs">
                 Email support <ArrowRight className="w-4 h-4" />
               </a>
             </div>
@@ -222,22 +221,22 @@ export function FaqPage({ onNavigate, authed, onOpenWorkspace }: PageProps) {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gray-50 border-t border-gray-100">
+      <section className="relative overflow-hidden bg-gray-50 dark:bg-[#07080d] border-t border-gray-200/80 dark:border-white/10 transition-colors">
         <div className="relative max-w-6xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-5xl font-normal text-gray-900 mb-5" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          <h2 className="text-5xl font-normal text-gray-900 dark:text-white mb-5" style={{ fontFamily: "'DM Serif Display', serif" }}>
             Ready to try it?
           </h2>
-          <p className="text-gray-500 text-lg max-w-lg mx-auto mb-10">
+          <p className="text-gray-600 dark:text-gray-300 text-lg max-w-lg mx-auto mb-10 font-normal">
             Source, score, and draft your first outreach message in under five minutes.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <button onClick={() => onNavigate('/register')}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-[16px] text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)', boxShadow: '0 4px 20px rgba(124,58,237,0.25)' }}>
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-[16px] text-white transition-all shadow-md hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)' }}>
               Create free account <ArrowRight className="w-4 h-4" />
             </button>
             <button onClick={() => onNavigate('/pricing')}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-gray-200 hover:border-gray-400 text-gray-600 hover:text-gray-900 font-medium text-[16px] transition-colors bg-white">
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-gray-300 dark:border-white/10 hover:border-gray-500 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white font-medium text-[16px] transition-colors bg-white dark:bg-white/5">
               View pricing
             </button>
           </div>

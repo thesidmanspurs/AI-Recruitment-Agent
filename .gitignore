@@ -13,3 +13,9 @@ AI-Recruitment-Agent/
 
 # Local GitHub PAT, not part of the app
 token.md
+
+# Temporary test files & assets
+test_cvs/
+*.zip
+*.docx
+*.xlsx
