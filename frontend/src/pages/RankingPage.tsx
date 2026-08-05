@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, type MouseEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type MouseEvent, type ChangeEvent } from 'react';
 import {
   Trophy, Plus, Trash2,
-  Download, Clock as ClockIcon, CheckCircle2, AlertCircle, Sparkles, UserCheck, ChevronDown, ChevronUp, FileCode, Menu, LogOut, Upload, RefreshCw
+  Download, Clock as ClockIcon, CheckCircle2, AlertCircle, Sparkles, UserCheck, ChevronDown, ChevronUp, FileCode, Menu, LogOut, Upload, RefreshCw, Loader2, ClipboardPaste, FileText
 } from 'lucide-react';
 import { rankingApi, type RankingSession, type RankedCandidate, type UploadResult } from '../api/rankingApi';
 import { CVUploadDropzone } from '../components/ranking/CVUploadDropzone';
@@ -38,6 +38,11 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
   const [paywallFeature, setPaywallFeature] = useState<'sourcing' | 'ranking' | null>(null);
   const [showJdDetails, setShowJdDetails] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+
+  // JD File Upload / Paste state for session creation
+  const [jdUploading, setJdUploading] = useState(false);
+  const [uploadedJdName, setUploadedJdName] = useState<string | null>(null);
+  const jdFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Modal state for incremental CV batch addition
   const [showAddMoreModal, setShowAddMoreModal] = useState(false);
@@ -85,6 +90,43 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  const handleJdFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    setJdUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/upload/extract-text', { method: 'POST', credentials: 'include', body: form });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || `HTTP ${res.status}`);
+      setRawJobText(json.text as string);
+      setUploadedJdName(file.name);
+      const base = file.name.replace(/\.(pdf|docx|doc|txt|md)$/i, '').replace(/[_-]+/g, ' ').trim();
+      if (base) {
+        if (!jobTitle.trim()) setJobTitle(base);
+        if (!sessionName.trim()) setSessionName(`${base} — Batch`);
+      }
+    } catch (err) {
+      setError(`Could not read JD file: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setJdUploading(false);
+    }
+  };
+
+  const handleJdPaste = async () => {
+    setError(null);
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text.trim()) { setError('Clipboard is empty.'); return; }
+      setRawJobText(prev => (prev.trim() ? `${prev.trim()}\n\n${text.trim()}` : text.trim()));
+    } catch {
+      setError('Browser blocked clipboard access. Paste manually with Ctrl+V.');
+    }
+  };
 
   const handleInspectCandidate = (candidate: RankedCandidate) => {
     setSelectedCandidate(candidate);
@@ -585,18 +627,56 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
                     </div>
                   </div>
 
-                  {/* Job Description Textarea */}
+                  {/* Job Description Textarea + Upload / Paste buttons */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                       <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                         Job Description (JD) & Key Evaluation Criteria <span className="text-red-500">*</span>
                       </label>
-                      <span className="text-[10px] text-gray-400 font-mono">{rawJobText.length} chars (min 50)</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={jdFileInputRef}
+                          type="file"
+                          accept=".pdf,.docx,.doc,.txt,.md"
+                          onChange={handleJdFileChange}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => jdFileInputRef.current?.click()}
+                          disabled={jdUploading}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+                        >
+                          {jdUploading ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Reading file…</>
+                          ) : (
+                            <><Upload className="w-3.5 h-3.5 text-gray-500" /> Upload JD File (PDF/DOCX)</>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleJdPaste}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shadow-xs cursor-pointer"
+                        >
+                          <ClipboardPaste className="w-3.5 h-3.5 text-gray-500" /> Paste Clipboard
+                        </button>
+                        <span className="text-[10px] text-gray-400 font-mono">{rawJobText.length} chars (min 50)</span>
+                      </div>
                     </div>
+
+                    {uploadedJdName && (
+                      <div className="mb-2 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <FileText size={14} /> Extracted criteria from <strong>{uploadedJdName}</strong>
+                        </span>
+                        <button type="button" onClick={() => setUploadedJdName(null)} className="text-emerald-600 hover:text-emerald-900 dark:hover:text-emerald-100 text-[11px] font-bold">Clear</button>
+                      </div>
+                    )}
+
                     <textarea
                       value={rawJobText}
                       onChange={e => setRawJobText(e.target.value)}
-                      placeholder="Paste the full job description, required technical skills, experience requirements, and key responsibilities here..."
+                      placeholder="Paste or upload full job description, required technical skills, experience thresholds, and key criteria here..."
                       rows={8}
                       className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-gray-400 transition-colors resize-none leading-relaxed font-mono"
                     />
