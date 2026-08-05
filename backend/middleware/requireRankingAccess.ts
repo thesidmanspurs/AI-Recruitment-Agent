@@ -35,9 +35,14 @@ export async function requireRankingAccess(
 
     const { hasRankingAccess } = deriveAccess(user);
     if (!hasRankingAccess) {
+      // Free trial allowance: allow non-subscribed users up to 5 free ranking sessions
+      const sessionCount = await prisma.rankingSession.count({ where: { userId } });
+      if (sessionCount < 5) {
+        return next();
+      }
       return next(
         createError(
-          'CV Ranking requires an active Ranking Plan or Pro Plan. Upgrade from the Billing tab.',
+          'You have used your 5 free trial Ranking sessions. Upgrade to Ranking Plan or Pro Plan from the Billing tab for unlimited rankings.',
           403,
         ),
       );
