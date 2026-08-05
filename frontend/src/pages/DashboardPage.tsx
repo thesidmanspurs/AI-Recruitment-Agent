@@ -405,7 +405,20 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
       <FeaturePaywallModal
         open={paywallFeature !== null}
-        onClose={() => setPaywallFeature(null)}
+        onClose={() => {
+          if (paywallFeature === 'sourcing') {
+            setPaywallFeature(null);
+            // Ranking plan users → go to ranking workspace
+            // No plan / other → stay on home (they can still browse)
+            const hasRanking = user?.planType === 'RANKING' || user?.planType === 'PRO';
+            if (hasRanking) {
+              onOpenRanking?.();
+            }
+            // no plan: just close, they're already on home
+          } else {
+            setPaywallFeature(null);
+          }
+        }}
         targetFeature={paywallFeature ?? 'ranking'}
         onUpgrade={() => onOpenBilling?.()}
       />

@@ -307,8 +307,18 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
 
       <FeaturePaywallModal
         open={paywallFeature !== null}
-        onClose={() => setPaywallFeature(null)}
-        targetFeature={paywallFeature ?? 'sourcing'}
+        onClose={() => {
+          if (paywallFeature === 'ranking') {
+            setPaywallFeature(null);
+            // Redirect away from the locked page — user can't use ranking
+            // Sourcing plan → sourcing workspace (/home)
+            // No plan → landing/home
+            onOpenHome?.();
+          } else {
+            setPaywallFeature(null);
+          }
+        }}
+        targetFeature={paywallFeature ?? 'ranking'}
         onUpgrade={() => onOpenBilling?.()}
       />
 
