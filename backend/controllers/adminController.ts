@@ -150,15 +150,17 @@ export const adminController = {
 
   async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, dailyLimitOverride } = req.body as {
+      const { name, email, dailyLimitOverride, planType } = req.body as {
         name?: string;
         email?: string;
         dailyLimitOverride?: number | null;
+        planType?: 'NONE' | 'SOURCING' | 'RANKING' | 'PRO';
       };
       const user = await adminService.updateUser(req.params.userId, {
         name,
         email,
         dailyLimitOverride,
+        planType,
       });
       res.json({ success: true, user });
     } catch (err) {

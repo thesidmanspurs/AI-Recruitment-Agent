@@ -37,7 +37,7 @@ export function UserDetailModal({
   onChanged,
 }: UserDetailModalProps) {
   const [behavior, setBehavior] = useState<AdminUserBehavior | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [behaviorLoading, setBehaviorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -45,32 +45,35 @@ export function UserDetailModal({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [limitOverride, setLimitOverride] = useState('');
+  const [planType, setPlanType] = useState<'NONE' | 'SOURCING' | 'RANKING' | 'PRO'>('NONE');
 
   // Pending confirms
   const [confirm, setConfirm] = useState<Action>(null);
   const [blockReason, setBlockReason] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
-  // Hydrate when user changes
+  // Hydrate instantly when user changes
   useEffect(() => {
     if (!user) return;
     setName(user.name);
     setEmail(user.email);
     setLimitOverride(user.dailyLimitOverride == null ? '' : String(user.dailyLimitOverride));
+    setPlanType(user.planType ?? 'NONE');
     setError(null);
     setBlockReason('');
     setNewPassword('');
+    setBehavior(null);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load behavior on open
+  // Load behavior asynchronously in background without blocking modal UI
   useEffect(() => {
     if (!open || !user) return;
-    setLoading(true);
+    setBehaviorLoading(true);
     adminApi
       .getUserBehavior(user.id)
       .then(setBehavior)
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load behavior.'))
-      .finally(() => setLoading(false));
+      .catch(() => { /* silent fallback */ })
+      .finally(() => setBehaviorLoading(false));
   }, [open, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!user) return null;
@@ -79,6 +82,7 @@ export function UserDetailModal({
   const dirty =
     name !== user.name ||
     email !== user.email ||
+    planType !== (user.planType ?? 'NONE') ||
     limitOverride !== (user.dailyLimitOverride == null ? '' : String(user.dailyLimitOverride));
 
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
@@ -107,6 +111,7 @@ export function UserDetailModal({
         name: name.trim(),
         email: email.trim(),
         dailyLimitOverride: overrideValue,
+        planType,
       })
     );
     if (ok) onChanged();
@@ -223,6 +228,30 @@ export function UserDetailModal({
                   className="w-full bg-white dark:bg-[#0a0c12] border border-gray-300 dark:border-white/10 rounded-lg px-3.5 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                 />
               </FormField>
+
+              <div className="md:col-span-2">
+                <FormField label="Assigned Plan Type" hint="Grants feature access directly from admin panel.">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+                    {(['NONE', 'SOURCING', 'RANKING', 'PRO'] as const).map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPlanType(p)}
+                        className={`px-3 py-2 text-xs font-bold rounded-xl border text-center transition-all ${
+                          planType === p
+                            ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent shadow-xs scale-[1.02]'
+                            : 'bg-white dark:bg-[#0a0c12] text-gray-700 dark:text-gray-300 border-gray-300 dark:border-white/10 hover:border-gray-500'
+                        }`}
+                      >
+                        {p === 'NONE' && '🆓 NONE'}
+                        {p === 'SOURCING' && '⚡ SOURCING'}
+                        {p === 'RANKING' && '🏆 RANKING'}
+                        {p === 'PRO' && '👑 PRO'}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+              </div>
             </div>
             <div className="flex justify-end mt-1">
               <button
@@ -352,7 +381,7 @@ export function UserDetailModal({
             icon={<Activity className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />}
             title="Behavior"
           >
-            {loading ? (
+            {behaviorLoading ? (
               <div className="flex justify-center py-6">
                 <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
               </div>

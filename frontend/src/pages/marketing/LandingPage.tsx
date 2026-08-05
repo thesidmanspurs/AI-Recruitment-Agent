@@ -1,4 +1,4 @@
-import { ArrowRight, Zap, Search, Star, Mail as MailIcon, BarChart2, Shield } from 'lucide-react';
+import { ArrowRight, Zap, Search, Star, Mail as MailIcon, BarChart2, Shield, Trophy, Upload, Sparkles } from 'lucide-react';
 import { MarketingShell } from '../../components/marketing/MarketingShell';
 const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
@@ -7,6 +7,7 @@ interface LandingPageProps {
   onNavigate: (to: string) => void;
   authed?: boolean;
   onOpenWorkspace?: () => void;
+  onOpenRanking?: () => void;
 }
 
 const STEPS = [
@@ -204,7 +205,7 @@ function ProductMockup() {
 }
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
-export function LandingPage({ onNavigate, authed, onOpenWorkspace }: LandingPageProps) {
+export function LandingPage({ onNavigate, authed, onOpenWorkspace, onOpenRanking }: LandingPageProps) {
   return (
     <MarketingShell current="home" onNavigate={onNavigate} authed={authed} onOpenWorkspace={onOpenWorkspace}>
       <style>{`
@@ -223,10 +224,10 @@ export function LandingPage({ onNavigate, authed, onOpenWorkspace }: LandingPage
       <section className="relative overflow-hidden">
         <div className="lp-dots absolute inset-0 pointer-events-none" />
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-12">
-          <div className="max-w-4xl mx-auto text-center space-y-6 mb-14">
+          <div className="max-w-4xl mx-auto text-center space-y-6 mb-12">
             <div className="flex justify-center">
-              <span className="inline-flex items-center px-3.5 py-1 border border-gray-200 dark:border-white/10 rounded-full text-[12px] font-medium text-gray-600 dark:text-gray-300 tracking-wide bg-white/80 dark:bg-white/5 backdrop-blur-sm shadow-xs">
-                AI-Powered Sourcing &amp; Inbound CV Ranking
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 border border-gray-200 dark:border-white/10 rounded-full text-[12px] font-medium text-gray-600 dark:text-gray-300 tracking-wide bg-white/80 dark:bg-white/5 backdrop-blur-sm shadow-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI-Powered Sourcing &amp; Inbound CV Ranking
               </span>
             </div>
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal leading-[1.05] text-gray-900 dark:text-white"
@@ -235,26 +236,58 @@ export function LandingPage({ onNavigate, authed, onOpenWorkspace }: LandingPage
               <span className="italic">Automatically.</span>
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto font-normal">
-              Upload a job spec or batch of candidate CVs. TalentScanr autonomously sources across platforms, ranks candidates 0–10, enriches contact details, and drafts personalized outreach.
+              Select your workflow below: Autonomously source top passive candidates across platforms OR upload candidate CV batches &amp; JD criteria for instant AI match ranking.
             </p>
-            <div className="flex flex-wrap gap-3 pt-1 justify-center">
-              {authed ? (
-                <button onClick={onOpenWorkspace}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white rounded-xl font-semibold text-[15px] transition-colors shadow-xs">
-                  Open workspace <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <>
-                  <button onClick={() => onNavigate('/register')}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100 text-white rounded-xl font-semibold text-[15px] transition-colors shadow-xs">
-                    Start for free <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => onNavigate('/login')}
-                    className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 dark:border-white/10 hover:border-gray-500 text-gray-700 dark:text-gray-200 rounded-xl font-medium text-[15px] transition-colors bg-white/80 dark:bg-white/5 backdrop-blur-sm">
-                    Sign in
-                  </button>
-                </>
-              )}
+
+            {/* ── 2 PROMINENT HERO ACTION BUTTONS (SOURCE vs RANK) ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto pt-4 text-left">
+              {/* Option 1: AI Sourcing */}
+              <button
+                type="button"
+                onClick={() => (authed ? (onOpenWorkspace ? onOpenWorkspace() : onNavigate('/home')) : onNavigate('/register'))}
+                className="group relative p-5 rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-b from-amber-500/10 to-transparent hover:from-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                    <Search className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    Outbound Sourcing
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-1.5 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                    Source Candidates <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                    Enter job spec &amp; criteria. Crawl LinkedIn &amp; GitHub for matching passive talent automatically.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 2: CV Batch Ranking */}
+              <button
+                type="button"
+                onClick={() => (authed ? (onOpenRanking ? onOpenRanking() : onNavigate('/ranking')) : onNavigate('/ranking'))}
+                className="group relative p-5 rounded-2xl border border-purple-200 dark:border-purple-500/20 bg-gradient-to-b from-purple-500/10 to-transparent hover:from-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                    Inbound Screening
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-1.5 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    Rank Candidate CVs <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                    Upload candidate CVs (PDF/DOCX) + JD criteria to score 0–10 &amp; find top winners instantly.
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
           <ProductMockup />

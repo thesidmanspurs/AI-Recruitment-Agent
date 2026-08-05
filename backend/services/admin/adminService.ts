@@ -385,7 +385,12 @@ export const adminService = {
    */
   async updateUser(
     userId: string,
-    input: { name?: string; email?: string; dailyLimitOverride?: number | null }
+    input: {
+      name?: string;
+      email?: string;
+      dailyLimitOverride?: number | null;
+      planType?: 'NONE' | 'SOURCING' | 'RANKING' | 'PRO';
+    }
   ) {
     if (input.email) {
       const conflict = await prisma.user.findFirst({
@@ -397,12 +402,12 @@ export const adminService = {
     return prisma.user.update({
       where: { id: userId },
       data: {
-        name: input.name,
-        email: input.email,
-        // Explicit "set to null to clear override". `undefined` leaves it alone.
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.email !== undefined && { email: input.email }),
         ...(input.dailyLimitOverride !== undefined && {
           dailyLimitOverride: input.dailyLimitOverride,
         }),
+        ...(input.planType !== undefined && { planType: input.planType }),
       },
       select: {
         id: true,
@@ -410,6 +415,7 @@ export const adminService = {
         name: true,
         role: true,
         isBlocked: true,
+        planType: true,
         dailyLimitOverride: true,
       },
     });

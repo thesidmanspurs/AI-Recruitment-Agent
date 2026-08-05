@@ -168,7 +168,12 @@ export const adminApi = {
   },
   updateUser(
     userId: string,
-    input: { name?: string; email?: string; dailyLimitOverride?: number | null }
+    input: {
+      name?: string;
+      email?: string;
+      dailyLimitOverride?: number | null;
+      planType?: 'NONE' | 'SOURCING' | 'RANKING' | 'PRO';
+    }
   ) {
     return apiClient.put<{ success: boolean; user: AdminUserRow }>(
       `/admin/users/${userId}`,
