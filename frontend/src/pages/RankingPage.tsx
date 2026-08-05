@@ -11,7 +11,7 @@ import { FeaturePaywallModal } from '../components/shared/FeaturePaywallModal';
 import { WorkspaceSidebar, type RankingSessionDto } from '../components/layout/WorkspaceSidebar';
 import { CenterModal } from '../components/shared/CenterModal';
 import { CandidateDetailModal } from '../components/ranking/CandidateDetailModal';
-import { LeaderboardPodium } from '../components/ranking/LeaderboardPodium';
+
 import { ThemeToggle } from '../components/shared/ThemeToggle';
 import type { AuthUser } from '../hooks/useAuth';
 
@@ -680,13 +680,7 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
                 )}
               </div>
 
-              {/* Top 5 Winners Stage Showcase Card */}
-              {results.length > 0 && (
-                <LeaderboardPodium
-                  topCandidates={results.slice(0, 5)}
-                  onSelect={handleInspectCandidate}
-                />
-              )}
+
 
               {/* Summary Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
