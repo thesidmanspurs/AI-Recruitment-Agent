@@ -1,53 +1,47 @@
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { env } from '../config/env.js';
 
-/**
- * HttpOnly auth cookie helpers.
- *
- * Storing the JWT in an HttpOnly cookie is the defense against XSS-style
- * token theft: even if attacker JS runs on our origin, it cannot read or
- * exfiltrate the cookie. localStorage offers no such guarantee.
- *
- * Flags:
- *   httpOnly  — invisible to document.cookie / fetch / any client JS
- *   secure    — HTTPS only in production (Cloud Run is always HTTPS)
- *   sameSite  — 'lax' lets the cookie ride along on top-level navigation
- *               but blocks third-party AJAX, which is the CSRF surface
- *   path: /   — sent on every API request (and SPA navigation, but only
- *               /api/* actually reads it server-side)
- *   maxAge    — matches JWT_EXPIRES_IN; we keep the cookie alive as long
- *               as the underlying JWT could plausibly still be valid
- */
 export const AUTH_COOKIE_NAME = 'talentscanr_token';
 
 function maxAgeMs(): number {
-  // env.JWT_EXPIRES_IN is "7d" by default; map common suffixes to ms.
   const raw = env.JWT_EXPIRES_IN.trim();
   const m = raw.match(/^(\d+)([smhd])$/);
   if (!m) return 7 * 24 * 60 * 60 * 1000;
   const n = Number(m[1]);
-  const unit = m[2];
   const mult: Record<string, number> = { s: 1_000, m: 60_000, h: 3_600_000, d: 86_400_000 };
-  return n * (mult[unit] ?? 86_400_000);
+  return n * (mult[m[2]] ?? 86_400_000);
 }
 
-export function setAuthCookie(res: Response, token: string): void {
+export function getCookieDomain(req?: Request): string | undefined {
+  if (!env.COOKIE_DOMAIN) return undefined;
+  if (!req) return env.COOKIE_DOMAIN;
+  const rawHost = (req.get('x-forwarded-host') || req.get('host') || '').split(':')[0];
+  const targetDomain = env.COOKIE_DOMAIN.replace(/^\./, '');
+  if (rawHost === targetDomain || rawHost.endsWith('.' + targetDomain)) {
+    return env.COOKIE_DOMAIN;
+  }
+  return undefined;
+}
+
+export function setAuthCookie(res: Response, token: string, req?: Request): void {
+  const domain = getCookieDomain(req);
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: maxAgeMs(),
-    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+    ...(domain ? { domain } : {}),
   });
 }
 
-export function clearAuthCookie(res: Response): void {
+export function clearAuthCookie(res: Response, req?: Request): void {
+  const domain = getCookieDomain(req);
   res.clearCookie(AUTH_COOKIE_NAME, {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+    ...(domain ? { domain } : {}),
   });
 }

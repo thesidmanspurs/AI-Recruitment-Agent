@@ -12,7 +12,7 @@ import { EngineFeaturesPage } from './pages/marketing/EngineFeaturesPage';
 import { PricingPage } from './pages/marketing/PricingPage';
 import { FaqPage } from './pages/marketing/FaqPage';
 import { PolicyPage } from './pages/marketing/PolicyPage';
-import { ToastProvider } from './components/shared/Toast';
+import { ToastProvider, useToast } from './components/shared/Toast';
 import { useAuth } from './hooks/useAuth';
 import { paymentsApi } from './api/paymentsApi';
 
@@ -62,7 +62,18 @@ function clearPendingCheckout(): void {
 
 function AuthGate() {
   const { user, loading, login, register, logout } = useAuth();
+  const toast = useToast();
   const [path, setPath] = useState<string>(() => window.location.pathname);
+
+  // Detect OAuth error query param on page load (e.g., ?auth_error=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authErr = params.get('auth_error');
+    if (authErr) {
+      toast.push({ title: 'Google Sign-in Failed', body: authErr, tone: 'error' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [toast]);
 
   // Sync with browser back/forward.
   useEffect(() => {

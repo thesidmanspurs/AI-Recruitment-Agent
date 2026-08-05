@@ -2,31 +2,26 @@ import type { Request, Response } from 'express';
 import crypto from 'node:crypto';
 import { env, isGoogleConfigured } from '../config/env.js';
 import { authService } from '../services/auth/authService.js';
-import { setAuthCookie } from '../utils/authCookie.js';
+import { setAuthCookie, getCookieDomain } from '../utils/authCookie.js';
 
-/**
- * Google OAuth 2.0 — server-side Authorization Code flow.
- *
- *   GET /api/auth/google  → redirect the browser to Google's consent screen.
- *   GET /api/callback     → Google redirects back here with ?code; we exchange
- *                           it for tokens, resolve the user, set the auth
- *                           cookie, and redirect into the app.
- *
- * The redirect path /api/callback matches the Authorized redirect URI on the
- * OAuth client. CSRF is handled with a one-time `state` value mirrored in a
- * short-lived HttpOnly cookie. The auth cookie is SameSite=Lax, so it is sent
- * on the top-level redirect back into the SPA.
- */
 const STATE_COOKIE = 'aries_oauth_state';
+const ORIGIN_COOKIE = 'aries_oauth_origin';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
-function appHome(): string {
-  return env.APP_URL.replace(/\/$/, '') || '';
+function getClientOrigin(req: Request): string {
+  const host = (req.get('x-forwarded-host') || req.get('host') || '').split(':')[0];
+  const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    const port = req.get('x-forwarded-port') || host.split(':')[1] || '3000';
+    return `${proto}://${host.split(':')[0]}:${port}`;
+  }
+  if (host.includes('run.app')) {
+    return `${proto}://${host}`;
+  }
+  return env.APP_URL.replace(/\/$/, '') || `${proto}://${host}`;
 }
 
-/** Decode a JWT payload (no signature check needed — token came straight from
- *  Google's token endpoint over TLS). */
 function decodeJwtPayload(jwtStr: string): Record<string, unknown> {
   const part = jwtStr.split('.')[1];
   if (!part) throw new Error('malformed id_token');
@@ -35,21 +30,32 @@ function decodeJwtPayload(jwtStr: string): Record<string, unknown> {
 
 export const googleAuthController = {
   // GET /api/auth/google
-  start(_req: Request, res: Response): void {
+  start(req: Request, res: Response): void {
+    const origin = getClientOrigin(req);
     if (!isGoogleConfigured()) {
-      res.redirect(`${appHome()}/?auth_error=${encodeURIComponent('Google sign-in is not configured.')}`);
+      res.redirect(`${origin}/?auth_error=${encodeURIComponent('Google sign-in is not configured.')}`);
       return;
     }
+
     const state = crypto.randomBytes(16).toString('hex');
+    const domain = getCookieDomain(req);
+
     res.cookie(STATE_COOKIE, state, {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 10 * 60 * 1000, // 10 min — only needs to survive the round trip
-      // Share across www↔apex so the cookie set here survives the redirect
-      // back to GOOGLE_REDIRECT_URI's host (see COOKIE_DOMAIN in env.ts).
-      ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+      maxAge: 10 * 60 * 1000,
+      ...(domain ? { domain } : {}),
+    });
+
+    res.cookie(ORIGIN_COOKIE, origin, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 10 * 60 * 1000,
+      ...(domain ? { domain } : {}),
     });
 
     const params = new URLSearchParams({
@@ -66,8 +72,13 @@ export const googleAuthController = {
 
   // GET /api/callback
   async callback(req: Request, res: Response): Promise<void> {
-    const fail = (msg: string) =>
-      res.redirect(`${appHome()}/?auth_error=${encodeURIComponent(msg)}`);
+    const domain = getCookieDomain(req);
+    const savedOrigin = req.cookies?.[ORIGIN_COOKIE] || getClientOrigin(req);
+    const fail = (msg: string) => {
+      res.clearCookie(STATE_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
+      res.clearCookie(ORIGIN_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
+      res.redirect(`${savedOrigin}/?auth_error=${encodeURIComponent(msg)}`);
+    };
 
     try {
       if (!isGoogleConfigured()) return fail('Google sign-in is not configured.');
@@ -76,14 +87,16 @@ export const googleAuthController = {
       if (error) return fail(`Google denied the request (${error}).`);
       if (!code) return fail('Missing authorization code.');
 
-      // CSRF: the state echoed by Google must match the cookie we set.
+      // CSRF validation
       const expected = req.cookies?.[STATE_COOKIE];
-      res.clearCookie(STATE_COOKIE, { path: '/' });
+      res.clearCookie(STATE_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
+      res.clearCookie(ORIGIN_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
+
       if (!expected || !state || expected !== state) {
         return fail('Sign-in session expired. Please try again.');
       }
 
-      // Exchange the code for tokens.
+      // Token exchange
       const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -108,23 +121,20 @@ export const googleAuthController = {
         name?: string;
         picture?: string;
       };
-      // Defence: the token's audience must be our client id.
       const verifiedEmail = claims.email_verified === true || claims.email_verified === 'true';
       if (!claims.sub || !claims.email) return fail('Google profile was incomplete.');
       if (!verifiedEmail) return fail('Your Google email is not verified.');
 
-      const result = await authService.googleSignIn({
+      const result = authService.googleSignIn({
         googleId: claims.sub,
         email: claims.email,
         name: claims.name,
         avatarUrl: claims.picture,
       });
 
-      setAuthCookie(res, result.token);
-      // Top-level navigation back into the SPA; the Lax auth cookie rides along.
-      // Land in the workspace (/home); "/" is the public homepage. A pending
-      // checkout is resumed client-side regardless of the landing path.
-      res.redirect(`${appHome()}/home`);
+      const userResult = await result;
+      setAuthCookie(res, userResult.token, req);
+      res.redirect(`${savedOrigin}/home`);
     } catch (err) {
       console.error('[Google OAuth] callback error:', err instanceof Error ? err.message : err);
       fail('Could not complete Google sign-in.');
