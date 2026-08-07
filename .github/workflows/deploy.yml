@@ -1,10 +1,24 @@
-name: CI/CD Pipeline — Deploy to GCP Cloud Run
+name: Multi-Environment CI/CD Pipeline — UAT & Production
 
 on:
   push:
     branches:
       - main
+      - uat
+      - staging
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target Environment'
+        required: true
+        default: 'uat'
+        type: choice
+        options:
+          - uat
+          - production
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -15,7 +29,7 @@ permissions:
   id-token: write
 
 jobs:
-  # ── Phase 1: Lint & Code Checks ──────────────────────────────────────────
+  # ── Phase 1: Code Quality & TypeScript Check ─────────────────────────────
   check:
     name: 🧪 Code Quality & TypeScript Check
     runs-on: ubuntu-latest
@@ -45,10 +59,11 @@ jobs:
           npm ci
           npx tsc --noEmit
 
-  # ── Phase 2: Keyless Deploy to GCP Cloud Run ─────────────────────────────
+  # ── Phase 2: Deploy to GCP (UAT vs Production) ─────────────────────────────
   deploy:
-    name: 🚀 Deploy to GCP Cloud Run
+    name: 🚀 Deploy Environment
     needs: check
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -66,9 +81,22 @@ jobs:
         with:
           project_id: 'ai-recruitment-agent-496914'
 
-      - name: 🚢 Submit Cloud Build & Deploy to Cloud Run
+      - name: 🌐 Determine Target Service (UAT vs Production)
+        id: target
         run: |
+          # If branch is main or manual input is production -> Production Service
+          if [ "${{ github.ref_name }}" = "main" ] || [ "${{ inputs.target_env }}" = "production" ]; then
+            echo "service=ai-recruitment-agent" >> $GITHUB_OUTPUT
+            echo "env_name=Production" >> $GITHUB_OUTPUT
+          else
+            echo "service=ai-recruitment-agent-uat" >> $GITHUB_OUTPUT
+            echo "env_name=UAT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚢 Submit Cloud Build & Deploy
+        run: |
+          echo "Deploying to Service: ${{ steps.target.outputs.service }} (${{ steps.target.outputs.env_name }})"
           gcloud builds submit \
             --config=cloudbuild.yaml \
             --project=ai-recruitment-agent-496914 \
-            --substitutions=_CLOUDSQL_CONN="ai-recruitment-agent-496914:us-central1:agent-db",_IMAGE_TAG="${GITHUB_SHA::7}"
+            --substitutions=_SERVICE="${{ steps.target.outputs.service }}",_CLOUDSQL_CONN="ai-recruitment-agent-496914:us-central1:agent-db",_IMAGE_TAG="${GITHUB_SHA::7}"
