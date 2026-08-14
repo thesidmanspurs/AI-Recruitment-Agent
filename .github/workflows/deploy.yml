@@ -47,15 +47,12 @@ jobs:
       - name: 📦 Install root dependencies
         run: npm ci
 
+      - name: 🔍 TypeScript Check — Backend
+        run: npx tsc --noEmit
+
       - name: 🔍 TypeScript Check — Frontend
         run: |
           cd frontend
-          npm ci
-          npx tsc --noEmit
-
-      - name: 🔍 TypeScript Check — Backend
-        run: |
-          cd backend
           npm ci
           npx tsc --noEmit
 
