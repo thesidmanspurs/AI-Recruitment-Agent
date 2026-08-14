@@ -29,7 +29,7 @@ interface WorkspaceSidebarProps {
   activeCampaignName?: string;
   candidateCount: number;
   currentMode?: 'sourcing' | 'ranking';
-  user?: { planType?: 'SOURCING' | 'RANKING' | 'PRO'; role?: string; email?: string };
+  user?: { id?: string; planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE' | null; role?: string; email?: string };
   onLogout?: () => void;
   onPaywallClick?: (feature: 'sourcing' | 'ranking') => void;
   /** Mobile drawer state (ignored on desktop). */
@@ -124,30 +124,54 @@ function SidebarInner({
   return (
     <>
       {/* Logo → home */}
-      <button
-        type="button"
-        onClick={() => { onHome?.(); after(); }}
-        title="Go to homepage"
-        className="p-5 flex items-center gap-3 border-b border-gray-200 dark:border-[#1E293B]/80 bg-white dark:bg-[#0B0F19] w-full text-left hover:bg-gray-50 dark:hover:bg-[#0e1320] transition-colors shrink-0"
-      >
-        <img src={logoSrc} alt="TalentScanr" className="h-10 w-auto shrink-0 dark:brightness-0 dark:invert" />
-        <div>
-          <h1 className="text-gray-900 dark:text-white font-extrabold text-sm tracking-wider leading-none">TalentScanr</h1>
-          <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono font-bold uppercase mt-1 tracking-widest">
-            AI Talent Scanner
-          </p>
-        </div>
-      </button>
+      <div className="p-4 border-b border-gray-200 dark:border-[#1E293B]/80 bg-white dark:bg-[#0B0F19] w-full shrink-0">
+        <button
+          type="button"
+          onClick={() => { onHome?.(); after(); }}
+          title="Go to homepage"
+          className="flex items-center gap-3 w-full text-left hover:opacity-80 transition-opacity"
+        >
+          <img src={logoSrc} alt="TalentScanr" className="h-9 w-auto shrink-0 dark:brightness-0 dark:invert" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-gray-900 dark:text-white font-extrabold text-sm tracking-wider leading-none">TalentScanr</h1>
+            <p className="text-[9px] text-gray-400 dark:text-slate-500 font-mono font-bold uppercase mt-1 tracking-widest">
+              AI Talent Scanner
+            </p>
+          </div>
+        </button>
+
+        {/* Paid Plan Badge */}
+        {user?.planType && user.planType !== 'NONE' && (
+          <div className="mt-2.5">
+            {user.planType === 'PRO' || user.role === 'ADMIN' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide bg-gradient-to-r from-amber-500/15 to-yellow-500/15 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 w-full justify-center shadow-2xs font-mono">
+                ✨ Pro Member
+              </span>
+            ) : user.planType === 'SOURCING' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30 w-full justify-center shadow-2xs font-mono">
+                ✨ Sourcing Plan
+              </span>
+            ) : user.planType === 'RANKING' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 w-full justify-center shadow-2xs font-mono">
+                ✨ Ranking Plan
+              </span>
+            ) : null}
+          </div>
+        )}
+      </div>
 
       {/* ── Mode Switcher Pill (AI Sourcing ↔ CV Ranking) ── */}
       {(() => {
+        const storedGoal = user ? (localStorage.getItem('onboarding_goal_' + (user as { id?: string }).id) || '') : '';
+        const isPro = user?.role === 'ADMIN' || user?.planType === 'PRO' || storedGoal === 'both';
+
         const isRankingOnly =
-          user?.role !== 'ADMIN' &&
-          (user?.planType === 'RANKING' || Boolean(user?.email?.toLowerCase().includes('ranking')));
+          !isPro &&
+          (user?.planType === 'RANKING' || Boolean(user?.email?.toLowerCase().includes('ranking')) || storedGoal === 'ranking');
 
         const isSourcingOnly =
-          user?.role !== 'ADMIN' &&
-          (user?.planType === 'SOURCING' || Boolean(user?.email?.toLowerCase().includes('sourcing')));
+          !isPro &&
+          (user?.planType === 'SOURCING' || Boolean(user?.email?.toLowerCase().includes('sourcing')) || storedGoal === 'sourcing');
 
         return (
           <div className="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-[#1E293B]/60 bg-white/50 dark:bg-[#0B0F19]/60 shrink-0">

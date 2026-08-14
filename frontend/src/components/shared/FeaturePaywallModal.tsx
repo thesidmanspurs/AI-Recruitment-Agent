@@ -112,10 +112,13 @@ interface FeaturePaywallModalProps {
   onClose: () => void;
   targetFeature: 'sourcing' | 'ranking';
   onUpgrade: () => void;
+  /** When true, the modal cannot be dismissed to stay on the locked page — user can only upgrade or return to their permitted workspace. */
+  isForcedSwitch?: boolean;
+  onReturnToWorkspace?: () => void;
 }
 
 export function FeaturePaywallModal({
-  open, onClose, targetFeature, onUpgrade,
+  open, onClose, targetFeature, onUpgrade, isForcedSwitch = false, onReturnToWorkspace,
 }: FeaturePaywallModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const isSourcing = targetFeature === 'sourcing';
@@ -123,15 +126,29 @@ export function FeaturePaywallModal({
   useEffect(() => {
     if (!open) return;
     injectKeyframes();
-    const h = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const h = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isForcedSwitch) {
+          onReturnToWorkspace?.();
+        } else {
+          onClose();
+        }
+      }
+    };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [open, onClose]);
+  }, [open, onClose, isForcedSwitch, onReturnToWorkspace]);
 
   if (!open) return null;
 
   const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (modalRef.current && !modalRef.current.contains(e.target as Node)) onClose();
+    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+      if (isForcedSwitch) {
+        onReturnToWorkspace?.();
+      } else {
+        onClose();
+      }
+    }
   };
 
   const sourcingFeatures = [
@@ -197,7 +214,7 @@ export function FeaturePaywallModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={isForcedSwitch ? onReturnToWorkspace : onClose}
             style={{
               width: 30, height: 30, borderRadius: '50%',
               background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer',
@@ -305,16 +322,16 @@ export function FeaturePaywallModal({
         {/* ── CTA Buttons ── */}
         <div style={{ display: 'flex', gap: 10, padding: '0 22px 20px' }}>
           <button
-            onClick={onClose}
+            onClick={isForcedSwitch ? onReturnToWorkspace : onClose}
             style={{
               padding: '10px 16px', borderRadius: 12,
               background: 'rgba(0,0,0,0.04)',
               border: '1px solid rgba(0,0,0,0.09)',
-              fontSize: 12, fontWeight: 600, color: '#6b7280',
+              fontSize: 12, fontWeight: 700, color: '#4b5563',
               cursor: 'pointer', whiteSpace: 'nowrap',
             }}
           >
-            Maybe Later
+            {isForcedSwitch ? '← Return to my Workspace' : 'Maybe Later'}
           </button>
           <button
             onClick={() => { onClose(); onUpgrade(); }}

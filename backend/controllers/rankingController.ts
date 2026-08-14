@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { createError } from '../middleware/errorHandler.js';
 import { rankingSessionService } from '../services/ranking/rankingSessionService.js';
+import { prisma } from '../config/database.js';
+import { deriveAccess } from '../config/subscriptionPlans.js';
 
 // ─── Multer config (memory only, CV files) ────────────────────────────────────
 // Files are kept in-memory just long enough to extract text and never written
@@ -106,6 +108,29 @@ export const rankingController = {
       const files = req.files as Express.Multer.File[] | undefined;
       if (!files || files.length === 0) {
         return next(createError('At least one PDF or DOCX file is required.', 400));
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: {
+          planType: true,
+          subscriptionStatus: true,
+          sourcingAddonActive: true,
+          sourcingAddonStatus: true,
+          rankingAddonActive: true,
+          rankingAddonStatus: true,
+        },
+      });
+      if (user) {
+        const { hasRankingAccess } = deriveAccess(user);
+        if (!hasRankingAccess && files.length > 5) {
+          return next(
+            createError(
+              'Free trial is limited to a maximum of 5 CVs for your 1 session. Please select up to 5 CV files or upgrade to Ranking Plan for up to 50 CVs.',
+              400,
+            ),
+          );
+        }
       }
 
       const result = await rankingSessionService.processBatch(

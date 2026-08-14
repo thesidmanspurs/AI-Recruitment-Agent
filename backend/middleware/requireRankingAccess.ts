@@ -35,17 +35,19 @@ export async function requireRankingAccess(
 
     const { hasRankingAccess } = deriveAccess(user);
     if (!hasRankingAccess) {
-      // Free trial allowance: allow non-subscribed users up to 5 free ranking sessions
-      const sessionCount = await prisma.rankingSession.count({ where: { userId } });
-      if (sessionCount < 5) {
-        return next();
+      // Free trial allowance: allow non-subscribed users exactly 1 free ranking session
+      if (req.method === 'POST' && (req.path === '/' || req.path === '')) {
+        const sessionCount = await prisma.rankingSession.count({ where: { userId } });
+        if (sessionCount >= 1) {
+          return next(
+            createError(
+              'You have used your 1 free trial Ranking session. Upgrade to Ranking Plan or Pro Plan from the Billing tab for unlimited rankings.',
+              403,
+            ),
+          );
+        }
       }
-      return next(
-        createError(
-          'You have used your 5 free trial Ranking sessions. Upgrade to Ranking Plan or Pro Plan from the Billing tab for unlimited rankings.',
-          403,
-        ),
-      );
+      return next();
     }
     next();
   } catch (err) {

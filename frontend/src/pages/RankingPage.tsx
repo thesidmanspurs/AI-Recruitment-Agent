@@ -319,7 +319,7 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
           <CVUploadDropzone
             files={additionalFiles}
             onChange={setAdditionalFiles}
-            maxFiles={50}
+            maxFiles={user?.planType === 'RANKING' || user?.planType === 'PRO' || user?.role === 'ADMIN' ? 50 : 5}
           />
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-white/10">
@@ -349,16 +349,11 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
 
       <FeaturePaywallModal
         open={paywallFeature !== null}
-        onClose={() => {
-          if (paywallFeature === 'ranking') {
-            setPaywallFeature(null);
-            // Redirect away from the locked page — user can't use ranking
-            // Sourcing plan → sourcing workspace (/home)
-            // No plan → landing/home
-            onOpenHome?.();
-          } else {
-            setPaywallFeature(null);
-          }
+        isForcedSwitch={true}
+        onClose={() => setPaywallFeature(null)}
+        onReturnToWorkspace={() => {
+          setPaywallFeature(null);
+          onOpenHome?.();
         }}
         targetFeature={paywallFeature ?? 'ranking'}
         onUpgrade={() => onOpenBilling?.()}
@@ -684,12 +679,15 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-                      Upload Candidate CV Files
+                      Upload Candidate CV Files{' '}
+                      <span className="text-gray-400 font-normal normal-case">
+                        ({user?.planType === 'RANKING' || user?.planType === 'PRO' || user?.role === 'ADMIN' ? 'PDF & DOCX · up to 50 files' : 'Free Trial: 1 session · up to 5 files'})
+                      </span>
                     </label>
                     <CVUploadDropzone
                       files={selectedFiles}
                       onChange={setSelectedFiles}
-                      maxFiles={50}
+                      maxFiles={user?.planType === 'RANKING' || user?.planType === 'PRO' || user?.role === 'ADMIN' ? 50 : 5}
                     />
                   </div>
                 </div>

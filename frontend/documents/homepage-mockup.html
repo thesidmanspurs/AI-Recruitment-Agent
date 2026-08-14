@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homepage Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FAFAFC;
+    --ink: #14151A;
+    --ink-soft: #55565F;
+    --ink-faint: #9596A0;
+    --surface: #FFFFFF;
+    --line: #E7E7EE;
+    --line-soft: #F0F0F5;
+    --sourcing: #E8720C;
+    --sourcing-bg: #FDF1E6;
+    --screening: #7C5CFC;
+    --screening-bg: #F1EEFF;
+    --good: #1FAE6B;
+    --good-bg: #E7F7EF;
+    --sent: #2E6BE6;
+    --sent-bg: #EAF1FF;
+    --neutral-bg: #F3F3F7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:72px 24px 96px;
+  }
+  .hero{
+    text-align:center;
+  }
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:28px;
+  }
+  .eyebrow::before, .eyebrow::after{
+    content:'';
+    width:16px;
+    height:1px;
+    background:var(--line);
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:52px;
+    line-height:1.08;
+    letter-spacing:-.01em;
+    margin:0 0 20px;
+  }
+  h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--sourcing);
+  }
+  .sub{
+    font-size:17px;
+    line-height:1.55;
+    color:var(--ink-soft);
+    max-width:480px;
+    margin:0 auto 44px;
+  }
+  .sub b{ color:var(--ink); font-weight:600; }
+
+  .cards{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:28px;
+  }
+  .card{
+    text-align:left;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px 22px 24px;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px -12px rgba(20,21,26,.14);
+  }
+  .card:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:2px;
+  }
+  .card.source:hover{ border-color:var(--sourcing); }
+  .card.screen:hover{ border-color:var(--screening); }
+  .card-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .icon{
+    width:34px; height:34px;
+    border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;
+  }
+  .card.source .icon{ background:var(--sourcing-bg); color:var(--sourcing); }
+  .card.screen .icon{ background:var(--screening-bg); color:var(--screening); }
+  .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:4px 8px;
+    border-radius:20px;
+  }
+  .card.source .tag{ background:var(--sourcing-bg); color:var(--sourcing); }
+  .card.screen .tag{ background:var(--screening-bg); color:var(--screening); }
+  .card h3{
+    font-family:'Inter', sans-serif;
+    font-size:16.5px;
+    font-weight:600;
+    margin:0 0 6px;
+  }
+  .card h3 span{ color:var(--ink-faint); font-weight:500; margin-left:2px; }
+  .card p{
+    font-size:13.5px;
+    line-height:1.5;
+    color:var(--ink-soft);
+    margin:0;
+  }
+
+  .stats{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:64px;
+  }
+  .stats span{ padding:0 14px; }
+  .stats b{ color:var(--ink); font-weight:600; }
+  .stats .dot{ color:var(--line); padding:0; }
+
+  /* product panel */
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:0 24px 60px -32px rgba(20,21,26,.25);
+    overflow:hidden;
+  }
+  .panel-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    padding:22px 24px 18px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .panel-title{
+    font-size:15.5px;
+    font-weight:600;
+    margin:0 0 6px;
+  }
+  .panel-sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    display:flex;
+    gap:12px;
+  }
+  .panel-sub b{ color:var(--ink-soft); font-weight:600; }
+  .panel-actions{ display:flex; gap:8px; }
+  .btn{
+    font-family:'Inter', sans-serif;
+    font-size:12px;
+    font-weight:600;
+    padding:8px 13px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--surface);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .btn.primary{
+    background:var(--ink);
+    color:#fff;
+    border-color:var(--ink);
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns:1.6fr 1.4fr .7fr .7fr;
+    align-items:center;
+    padding:13px 24px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:13px;
+  }
+  .row:last-child{ border-bottom:none; }
+  .who{ display:flex; align-items:center; gap:10px; }
+  .avatar{
+    width:28px;height:28px;border-radius:50%;
+    background:var(--neutral-bg);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;font-weight:600;
+    color:var(--ink-soft);
+    flex-shrink:0;
+  }
+  .who-name{ font-weight:600; }
+  .who-role{ color:var(--ink-faint); font-size:11.5px; margin-top:1px; }
+  .score{ font-family:'JetBrains Mono', monospace; }
+  .score-num{ font-weight:700; font-size:13.5px; }
+  .score-bar{
+    height:3px; border-radius:2px; background:var(--line-soft);
+    margin-top:5px; overflow:hidden;
+  }
+  .score-bar i{ display:block; height:100%; background:var(--sourcing); }
+  .status{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px; font-weight:600; letter-spacing:.03em;
+    padding:4px 9px; border-radius:20px;
+    display:inline-block;
+  }
+  .status.replied{ background:var(--good-bg); color:var(--good); }
+  .status.sent{ background:var(--sent-bg); color:var(--sent); }
+  .status.enriched{ background:var(--screening-bg); color:var(--screening); }
+  .status.sourced{ background:var(--neutral-bg); color:var(--ink-soft); }
+
+  .panel-foot{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 24px;
+    background:var(--neutral-bg);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+  }
+  .credits-bar{ width:90px; height:4px; background:var(--line); border-radius:2px; overflow:hidden; }
+  .credits-bar i{ display:block; height:100%; width:68%; background:var(--ink); }
+  .credits-wrap{ display:flex; align-items:center; gap:8px; }
+
+  @media (max-width: 640px){
+    .wrap{ padding:48px 16px 64px; }
+    h1{ font-size:36px; }
+    .cards{ grid-template-columns:1fr; }
+    .row{ grid-template-columns:1.5fr .8fr .9fr; }
+    .who-role{ display:none; }
+    .stats{ font-size:11.5px; }
+    .stats span{ padding:0 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">AI sourcing &amp; screening</div>
+    <h1>Find &amp; rank top talent.<br><em>Automatically.</em></h1>
+    <p class="sub">Source passive candidates across platforms, or upload CVs against your JD for <b>instant 0–10 match scores</b>.</p>
+  </div>
+
+  <div class="cards">
+    <div class="card source" tabindex="0">
+      <div class="card-top">
+        <div class="icon">🔍</div>
+        <div class="tag">Outbound</div>
+      </div>
+      <h3>Source Candidates <span>→</span></h3>
+      <p>Enter a job spec. We crawl LinkedIn &amp; GitHub for matching passive talent.</p>
+    </div>
+    <div class="card screen" tabindex="0">
+      <div class="card-top">
+        <div class="icon">👤</div>
+        <div class="tag">Inbound</div>
+      </div>
+      <h3>Rank Candidate CVs <span>→</span></h3>
+      <p>Upload CVs (PDF/DOCX) + JD criteria. Score 0–10 and find top winners instantly.</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <span><b>50</b> CVs / batch</span><span class="dot">·</span>
+    <span><b>0–10</b> match score</span><span class="dot">·</span>
+    <span><b>100%</b> private</span><span class="dot">·</span>
+    <span><b>$0</b> to start</span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <p class="panel-title">Senior Backend Engineer</p>
+        <div class="panel-sub">
+          <span><b>47</b> sourced</span>
+          <span><b>47</b> scored</span>
+          <span><b>8</b> sent</span>
+          <span><b>3</b> replied</span>
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button class="btn">Export CSV</button>
+        <button class="btn primary">+ Source more</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="who">
+        <div class="avatar">SC</div>
+        <div><div class="who-name">Sarah Chen</div><div class="who-role">Principal Eng · Stripe</div></div>
+      </div>
+      <div></div>
+      <div class="score"><span class="score-num">9.2</span><div class="score-bar"><i style="width:92%"></i></div></div>
+      <div><span class="status replied">Replied</span></div>
+    </div>
+    <div class="row">
+      <div class="who">
+        <div class="avatar">JP</div>
+        <div><div class="who-name">James Park</div><div class="who-role">Staff Eng · Figma</div></div>
+      </div>
+      <div></div>
+      <div class="score"><span class="score-num">8.7</span><div class="score-bar"><i style="width:87%"></i></div></div>
+      <div><span class="status sent">Sent</span></div>
+    </div>
+    <div class="row">
+      <div class="who">
+        <div class="avatar">PN</div>
+        <div><div class="who-name">Priya Nair</div><div class="who-role">Senior SWE · Shopify</div></div>
+      </div>
+      <div></div>
+      <div class="score"><span class="score-num">8.4</span><div class="score-bar"><i style="width:84%"></i></div></div>
+      <div><span class="status enriched">Enriched</span></div>
+    </div>
+    <div class="row">
+      <div class="who">
+        <div class="avatar">AM</div>
+        <div><div class="who-name">Alex Morgan</div><div class="who-role">Backend Lead · Linear</div></div>
+      </div>
+      <div></div>
+      <div class="score"><span class="score-num">7.9</span><div class="score-bar"><i style="width:79%"></i></div></div>
+      <div><span class="status sourced">Sourced</span></div>
+    </div>
+
+    <div class="panel-foot">
+      <span>talentbcanr.com/campaigns</span>
+      <div class="credits-wrap">
+        <span>1,360 / 2,000 credits</span>
+        <div class="credits-bar"><i></i></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

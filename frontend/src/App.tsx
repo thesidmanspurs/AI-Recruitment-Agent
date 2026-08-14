@@ -138,7 +138,10 @@ function AuthGate() {
   }, [user]);
 
   const handleSelectGoal = (goal: 'sourcing' | 'ranking' | 'both') => {
-    if (user) localStorage.setItem('onboarding_done_' + user.id, 'true');
+    if (user) {
+      localStorage.setItem('onboarding_done_' + user.id, 'true');
+      localStorage.setItem('onboarding_goal_' + user.id, goal);
+    }
     sessionStorage.removeItem('show_onboarding_intent');
     setShowOnboarding(false);
     if (goal === 'ranking') {

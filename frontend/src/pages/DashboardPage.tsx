@@ -405,18 +405,14 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
 
       <FeaturePaywallModal
         open={paywallFeature !== null}
-        onClose={() => {
-          if (paywallFeature === 'sourcing') {
-            setPaywallFeature(null);
-            // Ranking plan users → go to ranking workspace
-            // No plan / other → stay on home (they can still browse)
-            const hasRanking = user?.planType === 'RANKING' || user?.planType === 'PRO';
-            if (hasRanking) {
-              onOpenRanking?.();
-            }
-            // no plan: just close, they're already on home
-          } else {
-            setPaywallFeature(null);
+        isForcedSwitch={true}
+        onClose={() => setPaywallFeature(null)}
+        onReturnToWorkspace={() => {
+          setPaywallFeature(null);
+          const storedGoal = user ? (localStorage.getItem('onboarding_goal_' + user.id) || '') : '';
+          const isRankingOnly = user?.planType === 'RANKING' || storedGoal === 'ranking';
+          if (isRankingOnly) {
+            onOpenRanking?.();
           }
         }}
         targetFeature={paywallFeature ?? 'ranking'}
