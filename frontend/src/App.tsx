@@ -14,6 +14,7 @@ import { FaqPage } from './pages/marketing/FaqPage';
 import { PolicyPage } from './pages/marketing/PolicyPage';
 import { ToastProvider, useToast } from './components/shared/Toast';
 import { OnboardingIntentModal } from './components/onboarding/OnboardingIntentModal';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { useAuth } from './hooks/useAuth';
 import { paymentsApi } from './api/paymentsApi';
 
@@ -157,32 +158,43 @@ function AuthGate() {
     await register(name, email, password);
     clearPendingCheckout();
     sessionStorage.setItem('show_onboarding_intent', 'true');
-    navigate('/home');
+    navigate('/welcome');
   }, [register, navigate]);
 
   // Enforce sensible URLs once the user is known.
   useEffect(() => {
     if (!user) return;
-    const isJustReg = sessionStorage.getItem('show_onboarding_intent') === 'true';
-    if (isJustReg && path !== '/home') {
-      window.history.replaceState({}, '', '/home');
-      setPath('/home');
+    if (user.role === 'ADMIN') {
+      if (path === '/home' || path === '/login' || path === '/register' || path === '/welcome') {
+        window.history.replaceState({}, '', '/admin');
+        setPath('/admin');
+      }
       return;
     }
-    if (resumed.current || readPendingCheckout()) return;
-    if (user.role === 'ADMIN' && (path === '/home' || path === '/login' || path === '/register')) {
-      window.history.replaceState({}, '', '/admin');
-      setPath('/admin');
-    } else if (user.role !== 'ADMIN') {
-      const isRankingUser = user.planType === 'RANKING' || Boolean(user.email?.toLowerCase().includes('ranking'));
-      if (isRankingUser && !path.startsWith('/ranking') && !path.startsWith('/billing') && path !== '/') {
-        window.history.replaceState({}, '', '/ranking');
-        setPath('/ranking');
-      } else if (path === '/login' || path === '/register' || path.startsWith('/admin')) {
-        const dest = isRankingUser ? '/ranking' : '/home';
-        window.history.replaceState({}, '', dest);
-        setPath(dest);
+
+    const isJustReg = sessionStorage.getItem('show_onboarding_intent') === 'true';
+    const isNotDone = !localStorage.getItem('onboarding_done_' + user.id);
+    const isFreemium = !user.planType || user.planType === 'NONE';
+
+    // If new user registered or hasn't selected an intent, force /welcome route
+    if (isJustReg || (isNotDone && isFreemium)) {
+      if (path !== '/welcome') {
+        window.history.replaceState({}, '', '/welcome');
+        setPath('/welcome');
       }
+      return;
+    }
+
+    if (resumed.current || readPendingCheckout()) return;
+
+    const isRankingUser = user.planType === 'RANKING' || Boolean(user.email?.toLowerCase().includes('ranking'));
+    if (isRankingUser && !path.startsWith('/ranking') && !path.startsWith('/billing') && path !== '/') {
+      window.history.replaceState({}, '', '/ranking');
+      setPath('/ranking');
+    } else if (path === '/login' || path === '/register' || path.startsWith('/admin')) {
+      const dest = isRankingUser ? '/ranking' : '/home';
+      window.history.replaceState({}, '', dest);
+      setPath(dest);
     }
   }, [user, path]);
 
@@ -234,6 +246,9 @@ function AuthGate() {
   }
 
   // ── Authenticated app ─────────────────────────────────────────────────────
+  if (path.startsWith('/welcome')) {
+    return <OnboardingPage user={user} onSelectGoal={handleSelectGoal} />;
+  }
   return (
     <>
       <OnboardingIntentModal
