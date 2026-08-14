@@ -155,15 +155,20 @@ function AuthGate() {
 
   const handleRegister = useCallback(async (name: string, email: string, password: string) => {
     await register(name, email, password);
-    if (!readPendingCheckout()) {
-      sessionStorage.setItem('show_onboarding_intent', 'true');
-      navigate('/home');
-    }
+    clearPendingCheckout();
+    sessionStorage.setItem('show_onboarding_intent', 'true');
+    navigate('/home');
   }, [register, navigate]);
 
   // Enforce sensible URLs once the user is known.
   useEffect(() => {
     if (!user) return;
+    const isJustReg = sessionStorage.getItem('show_onboarding_intent') === 'true';
+    if (isJustReg && path !== '/home') {
+      window.history.replaceState({}, '', '/home');
+      setPath('/home');
+      return;
+    }
     if (resumed.current || readPendingCheckout()) return;
     if (user.role === 'ADMIN' && (path === '/home' || path === '/login' || path === '/register')) {
       window.history.replaceState({}, '', '/admin');
