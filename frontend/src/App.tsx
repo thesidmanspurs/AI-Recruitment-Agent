@@ -13,6 +13,7 @@ import { PricingPage } from './pages/marketing/PricingPage';
 import { FaqPage } from './pages/marketing/FaqPage';
 import { PolicyPage } from './pages/marketing/PolicyPage';
 import { ToastProvider, useToast } from './components/shared/Toast';
+import { OnboardingIntentModal } from './components/onboarding/OnboardingIntentModal';
 import { useAuth } from './hooks/useAuth';
 import { paymentsApi } from './api/paymentsApi';
 
@@ -122,23 +123,45 @@ function AuthGate() {
     }
   }, [user, startCheckout]);
 
-  // After a fresh password login/register, move into the app (workspace at
-  // /home; admins get bounced to /admin by the effect below). When a purchase
-  // is pending we leave navigation to the resume effect (→ Stripe).
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+
+  // Check if newly registered or hasn't completed onboarding intent selection
+  useEffect(() => {
+    if (!user) return;
+    const isJustReg = sessionStorage.getItem('show_onboarding_intent') === 'true';
+    const isNotDone = !localStorage.getItem('onboarding_done_' + user.id);
+    const isFreemium = !user.planType || user.planType === 'NONE';
+    if ((isJustReg || (isNotDone && isFreemium)) && user.role !== 'ADMIN') {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+
+  const handleSelectGoal = (goal: 'sourcing' | 'ranking' | 'both') => {
+    if (user) localStorage.setItem('onboarding_done_' + user.id, 'true');
+    sessionStorage.removeItem('show_onboarding_intent');
+    setShowOnboarding(false);
+    if (goal === 'ranking') {
+      navigate('/ranking');
+    } else {
+      navigate('/home');
+    }
+  };
+
+  // After a fresh password login/register, move into the app
   const handleLogin = useCallback(async (email: string, password: string) => {
     await login(email, password);
     if (!readPendingCheckout()) navigate('/home');
   }, [login, navigate]);
+
   const handleRegister = useCallback(async (name: string, email: string, password: string) => {
     await register(name, email, password);
-    // New accounts have no plan yet — send them straight to billing to pick one.
-    if (!readPendingCheckout()) navigate('/billing');
+    if (!readPendingCheckout()) {
+      sessionStorage.setItem('show_onboarding_intent', 'true');
+      navigate('/home');
+    }
   }, [register, navigate]);
 
-  // Enforce sensible URLs once the user is known. NOTE: "/" is the PUBLIC
-  // homepage (4 marketing tabs) for everyone — authed users are NOT bounced
-  // off it (that's how the workspace logo returns home). The authed workspace
-  // lives at /home; the admin console at /admin.
+  // Enforce sensible URLs once the user is known.
   useEffect(() => {
     if (!user) return;
     if (resumed.current || readPendingCheckout()) return;
@@ -206,36 +229,38 @@ function AuthGate() {
   }
 
   // ── Authenticated app ─────────────────────────────────────────────────────
-  if (path.startsWith('/admin') && user.role === 'ADMIN') {
-    return <AdminPage currentUser={user} onLogout={handleLogout} onHome={() => navigate('/')} />;
-  }
-  if (path.startsWith('/billing')) {
-    return <BillingPage user={user} onBack={() => navigate('/home')} />;
-  }
-  if (path.startsWith('/ranking')) {
-    return (
-      <RankingPage
-        user={user}
-        onLogout={handleLogout}
-        onOpenAdmin={user?.role === 'ADMIN' ? () => navigate('/admin') : undefined}
-        onOpenBilling={() => navigate('/billing')}
-        onOpenHome={() => navigate('/home')}
-      />
-    );
-  }
-
-  // /home (and any other authenticated path) → the workspace.
   return (
-    <AppProvider>
-      <DashboardPage
-        user={user}
-        onLogout={handleLogout}
-        onOpenAdmin={user.role === 'ADMIN' ? () => navigate('/admin') : undefined}
-        onOpenBilling={() => navigate('/billing')}
-        onOpenRanking={() => navigate('/ranking')}
-        onOpenHome={() => navigate('/')}
+    <>
+      <OnboardingIntentModal
+        open={showOnboarding}
+        userName={user.name}
+        onSelectGoal={handleSelectGoal}
       />
-    </AppProvider>
+      {path.startsWith('/admin') && user.role === 'ADMIN' ? (
+        <AdminPage currentUser={user} onLogout={handleLogout} onHome={() => navigate('/')} />
+      ) : path.startsWith('/billing') ? (
+        <BillingPage user={user} onBack={() => navigate('/home')} />
+      ) : path.startsWith('/ranking') ? (
+        <RankingPage
+          user={user}
+          onLogout={handleLogout}
+          onOpenAdmin={user?.role === 'ADMIN' ? () => navigate('/admin') : undefined}
+          onOpenBilling={() => navigate('/billing')}
+          onOpenHome={() => navigate('/home')}
+        />
+      ) : (
+        <AppProvider>
+          <DashboardPage
+            user={user}
+            onLogout={handleLogout}
+            onOpenAdmin={user.role === 'ADMIN' ? () => navigate('/admin') : undefined}
+            onOpenBilling={() => navigate('/billing')}
+            onOpenRanking={() => navigate('/ranking')}
+            onOpenHome={() => navigate('/')}
+          />
+        </AppProvider>
+      )}
+    </>
   );
 }
 
