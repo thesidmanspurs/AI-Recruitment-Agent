@@ -79,13 +79,13 @@ function AuthGate() {
 
   // Sync with browser back/forward.
   useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
+    const onPop = () => setPath(window.location.pathname + window.location.search);
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   const navigate = useCallback((to: string) => {
-    if (window.location.pathname !== to) window.history.pushState({}, '', to);
+    if ((window.location.pathname + window.location.search) !== to) window.history.pushState({}, '', to);
     setPath(to);
     window.scrollTo(0, 0);
   }, []);
@@ -242,6 +242,8 @@ function AuthGate() {
     );
   }
 
+  const route = path.split('?')[0];
+
   // ── Public marketing homepage + tabs — ALWAYS, regardless of auth. "/" is
   //    the homepage (Overview); the workspace logo returns here. When signed
   //    in, the shell/console show "Open workspace" (session preserved — no
@@ -249,16 +251,16 @@ function AuthGate() {
   const goWorkspace = () => navigate(user?.role === 'ADMIN' ? '/admin' : '/home');
   const goRanking = () => navigate('/ranking');
   const mkt = { authed: !!user, onOpenWorkspace: goWorkspace, onOpenRanking: goRanking };
-  if (path === '/') return <LandingPage onLogin={handleLogin} onNavigate={navigate} {...mkt} />;
-  if (path === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} {...mkt} />;
-  if (path === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} {...mkt} />;
-  if (path === '/faq') return <FaqPage onNavigate={navigate} {...mkt} />;
-  if (path === '/policy') return <PolicyPage onNavigate={navigate} {...mkt} />;
+  if (route === '/') return <LandingPage onLogin={handleLogin} onNavigate={navigate} {...mkt} />;
+  if (route === '/engine-features') return <EngineFeaturesPage onNavigate={navigate} {...mkt} />;
+  if (route === '/pricing') return <PricingPage onNavigate={navigate} onSelectPlan={handleSelectPlan} {...mkt} />;
+  if (route === '/faq') return <FaqPage onNavigate={navigate} {...mkt} />;
+  if (route === '/policy') return <PolicyPage onNavigate={navigate} {...mkt} />;
 
   // ── Auth screens — shown when logged out. ─────────────────────────────────
-  if (!user && (path === '/login' || path === '/register' || path === '/forgot-password' || path.startsWith('/reset-password'))) {
+  if (!user && (route === '/login' || route === '/register' || route === '/forgot-password' || route.startsWith('/reset-password'))) {
     const pendingPkg = readPendingCheckout();
-    const mode = path === '/register' ? 'register' : path === '/forgot-password' ? 'forgot' : path.startsWith('/reset-password') ? 'reset' : 'login';
+    const mode = route === '/register' ? 'register' : route === '/forgot-password' ? 'forgot' : route.startsWith('/reset-password') ? 'reset' : 'login';
     return (
       <AuthPage
         mode={mode}
@@ -276,7 +278,7 @@ function AuthGate() {
   }
 
   // ── Authenticated app ─────────────────────────────────────────────────────
-  if (path.startsWith('/welcome')) {
+  if (route.startsWith('/welcome')) {
     return <OnboardingPage user={user} onSelectGoal={handleSelectGoal} />;
   }
   return (
@@ -286,11 +288,11 @@ function AuthGate() {
         userName={user.name}
         onSelectGoal={handleSelectGoal}
       />
-      {path.startsWith('/admin') && user.role === 'ADMIN' ? (
+      {route.startsWith('/admin') && user.role === 'ADMIN' ? (
         <AdminPage currentUser={user} onLogout={handleLogout} onHome={() => navigate('/')} />
-      ) : path.startsWith('/billing') ? (
+      ) : route.startsWith('/billing') ? (
         <BillingPage user={user} onBack={() => navigate('/home')} />
-      ) : path.startsWith('/ranking') ? (
+      ) : route.startsWith('/ranking') ? (
         <RankingPage
           user={user}
           onLogout={handleLogout}
