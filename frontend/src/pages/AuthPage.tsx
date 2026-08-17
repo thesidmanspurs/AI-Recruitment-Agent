@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Check, ShoppingBag } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Check, ShoppingBag, Trophy, Search } from 'lucide-react';
 import { ApiError } from '../api/client';
 const logoSrc = '/logo.png'; // served from frontend/public/logo.png
 
@@ -9,23 +9,34 @@ export type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
 interface AuthPageProps {
   mode: AuthMode;
-  onLogin: (email: string, password: string) => Promise<void>;
-  onRegister: (name: string, email: string, password: string) => Promise<void>;
+  onLogin: (email: string, password: string, intent?: 'sourcing' | 'ranking' | 'both') => Promise<void>;
+  onRegister: (name: string, email: string, password: string, intent?: 'sourcing' | 'ranking' | 'both') => Promise<void>;
   onNavigate: (to: string) => void;
   /** When the user arrived mid-purchase, show what they'll continue to. */
   pendingLabel?: string | null;
 }
 
-const PERKS = [
+const PERKS_SOURCING = [
   'Source across LinkedIn, GitHub & Reddit',
   'AI fit scoring + Gemini-drafted outreach',
   'Free to source & score — pay only per reveal',
+];
+
+const PERKS_RANKING = [
+  'Batch upload up to 50 CVs (PDF & DOCX) per session',
+  'Gemini AI candidate scoring (0–10) against active JD',
+  'Instant candidate ranking & skill gap analysis',
 ];
 
 export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }: AuthPageProps) {
   const isRegister = mode === 'register';
   const isForgot = mode === 'forgot';
   const isReset = mode === 'reset';
+
+  const params = new URLSearchParams(window.location.search);
+  const intent = (params.get('intent') as 'sourcing' | 'ranking' | 'both' | null) || undefined;
+
+  const isRankingIntent = intent === 'ranking';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -60,12 +71,11 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
     setLoading(true);
     try {
       if (isRegister) {
-        await onRegister(name.trim(), email.trim(), password);
+        await onRegister(name.trim(), email.trim(), password, intent);
       } else if (isForgot) {
         const res = await authApi.forgotPassword(email.trim());
         setSuccessMessage(res.message || 'If an account exists, a reset link has been sent.');
       } else if (isReset) {
-        const params = new URLSearchParams(window.location.search);
         const token = params.get('token');
         if (!token) {
           setError('Invalid or missing reset token. Please request a new link.');
@@ -74,7 +84,7 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
         const res = await authApi.resetPassword(token, password);
         setSuccessMessage(res.message || 'Password reset successfully! You can now sign in.');
       } else {
-        await onLogin(email.trim(), password);
+        await onLogin(email.trim(), password, intent);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
@@ -85,8 +95,15 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
 
   function signInWithGoogle() {
     const apiBase = import.meta.env.VITE_API_BASE_URL ?? '';
-    window.location.href = `${apiBase}/api/auth/google`;
+    const query = intent ? `?intent=${encodeURIComponent(intent)}` : '';
+    window.location.href = `${apiBase}/api/auth/google${query}`;
   }
+
+  const switchAuthUrl = (targetMode: 'login' | 'register') => {
+    return intent ? `/${targetMode}?intent=${intent}` : `/${targetMode}`;
+  };
+
+  const perks = isRankingIntent ? PERKS_RANKING : PERKS_SOURCING;
 
   return (
     <div className="min-h-screen w-full flex bg-white text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -105,14 +122,34 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
         </button>
 
         <div className="relative z-10 max-w-md">
-          <h2 className="text-[42px] leading-[1.1] font-normal tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
-            Find the people<br />others can’t.
-          </h2>
-          <p className="mt-5 text-[15px] leading-relaxed text-gray-400">
-            AI sourcing across LinkedIn, GitHub and Reddit — scored, ranked, and ready to reach out.
-          </p>
+          {isRankingIntent ? (
+            <>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-semibold mb-4">
+                <Trophy className="w-3.5 h-3.5" /> CV Batch Ranking Mode
+              </div>
+              <h2 className="text-[42px] leading-[1.1] font-normal tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                Rank applicant CVs<br />in seconds.
+              </h2>
+              <p className="mt-5 text-[15px] leading-relaxed text-gray-400">
+                Upload batches of resumes and let Gemini AI evaluate, match, and rank your top candidates automatically.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold mb-4">
+                <Search className="w-3.5 h-3.5" /> AI Candidate Sourcing
+              </div>
+              <h2 className="text-[42px] leading-[1.1] font-normal tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                Find the people<br />others can’t.
+              </h2>
+              <p className="mt-5 text-[15px] leading-relaxed text-gray-400">
+                AI sourcing across LinkedIn, GitHub and Reddit — scored, ranked, and ready to reach out.
+              </p>
+            </>
+          )}
+
           <div className="mt-9 flex flex-col gap-3.5">
-            {PERKS.map(p => (
+            {perks.map(p => (
               <div key={p} className="flex items-center gap-3 text-[13.5px] text-gray-300">
                 <span className="w-5 h-5 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
                   <Check className="w-3 h-3 text-white" />
@@ -123,7 +160,7 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
           </div>
         </div>
 
-        <p className="relative z-10 text-[11px] text-gray-600">© 2026 TalentScanr · AI Talent Sourcing</p>
+        <p className="relative z-10 text-[11px] text-gray-600">© 2026 TalentScanr · AI Talent Scanner</p>
       </aside>
 
       {/* ── RIGHT: form panel ──────────────────────────────────────────────── */}
@@ -154,12 +191,12 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
             </h1>
             <p className="text-[14px] text-gray-500">
               {isRegister
-                ? 'Start sourcing candidates in minutes.'
+                ? (isRankingIntent ? 'Start ranking candidate CVs with AI.' : 'Start sourcing candidates in minutes.')
                 : isForgot
                   ? "Enter your email to receive a password reset link."
                   : isReset
                     ? "Enter your new password below."
-                    : 'Sign in to your recruiter workspace.'}
+                    : (isRankingIntent ? 'Sign in to your CV Ranking workspace.' : 'Sign in to your recruiter workspace.')}
             </p>
           </div>
 
@@ -265,7 +302,7 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
           <p className="text-[13px] text-gray-500 mt-7">
             {isForgot || isReset ? (
               <button
-                onClick={() => onNavigate('/login')}
+                onClick={() => onNavigate(switchAuthUrl('login'))}
                 className="text-gray-900 font-semibold underline underline-offset-2 hover:text-black"
               >
                 Back to Sign in
@@ -274,7 +311,7 @@ export function AuthPage({ mode, onLogin, onRegister, onNavigate, pendingLabel }
               <>
                 {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
                 <button
-                  onClick={() => onNavigate(isRegister ? '/login' : '/register')}
+                  onClick={() => onNavigate(switchAuthUrl(isRegister ? 'login' : 'register'))}
                   className="text-gray-900 font-semibold underline underline-offset-2 hover:text-black"
                 >
                   {isRegister ? 'Sign in' : 'Create one free'}

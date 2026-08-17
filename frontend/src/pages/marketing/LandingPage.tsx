@@ -244,7 +244,7 @@ export function LandingPage({ onNavigate, authed, onOpenWorkspace, onOpenRanking
               {/* Option 1: AI Sourcing */}
               <button
                 type="button"
-                onClick={() => (authed ? (onOpenWorkspace ? onOpenWorkspace() : onNavigate('/home')) : onNavigate('/register'))}
+                onClick={() => (authed ? (onOpenWorkspace ? onOpenWorkspace() : onNavigate('/home')) : onNavigate('/register?intent=sourcing'))}
                 className="group relative p-5 rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-gradient-to-b from-amber-500/10 to-transparent hover:from-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-3">
@@ -268,7 +268,7 @@ export function LandingPage({ onNavigate, authed, onOpenWorkspace, onOpenRanking
               {/* Option 2: CV Batch Ranking */}
               <button
                 type="button"
-                onClick={() => (authed ? (onOpenRanking ? onOpenRanking() : onNavigate('/ranking')) : onNavigate('/login'))}
+                onClick={() => (authed ? (onOpenRanking ? onOpenRanking() : onNavigate('/ranking')) : onNavigate('/register?intent=ranking'))}
                 className="group relative p-5 rounded-2xl border border-purple-200 dark:border-purple-500/20 bg-gradient-to-b from-purple-500/10 to-transparent hover:from-purple-500/20 hover:border-purple-400 dark:hover:border-purple-500/40 transition-all duration-200 shadow-sm text-left flex flex-col justify-between cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-3">

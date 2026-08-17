@@ -13,13 +13,17 @@ export const authService = {
     if (existing) throw createError('An account with this email already exists.', 409);
 
     const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
-    // Bootstrap admins from the ADMIN_EMAILS env allowlist — saves an
-    // out-of-band DB UPDATE to seed the first admin. Comparison lowercased.
     const role = env.ADMIN_EMAILS.includes(data.email.trim().toLowerCase())
       ? 'ADMIN'
       : 'USER';
+
+    const planType =
+      data.intent === 'ranking' ? 'RANKING' :
+      data.intent === 'sourcing' ? 'SOURCING' :
+      null;
+
     const user = await prisma.user.create({
-      data: { email: data.email, name: data.name, passwordHash, role },
+      data: { email: data.email, name: data.name, passwordHash, role, planType },
     });
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
@@ -38,13 +42,17 @@ export const authService = {
     const valid = await bcrypt.compare(data.password, user.passwordHash);
     if (!valid) throw createError('Invalid email or password.', 401);
 
-    // Self-heal: auto-assign planType for known test accounts or defaults.
-    // Note: planType 'NONE' means user just registered, treat same as null.
-    const currentPlan = user.planType === 'NONE' ? null : user.planType;
+    // If account has empty plan and user passed an intent -> assign chosen intent
+    let currentPlan = user.planType === 'NONE' ? null : user.planType;
+    if (!currentPlan && data.intent) {
+      if (data.intent === 'ranking') currentPlan = 'RANKING';
+      else if (data.intent === 'sourcing') currentPlan = 'SOURCING';
+    }
+
     const derivedPlan =
       user.email.includes('ranking') ? 'RANKING' :
       user.email.includes('pro') || env.ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'PRO' :
-      currentPlan ?? null; // Keep null so user stays on NONE until they pick a plan
+      currentPlan ?? null;
 
     const shouldBeAdmin =
       env.ADMIN_EMAILS.includes(user.email.toLowerCase()) && user.role !== 'ADMIN';
@@ -71,15 +79,13 @@ export const authService = {
    *   2. Match by email       → existing (likely password) account: LINK the
    *                             googleId onto it so future logins are instant.
    *   3. Otherwise            → create a brand-new account (no passwordHash).
-   *
-   * Trusting the email for linking is safe because we only accept Google
-   * profiles whose email is verified (checked in the controller).
    */
   async googleSignIn(profile: {
     googleId: string;
     email: string;
     name?: string;
     avatarUrl?: string;
+    intent?: 'sourcing' | 'ranking' | 'both';
   }): Promise<AuthResponse> {
     const email = profile.email.trim().toLowerCase();
     const shouldBeAdmin = env.ADMIN_EMAILS.includes(email);
@@ -89,6 +95,13 @@ export const authService = {
       (await prisma.user.findUnique({ where: { email } }));
 
     if (user) {
+      // If existing user has no plan, populate intent if provided
+      let planToSet = user.planType === 'NONE' ? null : user.planType;
+      if (!planToSet && profile.intent) {
+        if (profile.intent === 'ranking') planToSet = 'RANKING';
+        else if (profile.intent === 'sourcing') planToSet = 'SOURCING';
+      }
+
       user = await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -97,10 +110,16 @@ export const authService = {
           // Backfill avatar/name only when we don't already have them.
           avatarUrl: user.avatarUrl ?? profile.avatarUrl ?? null,
           name: user.name || profile.name || email,
+          planType: planToSet,
           ...(shouldBeAdmin && user.role !== 'ADMIN' ? { role: 'ADMIN' as const } : {}),
         },
       });
     } else {
+      const planType =
+        profile.intent === 'ranking' ? 'RANKING' :
+        profile.intent === 'sourcing' ? 'SOURCING' :
+        null;
+
       user = await prisma.user.create({
         data: {
           email,
@@ -109,6 +128,7 @@ export const authService = {
           googleId: profile.googleId,
           avatarUrl: profile.avatarUrl ?? null,
           role: shouldBeAdmin ? 'ADMIN' : 'USER',
+          planType,
           lastLoginAt: new Date(),
         },
       });

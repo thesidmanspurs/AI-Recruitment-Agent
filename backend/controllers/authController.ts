@@ -8,14 +8,14 @@ export const authController = {
   // POST /api/auth/register
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, password } = req.body as RegisterRequest;
+      const { name, email, password, intent } = req.body as RegisterRequest;
       if (!name || !email || !password) {
         return next(createError('name, email and password are required.', 400));
       }
       if (password.length < 8) {
         return next(createError('Password must be at least 8 characters.', 400));
       }
-      const result = await authService.register({ name, email, password });
+      const result = await authService.register({ name, email, password, intent });
       setAuthCookie(res, result.token);
       // We no longer return the JWT in the body — the HttpOnly cookie carries
       // it. Returning the user is enough for the client to bootstrap state.
@@ -28,11 +28,11 @@ export const authController = {
   // POST /api/auth/login
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password } = req.body as LoginRequest;
+      const { email, password, intent } = req.body as LoginRequest;
       if (!email || !password) {
         return next(createError('email and password are required.', 400));
       }
-      const result = await authService.login({ email, password });
+      const result = await authService.login({ email, password, intent });
       setAuthCookie(res, result.token);
       res.json({ success: true, user: result.user });
     } catch (err) {

@@ -6,6 +6,7 @@ import { setAuthCookie, getCookieDomain } from '../utils/authCookie.js';
 
 const STATE_COOKIE = 'aries_oauth_state';
 const ORIGIN_COOKIE = 'aries_oauth_origin';
+const INTENT_COOKIE = 'aries_oauth_intent';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
@@ -39,6 +40,7 @@ export const googleAuthController = {
 
     const state = crypto.randomBytes(16).toString('hex');
     const domain = getCookieDomain(req);
+    const intent = req.query.intent as string | undefined;
 
     res.cookie(STATE_COOKIE, state, {
       httpOnly: true,
@@ -58,6 +60,17 @@ export const googleAuthController = {
       ...(domain ? { domain } : {}),
     });
 
+    if (intent && (intent === 'ranking' || intent === 'sourcing' || intent === 'both')) {
+      res.cookie(INTENT_COOKIE, intent, {
+        httpOnly: true,
+        secure: env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 10 * 60 * 1000,
+        ...(domain ? { domain } : {}),
+      });
+    }
+
     const params = new URLSearchParams({
       client_id: env.GOOGLE_CLIENT_ID,
       redirect_uri: env.GOOGLE_REDIRECT_URI,
@@ -74,9 +87,12 @@ export const googleAuthController = {
   async callback(req: Request, res: Response): Promise<void> {
     const domain = getCookieDomain(req);
     const savedOrigin = req.cookies?.[ORIGIN_COOKIE] || getClientOrigin(req);
+    const savedIntent = (req.cookies?.[INTENT_COOKIE] as 'sourcing' | 'ranking' | 'both' | undefined) || undefined;
+
     const fail = (msg: string) => {
       res.clearCookie(STATE_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
       res.clearCookie(ORIGIN_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
+      res.clearCookie(INTENT_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
       res.redirect(`${savedOrigin}/?auth_error=${encodeURIComponent(msg)}`);
     };
 
@@ -91,6 +107,7 @@ export const googleAuthController = {
       const expected = req.cookies?.[STATE_COOKIE];
       res.clearCookie(STATE_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
       res.clearCookie(ORIGIN_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
+      res.clearCookie(INTENT_COOKIE, { path: '/', ...(domain ? { domain } : {}) });
 
       if (!expected || !state || expected !== state) {
         return fail('Sign-in session expired. Please try again.');
@@ -125,16 +142,31 @@ export const googleAuthController = {
       if (!claims.sub || !claims.email) return fail('Google profile was incomplete.');
       if (!verifiedEmail) return fail('Your Google email is not verified.');
 
-      const result = authService.googleSignIn({
+      const userResult = await authService.googleSignIn({
         googleId: claims.sub,
         email: claims.email,
         name: claims.name,
         avatarUrl: claims.picture,
+        intent: savedIntent,
       });
 
-      const userResult = await result;
       setAuthCookie(res, userResult.token, req);
-      res.redirect(`${savedOrigin}/home`);
+
+      const plan = userResult.user.planType;
+      const isAdmin = userResult.user.role === 'ADMIN';
+
+      if (isAdmin || plan === 'PRO') {
+        if (savedIntent === 'ranking') res.redirect(`${savedOrigin}/ranking`);
+        else res.redirect(`${savedOrigin}/home`);
+      } else if (plan === 'RANKING') {
+        res.redirect(`${savedOrigin}/ranking`);
+      } else if (plan === 'SOURCING') {
+        res.redirect(`${savedOrigin}/home`);
+      } else {
+        if (savedIntent === 'ranking') res.redirect(`${savedOrigin}/ranking`);
+        else if (savedIntent === 'sourcing') res.redirect(`${savedOrigin}/home`);
+        else res.redirect(`${savedOrigin}/welcome`);
+      }
     } catch (err) {
       console.error('[Google OAuth] callback error:', err instanceof Error ? err.message : err);
       fail('Could not complete Google sign-in.');

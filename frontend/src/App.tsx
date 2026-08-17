@@ -152,16 +152,42 @@ function AuthGate() {
   };
 
   // After a fresh password login/register, move into the app
-  const handleLogin = useCallback(async (email: string, password: string) => {
-    await login(email, password);
-    if (!readPendingCheckout()) navigate('/home');
+  const handleLogin = useCallback(async (email: string, password: string, intent?: 'sourcing' | 'ranking' | 'both') => {
+    const authedUser = await login(email, password, intent);
+    if (!readPendingCheckout()) {
+      if (intent) {
+        localStorage.setItem('onboarding_done_' + authedUser.id, 'true');
+        localStorage.setItem('onboarding_goal_' + authedUser.id, intent);
+      }
+      if (authedUser.role === 'ADMIN') {
+        navigate('/admin');
+      } else if (authedUser.planType === 'RANKING' || intent === 'ranking') {
+        navigate('/ranking');
+      } else if (authedUser.planType === 'SOURCING' || intent === 'sourcing') {
+        navigate('/home');
+      } else if (intent === 'both') {
+        navigate('/home');
+      } else {
+        navigate('/home');
+      }
+    }
   }, [login, navigate]);
 
-  const handleRegister = useCallback(async (name: string, email: string, password: string) => {
-    await register(name, email, password);
+  const handleRegister = useCallback(async (name: string, email: string, password: string, intent?: 'sourcing' | 'ranking' | 'both') => {
+    const authedUser = await register(name, email, password, intent);
     clearPendingCheckout();
-    sessionStorage.setItem('show_onboarding_intent', 'true');
-    navigate('/welcome');
+    if (intent) {
+      localStorage.setItem('onboarding_done_' + authedUser.id, 'true');
+      localStorage.setItem('onboarding_goal_' + authedUser.id, intent);
+      if (intent === 'ranking') {
+        navigate('/ranking');
+      } else {
+        navigate('/home');
+      }
+    } else {
+      sessionStorage.setItem('show_onboarding_intent', 'true');
+      navigate('/welcome');
+    }
   }, [register, navigate]);
 
   // Enforce sensible URLs once the user is known.
@@ -179,7 +205,7 @@ function AuthGate() {
     const isNotDone = !localStorage.getItem('onboarding_done_' + user.id);
     const isFreemium = !user.planType || user.planType === 'NONE';
 
-    // If new user registered or hasn't selected an intent, force /welcome route
+    // If new user registered without an intent and hasn't selected an intent, force /welcome route
     if (isJustReg || (isNotDone && isFreemium)) {
       if (path !== '/welcome') {
         window.history.replaceState({}, '', '/welcome');
@@ -190,7 +216,8 @@ function AuthGate() {
 
     if (resumed.current || readPendingCheckout()) return;
 
-    const isRankingUser = user.planType === 'RANKING' || Boolean(user.email?.toLowerCase().includes('ranking'));
+    const storedGoal = localStorage.getItem('onboarding_goal_' + user.id);
+    const isRankingUser = user.planType === 'RANKING' || Boolean(user.email?.toLowerCase().includes('ranking')) || storedGoal === 'ranking';
     if (isRankingUser && !path.startsWith('/ranking') && !path.startsWith('/billing') && path !== '/') {
       window.history.replaceState({}, '', '/ranking');
       setPath('/ranking');

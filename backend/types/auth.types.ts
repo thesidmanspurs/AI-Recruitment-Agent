@@ -13,20 +13,29 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE' | null;
 }
 
 export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+  intent?: 'sourcing' | 'ranking' | 'both';
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+  intent?: 'sourcing' | 'ranking' | 'both';
 }
 
 export interface AuthResponse {
   token: string;
-  user: { id: string; email: string; name: string; role: UserRole };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE' | null;
+  };
 }

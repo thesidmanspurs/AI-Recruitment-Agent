@@ -3,15 +3,21 @@ import type { UserRole } from '../hooks/useAuth';
 
 export interface AuthResponse {
   success: boolean;
-  user: { id: string; email: string; name: string; role: UserRole; planType?: 'SOURCING' | 'RANKING' | 'PRO' };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE' | null;
+  };
 }
 
 export const authApi = {
-  register(data: { name: string; email: string; password: string }): Promise<AuthResponse> {
+  register(data: { name: string; email: string; password: string; intent?: 'sourcing' | 'ranking' | 'both' }): Promise<AuthResponse> {
     return apiClient.post('/auth/register', data);
   },
 
-  login(data: { email: string; password: string }): Promise<AuthResponse> {
+  login(data: { email: string; password: string; intent?: 'sourcing' | 'ranking' | 'both' }): Promise<AuthResponse> {
     return apiClient.post('/auth/login', data);
   },
 
@@ -19,7 +25,7 @@ export const authApi = {
     success: boolean;
     user: {
       id: string; email: string; name: string; role: UserRole;
-      planType?: 'SOURCING' | 'RANKING' | 'PRO';
+      planType?: 'SOURCING' | 'RANKING' | 'PRO' | 'NONE' | null;
       outreachSignature?: string | null;
       createdAt: string; lastLoginAt: string | null;
     };
