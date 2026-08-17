@@ -88,6 +88,13 @@ export function RankingPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOpen
   }, [activeSession]);
 
   useEffect(() => {
+    const isSourcingOnly = user?.role !== 'ADMIN' && user?.planType === 'SOURCING';
+    if (isSourcingOnly) {
+      setPaywallFeature('ranking');
+    }
+  }, [user]);
+
+  useEffect(() => {
     loadSessions();
   }, [loadSessions]);
 

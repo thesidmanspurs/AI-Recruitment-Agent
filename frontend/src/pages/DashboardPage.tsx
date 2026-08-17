@@ -116,6 +116,13 @@ export function DashboardPage({ user, onLogout, onOpenAdmin, onOpenBilling, onOp
       .catch(() => setEmailCanSend(false));
   };
   useEffect(() => {
+    const isRankingOnly = user?.role !== 'ADMIN' && user?.planType === 'RANKING';
+    if (isRankingOnly) {
+      setPaywallFeature('sourcing');
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (user) refreshEmailStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
