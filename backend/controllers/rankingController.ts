@@ -113,6 +113,8 @@ export const rankingController = {
       const user = await prisma.user.findUnique({
         where: { id: req.user!.id },
         select: {
+          role: true,
+          email: true,
           planType: true,
           subscriptionStatus: true,
           sourcingAddonActive: true,

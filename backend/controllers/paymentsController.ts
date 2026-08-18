@@ -58,6 +58,8 @@ export const paymentsController = {
       const u = await prisma.user.findUnique({
         where: { id: req.user!.id },
         select: {
+          role: true,
+          email: true,
           creditBalance: true,
           planType: true,
           subscriptionStatus: true,
@@ -75,14 +77,15 @@ export const paymentsController = {
       });
       if (!u) return next(createError('User not found.', 404));
 
+      const { hasSourceAccess, hasRankingAccess } = deriveAccess(u);
+      const isBaseSubCanceled =
+        u.subscriptionStatus === 'canceled' || u.subscriptionStatus === 'unpaid';
+      const isPaidPlan =
+        u.planType === 'PRO' || u.planType === 'SOURCING' || u.planType === 'RANKING';
       const basePlanActive =
-        u.subscriptionStatus === 'active' || u.subscriptionStatus === 'trialing';
-      const hasSourceAccess =
-        (basePlanActive && (u.planType === 'SOURCING' || u.planType === 'PRO')) ||
-        (u.sourcingAddonActive && (u.sourcingAddonStatus === 'active' || u.sourcingAddonStatus === 'trialing'));
-      const hasRankingAccess =
-        (basePlanActive && (u.planType === 'RANKING' || u.planType === 'PRO')) ||
-        (u.rankingAddonActive && (u.rankingAddonStatus === 'active' || u.rankingAddonStatus === 'trialing'));
+        u.subscriptionStatus === 'active' ||
+        u.subscriptionStatus === 'trialing' ||
+        (isPaidPlan && !isBaseSubCanceled);
 
       // Eligible add-ons for this user's current plan
       const eligibleAddons = getEligibleAddons(u.subscriptionPlan);

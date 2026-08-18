@@ -23,6 +23,8 @@ export async function requireRankingAccess(
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
+        role: true,
+        email: true,
         planType: true,
         subscriptionStatus: true,
         sourcingAddonActive: true,

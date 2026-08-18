@@ -169,18 +169,33 @@ export function deriveAccess(user: {
   subscriptionStatus?: string | null;
   sourcingAddonStatus?: string | null;
   rankingAddonStatus?: string | null;
+  role?: string | null;
+  email?: string | null;
 }): { hasSourceAccess: boolean; hasRankingAccess: boolean } {
+  // Admin accounts ALWAYS have full access to both features
+  if (user.role === 'ADMIN') {
+    return { hasSourceAccess: true, hasRankingAccess: true };
+  }
+
+  const isBaseSubCanceled =
+    user.subscriptionStatus === 'canceled' || user.subscriptionStatus === 'unpaid';
+
+  // Base plan is active if:
+  // 1. Stripe subscription is active/trialing, OR
+  // 2. planType is PRO, SOURCING, or RANKING (and not explicitly canceled/unpaid)
+  const isPaidPlan =
+    user.planType === 'PRO' || user.planType === 'SOURCING' || user.planType === 'RANKING';
   const basePlanActive =
-    user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing';
+    (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing') ||
+    (isPaidPlan && !isBaseSubCanceled);
+
   const sourcingAddonLive =
     user.sourcingAddonActive &&
-    (user.sourcingAddonStatus === 'active' || user.sourcingAddonStatus === 'trialing');
+    (user.sourcingAddonStatus === 'active' || user.sourcingAddonStatus === 'trialing' || !user.sourcingAddonStatus);
   const rankingAddonLive =
     user.rankingAddonActive &&
-    (user.rankingAddonStatus === 'active' || user.rankingAddonStatus === 'trialing');
+    (user.rankingAddonStatus === 'active' || user.rankingAddonStatus === 'trialing' || !user.rankingAddonStatus);
 
-  // Freemium sourcing: NONE or null plan users get the sourcing UI for free.
-  // They can search and see candidates — they only spend credits to reveal contacts.
   const isFreemiumOrNoSub =
     !user.planType || user.planType === 'NONE' || user.planType === 'null';
 
